@@ -1,5 +1,7 @@
 ### Slice 11 — Microsoft Store: MSIX package, listing and submission
 
+**Dropped 2026-10-22 (user): the app will not be submitted to the Microsoft Store.** The user already has a Partner Center account but decided against a new Store app. The MSIX build stays in `release.yml`, dormant until the `MSIX_*` repo variables are set.
+
 *Built 2026-10-22 (awaiting merge); Partner Center steps pending with the user. Not yet verified: WACK, signed sideload install, the CI msix job.* Needs Slice 08 (the assets) and Slice 10 (the privacy URL).
 
 **Touches:** `packaging/msix/**`, `.github/workflows/release.yml`, `docs/store/**`, `README.md`, `assets/store/**`, `tools/store-assets/**` (re-shoot the screenshots from the real app, carried over from Slice 8)
