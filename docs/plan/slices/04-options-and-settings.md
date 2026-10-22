@@ -1,10 +1,12 @@
 ### Slice 04 — Options: fill or fit, flip edge, remembered printer
 
-*Planned.*
+*In progress (wave 2026-10-22), draft PR.*
 
 **Touches:** `src/PrintTheDamnBook.App/Settings/**`, `src/PrintTheDamnBook.App/Views/OptionsPanel.xaml`,
 `src/PrintTheDamnBook.App/Views/OptionsPanel.xaml.cs`, `src/PrintTheDamnBook.App/Printing/**`,
-`src/PrintTheDamnBook.Core/Layout/**`, `tests/PrintTheDamnBook.Core.Tests/Layout*`
+`src/PrintTheDamnBook.Core/Layout/**`, `tests/PrintTheDamnBook.Core.Tests/Layout*`,
+`src/PrintTheDamnBook.App/MainWindow.xaml`, `src/PrintTheDamnBook.App/MainWindow.xaml.cs`,
+`src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`, `src/PrintTheDamnBook.App/Views/PageResources.xaml`
 
 **Why.** Two drivers interpret the duplex flip differently, and some books look better edge
 to edge. These are the knobs the user will reach for after the first print, and they should
@@ -22,6 +24,10 @@ stay set between runs.
   rotated 180 degrees when rendered, so left/right and up/down still come out right. The
   page assignment from Core never changes; only the rendering does. Unit test the rotation
   decision; verify on paper with the test sheet.
+
+- Added 2026-10-22 (after Slice 6): the settings also remember Slice 6's Two-sided choice
+  (Automatic/Manual), *Reverse order of backs* and *Rotate backs 180°*, per printer name. Long-edge flip
+  applies to Automatic only; in Manual, the rotate option already covers it.
 
 **Work.**
 
