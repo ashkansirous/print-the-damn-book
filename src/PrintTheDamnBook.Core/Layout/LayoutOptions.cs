@@ -24,8 +24,18 @@ public enum DuplexMode
     Manual,
 }
 
-/// <summary>The layout choices that apply to a whole print job.</summary>
-public sealed record JobLayout(ScalingMode Scaling, double MarginMm, FlipEdge Flip);
+/// <summary>Where the page numbers go and which number each page gets (see <see cref="PageNumbering.Compute"/>). The two always travel together.</summary>
+public sealed record PageNumberSetup(PageNumberPosition Position, IReadOnlyDictionary<BookPage, int> Numbers);
+
+/// <summary>The layout choices that apply to a whole print job. A null <paramref name="PageNumbers"/> prints no numbers.</summary>
+public sealed record JobLayout(
+    ScalingMode Scaling,
+    double MarginMm,
+    FlipEdge Flip,
+    PageNumberSetup? PageNumbers = null)
+{
+    public PageNumberPosition NumberPosition => PageNumbers?.Position ?? PageNumberPosition.Off;
+}
 
 /// <summary>The size of one page box in the sheet preview and the inset the margin leaves inside it, in the same unit.</summary>
 public readonly record struct PreviewBox(double Width, double Height, double Inset);

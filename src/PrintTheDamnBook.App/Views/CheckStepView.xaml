@@ -130,6 +130,16 @@
             <TextBlock Style="{StaticResource PhFill}" FontSize="11" Text="{StaticResource IconWarning}" Foreground="{StaticResource BgBrush}"
                        HorizontalAlignment="Center" />
           </Border>
+          <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="4" Padding="4,0" CornerRadius="3" Background="{StaticResource Neutral900Brush}"
+                  ToolTip="Printed page number">
+            <Border.Visibility>
+              <MultiBinding Converter="{StaticResource AllTrueToVisibility}">
+                <Binding Path="HasPrintedNumber" />
+                <Binding Path="DataContext.ShowsPageNumbers" RelativeSource="{RelativeSource AncestorType=views:CheckStepView}" />
+              </MultiBinding>
+            </Border.Visibility>
+            <TextBlock Text="{Binding PrintedNumber}" FontSize="10" Foreground="{StaticResource Neutral200Brush}" />
+          </Border>
         </Grid>
         <TextBlock x:Name="Label" Text="{Binding Label}" FontSize="11" Foreground="{StaticResource Neutral300Brush}" TextTrimming="CharacterEllipsis"
                    HorizontalAlignment="Center" Margin="0,4,0,0" />

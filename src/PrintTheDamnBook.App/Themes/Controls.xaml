@@ -5,6 +5,7 @@
 
   <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
   <views:InverseBoolVisibilityConverter x:Key="InverseBoolToVisibility" />
+  <views:AllTrueVisibilityConverter x:Key="AllTrueToVisibility" />
   <views:PresentVisibilityConverter x:Key="PresentToVisibility" />
   <views:EnumBoolConverter x:Key="EnumBool" />
   <views:InverseBoolConverter x:Key="InverseBool" />

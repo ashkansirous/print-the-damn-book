@@ -26,6 +26,11 @@ public sealed record PageViewModel(string Label, ImageSource? Image, PageKind Ki
     /// <summary>How many real pages the book has; with <see cref="Position"/> it names the tile for screen readers.</summary>
     public int Total { get; init; }
 
+    /// <summary>The number printed on this page, or 0 when it has none (covers, blanks).</summary>
+    public int PrintedNumber { get; init; }
+
+    public bool HasPrintedNumber => PrintedNumber > 0;
+
     public bool IsEditable => Source is not null;
 
     public string AutomationName => Position > 0 ? $"{Label}, page {Position} of {Total}" : IsBlank ? BlankName : Label;

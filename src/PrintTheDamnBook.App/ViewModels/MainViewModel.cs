@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using PrintTheDamnBook.App.Printing;
 using PrintTheDamnBook.App.Services;
 using PrintTheDamnBook.Core;
+using PrintTheDamnBook.Core.Layout;
 
 namespace PrintTheDamnBook.App.ViewModels;
 
@@ -21,6 +22,9 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The blank filler that stands in for a missing back cover; a distinct instance so only that tile is flagged.</summary>
     private BookPage? _warnedBlank;
 
+    /// <summary>The number printed on each page (see <see cref="PageNumbering.Compute"/>); covers and blanks have none.</summary>
+    private IReadOnlyDictionary<BookPage, int> _printedNumbers = new Dictionary<BookPage, int>();
+
     /// <summary>1-based position of each real page, by identity, for the current book.</summary>
     private Dictionary<BookPage, int> _positions = new(ReferenceEqualityComparer.Instance);
 
@@ -34,6 +38,9 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     public PrintViewModel Print { get; }
+
+    /// <summary>Whether the As printed tiles show the number each page is printed with.</summary>
+    public bool ShowsPageNumbers => Print.PageNumbers != PageNumberPosition.Off;
 
     [ObservableProperty]
     public partial IReadOnlyList<SpreadViewModel> Spreads { get; set; } = [];
@@ -165,10 +172,11 @@ public sealed partial class MainViewModel : ObservableObject
         var sheets = Imposition.Impose(padded);
         var cache = new Dictionary<BookPage, PageViewModel>(ReferenceEqualityComparer.Instance);
 
+        _printedNumbers = PageNumbering.Compute(padded);
         _positions = PositionsOf(pages);
         Spreads = PrintTheDamnBook.Core.Spreads.Of(padded).Select(s => ToViewModel(s, cache)).ToList();
         Sheets = sheets.Select(s => ToViewModel(s, cache)).ToList();
-        Print.SetSheets(sheets, Path.GetFileName(Path.TrimEndingDirectorySeparator(FolderPath)));
+        Print.SetSheets(sheets, Path.GetFileName(Path.TrimEndingDirectorySeparator(FolderPath)), _printedNumbers);
         Status = LoadProblem ?? BuildStatus(pages.Count, sheets.Length);
         IsLoaded = pages.Count > 0;
         Chips = BuildChips(BookChecks.Find(pages, sheets.Length), sheets.Length, FailedImages(pages));
@@ -340,7 +348,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             var image = _thumbnails.Load(page.Path);
             var (note, warned) = PageNotes.For(page, image is not null, ReferenceEquals(page, _warnedBlank));
-            viewModel = new PageViewModel(page.Label, image, page.Kind) { Note = note, IsWarned = warned };
+            viewModel = new PageViewModel(page.Label, image, page.Kind) { Note = note, IsWarned = warned, PrintedNumber = _printedNumbers.GetValueOrDefault(page) };
             cache[page] = viewModel;
         }
 

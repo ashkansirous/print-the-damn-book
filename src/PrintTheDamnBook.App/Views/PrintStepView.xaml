@@ -105,6 +105,20 @@
         <TextBox Width="80" HorizontalAlignment="Left" IsEnabled="{Binding IsIdle}" Text="{Binding MarginText, UpdateSourceTrigger=LostFocus}"
                  AutomationProperties.Name="Margin in millimetres" />
 
+        <TextBlock Style="{StaticResource FieldLabel}" Text="Page numbers" Margin="0,14,0,5" />
+        <Border Style="{StaticResource SegBorder}" IsEnabled="{Binding IsIdle}">
+          <StackPanel Orientation="Horizontal">
+            <RadioButton Style="{StaticResource SegOption}" Content="Off" GroupName="PageNumbers" AutomationProperties.Name="Page numbers off"
+                         IsChecked="{Binding PageNumbers, Converter={StaticResource EnumBool}, ConverterParameter={x:Static layout:PageNumberPosition.Off}}" />
+            <Rectangle Style="{StaticResource SegDivider}" />
+            <RadioButton Style="{StaticResource SegOption}" Content="Below" GroupName="PageNumbers" AutomationProperties.Name="Page numbers below"
+                         IsChecked="{Binding PageNumbers, Converter={StaticResource EnumBool}, ConverterParameter={x:Static layout:PageNumberPosition.Below}}" />
+            <Rectangle Style="{StaticResource SegDivider}" />
+            <RadioButton Style="{StaticResource SegOption}" Content="Above" GroupName="PageNumbers" AutomationProperties.Name="Page numbers above"
+                         IsChecked="{Binding PageNumbers, Converter={StaticResource EnumBool}, ConverterParameter={x:Static layout:PageNumberPosition.Above}}" />
+          </StackPanel>
+        </Border>
+
         <TextBlock Style="{StaticResource FieldLabel}" Text="Two-sided" Margin="0,14,0,5" />
         <Border Style="{StaticResource SegBorder}" IsEnabled="{Binding IsIdle}">
           <StackPanel Orientation="Horizontal">
