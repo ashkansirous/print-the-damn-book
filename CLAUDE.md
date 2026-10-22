@@ -36,8 +36,11 @@ dotnet run --project src/PrintTheDamnBook.App
   `left = p[2k+1]`, `right = p[N-2-2k]`. Blanks go before the back cover. Changing this is a
   slice, not a tweak.
 - Printing always sets orientation, duplex and paper size on the `PrintTicket` itself; never
-  rely on the driver's defaults. Never silently print simplex: if the printer can't short-edge
-  duplex, offer Manual two-sided (Slice 6: docs/plan/slices/06-manual-duplex.md). (Slice 02: docs/plan/slices/02-print-booklet.md)
+  rely on the driver's defaults. (Slice 02: docs/plan/slices/02-print-booklet.md)
+- Automatic printing needs a validated `TwoSidedShortEdge`. Manual sends two explicit `OneSided`
+  jobs (fronts, reload, backs) and refuses a validated `TwoSided*`. Never silently print simplex.
+  The two-pass flow lives in `Printing/ManualDuplexRunner.cs`; order and rotation maths in
+  `Core/Layout/ManualDuplexPlan.cs`. (Slice 6: docs/plan/slices/06-manual-duplex.md)
 - No Dockerfile, no container image: desktop app, no backend. Releases are a self-contained
   exe built by `release.yml` (Slice 05).
 - Files are LF (`.gitattributes`, `.editorconfig`); don't convert line endings.

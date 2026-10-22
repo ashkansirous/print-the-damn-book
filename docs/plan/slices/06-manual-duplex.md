@@ -70,11 +70,11 @@ again and print the odd ones"; details are recommended defaults, veto any):
 
 *Desktop test 2026-10-22 (Microsoft Print to PDF):* Brother and PDF auto-select Manual with a reason. Fronts: Back cover|Cover, 9|2, 7|4. Backs: 1|10, 3|8, 5|6, rotated 180° by default and upright when off. Test-sheet label and upside-down prompt work; *Print backs again* enables and disables correctly. Known nit: the test-sheet label slightly overlaps the cover's top-left corner (sky only).
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - Replace the duplex rule: Automatic needs a validated `TwoSidedShortEdge`; Manual sends two explicit `OneSided` jobs (fronts, reload, backs) and refuses a validated `TwoSided*`; never silently simplex. The two-pass flow lives in `Printing/ManualDuplexRunner.cs`; order and rotation maths in `Core/Layout/ManualDuplexPlan.cs`. (Slice 6: docs/plan/slices/06-manual-duplex.md)
 
-#### For README.md
+#### For README.md (lifted 2026-10-22)
 
 - Printers without two-sided printing: choose Manual; print the test sheet once to check the backs' rotation.
 
