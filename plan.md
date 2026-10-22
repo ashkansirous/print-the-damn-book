@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Slices 7, 8 and 10 merged 2026-10-22. Next: 9 (needs 7's Print step) and 11 (needs 8's assets and 10's privacy page). 12 and 13 are parked.
+Slices 7 to 11 merged 2026-10-22. Slice 11 still needs the Partner Center steps with the user. 12 and 13 are parked.
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -32,9 +32,9 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 6 | Manual two-sided printing (before Slice 4) | built | #8 | | [06](docs/plan/slices/06-manual-duplex.md) |
 | 7 | Redesign: Open → Check → Print wizard (Nocturne) | built | #15 | | [07](docs/plan/slices/07-wizard-redesign.md) |
 | 8 | App icon and Store Kit assets | built | #16 | | [08](docs/plan/slices/08-icon-and-store-assets.md) |
-| 9 | Optional page numbers, below or above (after 7) | planned | | | [09](docs/plan/slices/09-page-numbers.md) |
+| 9 | Optional page numbers, below or above (after 7) | built | #18 | | [09](docs/plan/slices/09-page-numbers.md) |
 | 10 | Landing site at print-the-damn-book.sirous.uk | built | #17 | | [10](docs/plan/slices/10-landing-site.md) |
-| 11 | Microsoft Store: MSIX, listing, submission (after 8, 10) | planned | | | [11](docs/plan/slices/11-microsoft-store.md) |
+| 11 | Microsoft Store: MSIX, listing, submission (after 8, 10) (Store submission pending) | built | #19 | | [11](docs/plan/slices/11-microsoft-store.md) |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
 
@@ -42,6 +42,11 @@ Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 
 ## Outstanding work
 
+- Slice 9: a real printed page with numbers (print to PDF or paper) ([slice 09](docs/plan/slices/09-page-numbers.md)).
+- Slice 11: WACK on the MSIX; signed sideload install; the `msix` job in CI (needs a stable tag and the three `MSIX_*` repo variables); Partner Center steps with the user (account, name reservation, age rating, upload, submission) ([slice 11](docs/plan/slices/11-microsoft-store.md)).
+- Slice 7 code follow-ups from Slice 11 review: `SnapLayoutHook` hover state not cleared without non-client mouse tracking; `NocturneDialog` CoverOwner sizing / null owner; `ClearStatusUnlessBusy` doesn't reset `PrintStatusKind`; `TestSheetSent` mid-send check only covers RotateBacks ([slice 11](docs/plan/slices/11-microsoft-store.md)).
+- Site CI deploy: the user creates a Cloudflare API token (Workers edit) in the dashboard and sets it as the `CLOUDFLARE_API_TOKEN` repo secret ([slice 10](docs/plan/slices/10-landing-site.md)).
+- First release tag `v0.1.0` is not yet cut; it unblocks Slice 5's `release.yml`, Slice 11's `msix` job and the site download link ([slice 05](docs/plan/slices/05-release-pipeline.md)).
 - Slice 7: focus ring on the A4/Letter radios and switches, done-step footer wrap, the stuck drag tooltip (not reproduced), snap layout on a high-DPI monitor, all seen on screen ([slice 07](docs/plan/slices/07-wizard-redesign.md)).
 - Slice 8: the icon by eye in Explorer, title bar and taskbar, light and dark. The screenshot re-shoot from the real app is carried by Slice 11 ([slice 08](docs/plan/slices/08-icon-and-store-assets.md)).
 - Slice 10: set the `CLOUDFLARE_API_TOKEN` repo secret (Workers-edit token from the Cloudflare dashboard); until then the CI deploy skips. First deploy and custom domain are live (done 2026-10-22). Still open: Lighthouse run, download link once the first release exists ([slice 10](docs/plan/slices/10-landing-site.md)).

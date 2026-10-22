@@ -51,7 +51,7 @@ step at a time.
 
 *Verified locally:* MSIX built (0.1.0.0), registered unpacked via Add-AppxPackage -Register, launched and ran, then removed.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - Store releases come from stable `vX.Y.Z` tags only (MSIX version X.Y.Z.0; tags only ever increase). (Slice 11: docs/plan/slices/11-microsoft-store.md)
 - MSIX identity lives in repo variables `MSIX_*`, never in `AppxManifest.xml`. (Slice 11: docs/plan/slices/11-microsoft-store.md)

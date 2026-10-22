@@ -18,7 +18,7 @@ The app is a three-step wizard (Open, Check, Print) ending with a fold guide. We
 3. Pick your printer, click **Print test sheet** the first time to confirm the flip edge,
    then **Print**.
 
-Options (scaling, flip edge, margin, paper, printer, two-sided) are remembered between runs.
+Options (scaling, flip edge, margin, paper, printer, two-sided) are remembered between runs. Page numbers (Off / Below / Above) are under More options.
 
 Printers without two-sided printing: choose Manual; print the test sheet once to check the backs' rotation.
 
