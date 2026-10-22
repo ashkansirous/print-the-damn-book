@@ -12,7 +12,7 @@ using Polygon = System.Windows.Shapes.Polygon;
 namespace PrintTheDamnBook.App.Printing;
 
 /// <summary>Draws sheet faces into a <see cref="FixedDocument"/>, one landscape page per face. Placement comes from Core.</summary>
-internal sealed class FaceRenderer(PaperKind paper, double marginMm)
+internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
 {
     private const double PrintDpi = 300;
     private const double FeedArrowMm = 7;
@@ -26,12 +26,6 @@ internal sealed class FaceRenderer(PaperKind paper, double marginMm)
     public const string FeedEdgeInstruction = "FRONT – put the stack back printed side UP with this arrow pointing INTO the printer";
 
     private readonly SizeD _sheetMm = Paper.LandscapeSheetMm(paper);
-
-    /// <summary>Renders each sheet as its front then its back, unrotated.</summary>
-    public FixedDocument Render(IEnumerable<Sheet> sheets)
-    {
-        return Render(sheets.SelectMany(s => new[] { new PlannedFace(s.Front, false, false), new PlannedFace(s.Back, false, false) }).ToList());
-    }
 
     /// <summary>Renders the faces in the given order, one page each, turned and marked as planned.</summary>
     public FixedDocument Render(IReadOnlyList<PlannedFace> faces)
@@ -136,11 +130,8 @@ internal sealed class FaceRenderer(PaperKind paper, double marginMm)
         }
 
         var size = sizes[bookPage.Path];
-        var rect = HalfSheetLayout.Place(size, _sheetMm, rightHalf, marginMm);
-        if (rotate180)
-        {
-            rect = HalfSheetLayout.Rotate180(rect, _sheetMm);
-        }
+        var placement = HalfSheetLayout.Resolve(size, _sheetMm, rightHalf, layout.MarginMm, layout.Scaling);
+        var rect = rotate180 ? placement.Rotate180(_sheetMm).Image : placement.Image;
 
         var image = ImageDecoder.Decode(bookPage.Path, TargetPixelWidth(rect.Width, size.Width)) ?? throw Unreadable(bookPage.Path);
         var element = new Image
@@ -151,10 +142,18 @@ internal sealed class FaceRenderer(PaperKind paper, double marginMm)
             Height = ToDip(rect.Height),
             RenderTransformOrigin = new Point(0.5, 0.5),
             RenderTransform = rotate180 ? new RotateTransform(180) : Transform.Identity,
+            Clip = layout.Scaling == ScalingMode.Fill ? ClipOf(placement) : null,
         };
         FixedPage.SetLeft(element, ToDip(rect.X));
         FixedPage.SetTop(element, ToDip(rect.Y));
         page.Children.Add(element);
+    }
+
+    /// <summary>The visible part in the image's own coordinates; it turns with the image, so it is the same for a rotated page.</summary>
+    private static RectangleGeometry ClipOf(PagePlacement placement)
+    {
+        var clip = placement.LocalClip;
+        return new RectangleGeometry(new Rect(ToDip(clip.X), ToDip(clip.Y), ToDip(clip.Width), ToDip(clip.Height)));
     }
 
     /// <summary>Pixels needed to print the width at <see cref="PrintDpi"/>, or 0 (decode as is) when the image is not larger.</summary>

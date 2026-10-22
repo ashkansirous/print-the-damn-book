@@ -26,7 +26,7 @@ internal enum PrintOutcome
 
 internal sealed record PartText(string Phrase, string JobSuffix);
 
-internal sealed record PrintTarget(string PrinterName, PaperKind Paper, string BookName);
+internal sealed record PrintTarget(string PrinterName, PaperKind Paper, JobLayout Layout, string BookName);
 
 /// <summary>What the manual two-pass flow reads from, and reports to, the print view model.</summary>
 internal interface IManualDuplexSession

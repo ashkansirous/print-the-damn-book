@@ -35,7 +35,7 @@ internal sealed class ManualDuplexRunner(PrinterService printer, IPrintPrompts p
         var text = PrintParts.Text(part);
         var plan = ManualDuplexPlan.Build(sheets, OptionsFor(part));
         await printer.CheckReadableAsync(plan.Fronts.Concat(plan.Backs).ToList());
-        await printer.PrintFacesAsync(target.PrinterName, target.Paper, plan.Fronts, target.BookName + text.JobSuffix + FrontsSuffix);
+        await printer.PrintFacesAsync(target.PrinterName, target.Paper, target.Layout, plan.Fronts, target.BookName + text.JobSuffix + FrontsSuffix);
         var run = new ManualRun(target, sheets, part);
         if (part != PrintPart.TestSheet)
         {
@@ -99,7 +99,7 @@ internal sealed class ManualDuplexRunner(PrinterService printer, IPrintPrompts p
         {
             session.PrintStatus = $"Sending the backs of {text.Phrase} to {printerName}...";
             var backs = ManualDuplexPlan.Build(run.Sheets, OptionsFor(run.Part)).Backs;
-            await printer.PrintFacesAsync(printerName, run.Target.Paper, backs, run.Target.BookName + text.JobSuffix + BacksSuffix);
+            await printer.PrintFacesAsync(printerName, run.Target.Paper, run.Target.Layout, backs, run.Target.BookName + text.JobSuffix + BacksSuffix);
             return null;
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)

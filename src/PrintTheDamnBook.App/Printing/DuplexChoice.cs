@@ -1,10 +1,6 @@
-namespace PrintTheDamnBook.App.Printing;
+using PrintTheDamnBook.Core.Layout;
 
-public enum DuplexMode
-{
-    Automatic,
-    Manual,
-}
+namespace PrintTheDamnBook.App.Printing;
 
 /// <summary>An entry of the Two-sided picker.</summary>
 public sealed record DuplexChoice(DuplexMode Mode, string Label)

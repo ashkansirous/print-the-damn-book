@@ -1,5 +1,9 @@
+using System.Globalization;
+using System.Windows;
+using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PrintTheDamnBook.App.Settings;
 using PrintTheDamnBook.Core;
 using PrintTheDamnBook.Core.Layout;
 
@@ -10,9 +14,16 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 {
     private const string CoverPrompt = "The cover sheet has been sent. Load the cover paper, then press OK to print the rest.";
 
-    private const string NoDuplexReason = " does not report two-sided printing, so manual two-sided printing is selected.";
+    private const string NoDuplexReason = " does not report two-sided printing on the ";
+    private const string NoDuplexSuffix = ", so manual two-sided printing is selected.";
+    private const string ShortEdgeName = "short edge";
+    private const string LongEdgeName = "long edge";
     private const string ProbeFailedReason = "Couldn't check two-sided support for ";
     private const string ProbeFailedSuffix = ", so manual two-sided printing is selected.";
+
+    private const string SettingsNotSaved = "Couldn't save your settings.";
+    private const double PreviewBoxWidth = 150;
+    private static readonly TimeSpan SaveDelay = TimeSpan.FromMilliseconds(500);
 
     private const string FallbackJobName = "Booklet";
     private const string CoverSent = "The cover sheet was sent.";
@@ -25,16 +36,64 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     private readonly ManualDuplexRunner _manual;
     private IReadOnlyList<Sheet> _sheets = [];
     private string _bookName = FallbackJobName;
+    private readonly SettingsStore _store;
+    private volatile PrintSettings _settings;
     private bool _forgetRunsWhenIdle;
 
-    public PrintViewModel(PrinterService printer, IPrintPrompts prompts)
+    /// <summary>True while values are being set from the settings file or a forced switch, so they are not saved back.</summary>
+    private bool _applying;
+
+    /// <summary>True while the printer list is being filled, so a fallback selection is not saved as the user's choice.</summary>
+    private bool _loadingPrinters;
+
+    /// <summary>The Two-sided mode the user chose for the selected printer; differs from the shown one while Manual is forced.</summary>
+    private DuplexMode _chosenDuplex = DuplexMode.Automatic;
+
+    private bool _manualForced;
+    private CancellationTokenSource? _saveTimer;
+    private volatile bool _savePending;
+    private readonly object _saveLock = new();
+
+    public PrintViewModel(PrinterService printer, IPrintPrompts prompts, SettingsStore store)
     {
         _printer = printer;
         _prompts = prompts;
+        _store = store;
         _manual = new ManualDuplexRunner(printer, prompts, this);
+        _settings = store.Load();
+        ApplyGlobalSettings(_settings);
     }
 
     public IReadOnlyList<PaperKind> PaperSizes { get; } = Enum.GetValues<PaperKind>();
+
+    public IReadOnlyList<LayoutChoice<ScalingMode>> ScalingChoices => LayoutChoices.Scaling;
+
+    public IReadOnlyList<LayoutChoice<FlipEdge>> FlipChoices => LayoutChoices.Flip;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ImageStretch))]
+    public partial ScalingMode Scaling { get; set; } = ScalingMode.Fit;
+
+    /// <summary>How the sheet preview draws a page: Fill shows the crop.</summary>
+    public Stretch ImageStretch => Scaling == ScalingMode.Fill ? Stretch.UniformToFill : Stretch.Uniform;
+
+    /// <summary>Applies to Automatic only; in Manual, <see cref="RotateBacks"/> already covers it.</summary>
+    [ObservableProperty]
+    public partial FlipEdge Flip { get; set; } = FlipEdge.ShortEdge;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Preview))]
+    [NotifyPropertyChangedFor(nameof(PreviewInset))]
+    public partial double MarginMm { get; set; } = HalfSheetLayout.DefaultMarginMm;
+
+    /// <summary>What the margin box shows; typed text is parsed on commit and replaced by the clamped value.</summary>
+    [ObservableProperty]
+    public partial string MarginText { get; set; } = HalfSheetLayout.FormatMargin(HalfSheetLayout.DefaultMarginMm, CultureInfo.CurrentCulture);
+
+    /// <summary>The preview box of one page: the real half-sheet aspect with the margin inset.</summary>
+    public PreviewBox Preview => HalfSheetLayout.Preview(Paper.LandscapeSheetMm(SelectedPaper), MarginMm, PreviewBoxWidth);
+
+    public Thickness PreviewInset => new(Preview.Inset);
 
     [ObservableProperty]
     public partial IReadOnlyList<PrinterChoice> Printers { get; set; } = [];
@@ -45,30 +104,39 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     public partial PrinterChoice? SelectedPrinter { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Preview))]
+    [NotifyPropertyChangedFor(nameof(PreviewInset))]
     public partial PaperKind SelectedPaper { get; set; } = PaperKind.A4;
 
     [ObservableProperty]
     public partial bool SeparateCoverJob { get; set; }
 
+    /// <summary>Set while the last attempt to save the settings failed; separate from <see cref="PrintStatus"/>.</summary>
+    [ObservableProperty]
+    public partial string? SettingsStatus { get; set; }
+
     public IReadOnlyList<DuplexChoice> DuplexChoices { get; } = DuplexChoice.All;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsManual))]
+    [NotifyPropertyChangedFor(nameof(IsAutomatic))]
     public partial DuplexChoice SelectedDuplex { get; set; } = DuplexChoice.All[0];
 
     /// <summary>Why Manual was selected for the chosen printer; null when the user picked it or the printer does duplex.</summary>
     [ObservableProperty]
     public partial string? DuplexNote { get; set; }
 
-    /// <summary>Print the backs from the last sheet to the first (manual mode, session only).</summary>
+    /// <summary>Print the backs from the last sheet to the first (manual mode, remembered per printer).</summary>
     [ObservableProperty]
     public partial bool ReverseBacks { get; set; }
 
-    /// <summary>Turn every back 180 degrees (manual mode, session only). The default matches the reload instruction.</summary>
+    /// <summary>Turn every back 180 degrees (manual mode, remembered per printer). The default matches the reload instruction.</summary>
     [ObservableProperty]
     public partial bool RotateBacks { get; set; } = ManualDuplexPlan.DefaultRotateBacks;
 
     public bool IsManual => SelectedDuplex.Mode == DuplexMode.Manual;
+
+    public bool IsAutomatic => !IsManual;
 
     [ObservableProperty]
     public partial string? PrintStatus { get; set; }
@@ -90,11 +158,18 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
         try
         {
             Printers = await _printer.ListPrintersAsync();
-            SelectedPrinter = Printers.FirstOrDefault(p => p.IsDefault) ?? Printers.FirstOrDefault();
+            _loadingPrinters = true;
+            SelectedPrinter = Printers.FirstOrDefault(p => string.Equals(p.Name, _settings.Printer, StringComparison.OrdinalIgnoreCase))
+                ?? Printers.FirstOrDefault(p => p.IsDefault)
+                ?? Printers.FirstOrDefault();
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             PrintStatus = $"Could not list printers: {ex.Message}";
+        }
+        finally
+        {
+            _loadingPrinters = false;
         }
     }
 
@@ -113,36 +188,275 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     {
         ClearStatusUnlessBusy();
         ForgetLastRun();
+        ApplyPrinterSettings(value);
+        if (!_loadingPrinters && value is not null)
+        {
+            _settings = _settings with { Printer = value.Name };
+            Persist();
+        }
+
         DuplexNote = null;
         _ = ApplyPrinterDuplexAsync(value);
     }
 
-    /// <summary>
-    /// Selects Manual, with the reason, when the printer cannot (or cannot be checked to) do short-edge duplex. Never
-    /// switches Manual back to Automatic, so a user's Manual choice sticks.
-    /// </summary>
-    private async Task ApplyPrinterDuplexAsync(PrinterChoice? printer)
+    partial void OnFlipChanged(FlipEdge value)
+    {
+        Persist();
+        if (!_manualForced)
+        {
+            DuplexNote = null;
+        }
+
+        _ = ApplyPrinterDuplexAsync(SelectedPrinter);
+    }
+
+    partial void OnScalingChanged(ScalingMode value)
+    {
+        LayoutChanged();
+    }
+
+    partial void OnMarginMmChanged(double value)
+    {
+        var margin = HalfSheetLayout.NormalizeMargin(value);
+        if (margin != value)
+        {
+            MarginMm = margin;
+            return;
+        }
+
+        MarginText = HalfSheetLayout.FormatMargin(margin, CultureInfo.CurrentCulture);
+        LayoutChanged();
+    }
+
+    partial void OnMarginTextChanged(string value)
+    {
+        if (HalfSheetLayout.TryParseMargin(value, out var parsed))
+        {
+            MarginMm = HalfSheetLayout.NormalizeMargin(parsed);
+        }
+
+        MarginText = HalfSheetLayout.FormatMargin(MarginMm, CultureInfo.CurrentCulture);
+    }
+
+    /// <summary>Scaling and margin change what the fronts look like, so a remembered first pass no longer matches.</summary>
+    private void LayoutChanged()
+    {
+        Persist();
+        ClearStatusUnlessBusy();
+        ForgetLastRun();
+    }
+
+    partial void OnSeparateCoverJobChanged(bool value)
+    {
+        Persist();
+    }
+
+    partial void OnReverseBacksChanged(bool value)
+    {
+        Persist();
+    }
+
+    partial void OnRotateBacksChanged(bool value)
+    {
+        Persist();
+    }
+
+    private void ApplyGlobalSettings(PrintSettings settings)
+    {
+        _applying = true;
+        try
+        {
+            Scaling = settings.Scaling;
+            Flip = settings.Flip;
+            MarginMm = settings.MarginMm;
+            SelectedPaper = settings.Paper;
+            SeparateCoverJob = settings.SeparateCoverJob;
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
+
+    /// <summary>Loads what is remembered for the printer (defaults for a new one) without saving it back.</summary>
+    private void ApplyPrinterSettings(PrinterChoice? printer)
     {
         if (printer is null)
         {
             return;
         }
 
-        var support = await ProbeDuplexAsync(printer.Name);
-        if (support == true || !ReferenceEquals(SelectedPrinter, printer))
+        var remembered = _settings.ForPrinter(printer.Name);
+        _applying = true;
+        try
+        {
+            _chosenDuplex = remembered.Duplex;
+            _manualForced = false;
+            SelectedDuplex = DuplexChoices.First(c => c.Mode == remembered.Duplex);
+            ReverseBacks = remembered.ReverseBacks;
+            RotateBacks = remembered.RotateBacks;
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
+
+    /// <summary>Updates the in-memory settings and schedules a save. The remembered printer changes only when the user picks one.</summary>
+    private void Persist()
+    {
+        if (_applying)
         {
             return;
         }
 
-        SelectedDuplex = DuplexChoices.First(c => c.Mode == DuplexMode.Manual);
-        DuplexNote = support == false ? printer.Name + NoDuplexReason : ProbeFailedReason + printer.Name + ProbeFailedSuffix;
+        _settings = _settings with { Scaling = Scaling, Flip = Flip, MarginMm = MarginMm, Paper = SelectedPaper, SeparateCoverJob = SeparateCoverJob };
+        if (SelectedPrinter is not null)
+        {
+            _settings = _settings.WithPrinter(SelectedPrinter.Name, new PrinterSettings(_chosenDuplex, ReverseBacks, RotateBacks));
+        }
+
+        ScheduleSave();
     }
 
-    private async Task<bool?> ProbeDuplexAsync(string printerName)
+    private void ScheduleSave()
+    {
+        StopSaveTimer();
+        _saveTimer = new CancellationTokenSource();
+        _savePending = true;
+        _ = SaveAfterDelayAsync(_saveTimer.Token);
+    }
+
+    private async Task SaveAfterDelayAsync(CancellationToken token)
     {
         try
         {
-            return await _printer.ProbeShortEdgeDuplexAsync(printerName);
+            await Task.Delay(SaveDelay, token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        var saved = await Task.Run(SaveLatest);
+        SettingsStatus = saved ? null : SettingsNotSaved;
+    }
+
+    private void StopSaveTimer()
+    {
+        _saveTimer?.Cancel();
+        _saveTimer?.Dispose();
+        _saveTimer = null;
+    }
+
+    /// <summary>
+    /// Writes the newest settings if a save is pending. Saves are serialised, so an older snapshot can never land after
+    /// a newer one; the change stays pending until a write succeeds or a newer change replaces it.
+    /// </summary>
+    private bool SaveLatest()
+    {
+        lock (_saveLock)
+        {
+            if (!_savePending)
+            {
+                return true;
+            }
+
+            var snapshot = _settings;
+            if (!_store.Save(snapshot))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(_settings, snapshot))
+            {
+                _savePending = false;
+            }
+
+            return true;
+        }
+    }
+
+    /// <summary>Writes any change still waiting for the save delay; call when the window closes. Never throws.</summary>
+    public void FlushSettings()
+    {
+        try
+        {
+            StopSaveTimer();
+            if (!SaveLatest())
+            {
+                SettingsStatus = SettingsNotSaved;
+            }
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // The window is closing: nothing useful is left to do with a failed save.
+        }
+    }
+
+    /// <summary>
+    /// Selects Manual, with the reason, when the printer cannot (or cannot be checked to) do duplex on the chosen flip
+    /// edge. The user's own choice is kept apart, so the forced Manual is never saved and is undone when a later check
+    /// passes. Nothing is probed while the user has chosen Manual.
+    /// </summary>
+    private async Task ApplyPrinterDuplexAsync(PrinterChoice? printer)
+    {
+        if (printer is null || (IsManual && !_manualForced))
+        {
+            return;
+        }
+
+        var flip = Flip;
+        var support = await ProbeDuplexAsync(printer.Name, flip);
+        if (!ReferenceEquals(SelectedPrinter, printer) || Flip != flip || (IsManual && !_manualForced))
+        {
+            return;
+        }
+
+        if (support == true)
+        {
+            RestoreChosenDuplex();
+            return;
+        }
+
+        SetDuplexWithoutSaving(DuplexMode.Manual);
+        _manualForced = true;
+        DuplexNote = support == false ? printer.Name + NoDuplexReason + EdgeName(flip) + NoDuplexSuffix : ProbeFailedReason + printer.Name + ProbeFailedSuffix;
+    }
+
+    private void RestoreChosenDuplex()
+    {
+        if (_manualForced)
+        {
+            _manualForced = false;
+            SetDuplexWithoutSaving(_chosenDuplex);
+            DuplexNote = null;
+        }
+    }
+
+    private static string EdgeName(FlipEdge flip)
+    {
+        return flip == FlipEdge.LongEdge ? LongEdgeName : ShortEdgeName;
+    }
+
+    private void SetDuplexWithoutSaving(DuplexMode mode)
+    {
+        _applying = true;
+        try
+        {
+            SelectedDuplex = DuplexChoices.First(c => c.Mode == mode);
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
+
+    private async Task<bool?> ProbeDuplexAsync(string printerName, FlipEdge flip)
+    {
+        try
+        {
+            return await _printer.ProbeDuplexAsync(printerName, flip);
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
@@ -152,11 +466,24 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     partial void OnSelectedDuplexChanged(DuplexChoice value)
     {
+        if (_applying)
+        {
+            return;
+        }
+
+        _manualForced = false;
+        _chosenDuplex = value.Mode;
         DuplexNote = null;
+        Persist();
+        if (value.Mode == DuplexMode.Automatic)
+        {
+            _ = ApplyPrinterDuplexAsync(SelectedPrinter);
+        }
     }
 
     partial void OnSelectedPaperChanged(PaperKind value)
     {
+        Persist();
         ClearStatusUnlessBusy();
         ForgetLastRun();
     }
@@ -236,7 +563,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     private PrintTarget CurrentTarget()
     {
-        return new PrintTarget(SelectedPrinter!.Name, SelectedPaper, _bookName);
+        return new PrintTarget(SelectedPrinter!.Name, SelectedPaper, new JobLayout(Scaling, MarginMm, Flip), _bookName);
     }
 
     private async Task PrintBookletAsync(IReadOnlyList<Sheet> sheets, PrintTarget target)
@@ -287,7 +614,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
                 return await _manual.RunAsync(target, sheets, part);
             }
 
-            await _printer.PrintAsync(target.PrinterName, target.Paper, sheets, target.BookName + text.JobSuffix);
+            await _printer.PrintAsync(target.PrinterName, target.Paper, target.Layout, sheets, target.BookName + text.JobSuffix);
             PrintStatus = $"Sent {text.Phrase} to {target.PrinterName}.";
             return PrintOutcome.Sent;
         }

@@ -18,4 +18,23 @@
                  Visibility="{Binding IsUnrecognised, Converter={StaticResource BoolToVisibility}}" />
     </StackPanel>
   </DataTemplate>
+
+  <!-- A page in the sheet preview: like PageTemplate, but follows the Scaling option so Fill shows the crop. -->
+  <DataTemplate x:Key="FacePageTemplate" DataType="{x:Type vm:PageViewModel}">
+    <StackPanel Margin="4" Width="150">
+      <Border BorderBrush="Gray" BorderThickness="1" Background="White" HorizontalAlignment="Center"
+              Width="{Binding DataContext.Print.Preview.Width, RelativeSource={RelativeSource AncestorType=Window}}"
+              Height="{Binding DataContext.Print.Preview.Height, RelativeSource={RelativeSource AncestorType=Window}}">
+        <Grid ClipToBounds="True" Margin="{Binding DataContext.Print.PreviewInset, RelativeSource={RelativeSource AncestorType=Window}}">
+          <Image Source="{Binding Image}"
+                 Stretch="{Binding DataContext.Print.ImageStretch, RelativeSource={RelativeSource AncestorType=Window}}" />
+          <TextBlock Text="blank" Foreground="Gray" HorizontalAlignment="Center" VerticalAlignment="Center"
+                     Visibility="{Binding IsBlank, Converter={StaticResource BoolToVisibility}}" />
+        </Grid>
+      </Border>
+      <TextBlock Text="{Binding Label}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />
+      <TextBlock Text="unrecognised name" Foreground="DarkOrange" FontSize="10" HorizontalAlignment="Center"
+                 Visibility="{Binding IsUnrecognised, Converter={StaticResource BoolToVisibility}}" />
+    </StackPanel>
+  </DataTemplate>
 </ResourceDictionary>
