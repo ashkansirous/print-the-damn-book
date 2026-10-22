@@ -1,6 +1,6 @@
 ### Slice 01 — Open a folder and preview the imposed sheets
 
-*Planned.*
+*In progress (wave 2026-10-22), draft PR.*
 
 **Touches:** `PrintTheDamnBook.slnx`, `global.json`, `Directory.Build.props`, `.editorconfig`,
 `src/PrintTheDamnBook.Core/**`, `src/PrintTheDamnBook.App/**`,
