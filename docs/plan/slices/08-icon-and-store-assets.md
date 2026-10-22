@@ -1,6 +1,6 @@
 ### Slice 08 — App icon and Store Kit assets
 
-*Planned.*
+*In progress (wave 2026-10-22b), draft PR.*
 
 **Touches:** `tools/store-assets/**`, `assets/store/**`, `src/PrintTheDamnBook.App/Assets/**`,
 `src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj`
