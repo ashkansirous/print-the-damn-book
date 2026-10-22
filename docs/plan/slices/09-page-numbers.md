@@ -1,6 +1,6 @@
 ### Slice 09 — Optional page numbers, below or above
 
-*Planned.* Comes after Slice 07, because its control lives in the new Print step.
+*In progress (wave 2026-10-22b), draft PR.* Comes after Slice 07, because its control lives in the new Print step.
 
 **Touches:** `src/PrintTheDamnBook.Core/Layout/**`, `tests/PrintTheDamnBook.Core.Tests/Layout*`,
 `tests/PrintTheDamnBook.Core.Tests/PageNumber*`, `src/PrintTheDamnBook.App/Printing/**`,
