@@ -43,7 +43,7 @@ mis-numbered page, drop one, or add a file from elsewhere without renaming on di
 
 *Desktop test 2026-10-22 (sample folder):* drag 3 to 1 reorders strip and sheets; covers refuse drag; removing 5 pads a blank before the back cover; adding 5.jpg lands before the back cover with no banner; Add is disabled before a folder is open.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - `PageList` (`src/PrintTheDamnBook.Core/Ordering/`) is the single source of page order; App items carry the `BookPage` identity, never positions. (Slice 03: docs/plan/slices/03-reorder-pages.md)
 

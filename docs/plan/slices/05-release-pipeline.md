@@ -39,7 +39,7 @@
 
 *From review:* two passes, 11 findings applied. Skipped: duplicate CI gating, an exe smoke test.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - The assembly and exe name is `PrintTheDamnBook`, not `PrintTheDamnBook.App`; use it in pack URIs and settings paths. (Slice 05: docs/plan/slices/05-release-pipeline.md)
 - Releases are cut by pushing a `vX.Y.Z` tag on a `main` commit; `release.yml` does the rest. (Slice 05: docs/plan/slices/05-release-pipeline.md)
