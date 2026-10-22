@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -21,6 +22,10 @@ internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
     private const double FeedNoteGapMm = 2;
     private const double FeedNotePaddingMm = 1.5;
     private const double FeedNoteBorderDip = 1;
+    private const string NumberFontFamily = "Segoe UI";
+    private const double NumberPixelsPerDip = 1.0;
+    private static readonly Brush PageNumberBrush = FrozenBrush(Color.FromRgb(0x44, 0x44, 0x44));
+    private static readonly Typeface NumberTypeface = new(NumberFontFamily);
 
     /// <summary>Printed on the test sheet's front; the reload dialog repeats it.</summary>
     public const string FeedEdgeInstruction = "FRONT – put the stack back printed side UP with this arrow pointing INTO the printer";
@@ -130,7 +135,8 @@ internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
         }
 
         var size = sizes[bookPage.Path];
-        var placement = HalfSheetLayout.Resolve(size, _sheetMm, rightHalf, layout.MarginMm, layout.Scaling);
+        // Every page reserves the same number strip (even unnumbered covers and blanks) so all pages print the same size and facing pages match.
+        var placement = HalfSheetLayout.Resolve(size, _sheetMm, rightHalf, layout.MarginMm, layout.Scaling, layout.NumberPosition);
         var rect = rotate180 ? placement.Rotate180(_sheetMm).Image : placement.Image;
 
         var image = ImageDecoder.Decode(bookPage.Path, TargetPixelWidth(rect.Width, size.Width)) ?? throw Unreadable(bookPage.Path);
@@ -147,6 +153,43 @@ internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
         FixedPage.SetLeft(element, ToDip(rect.X));
         FixedPage.SetTop(element, ToDip(rect.Y));
         page.Children.Add(element);
+        AddPageNumber(page, bookPage, rightHalf, rotate180);
+    }
+
+    /// <summary>Draws the page's number in its strip below or above the image; it turns with the face.</summary>
+    private void AddPageNumber(FixedPage page, BookPage bookPage, bool rightHalf, bool rotate180)
+    {
+        var strip = HalfSheetLayout.PageNumberRect(_sheetMm, rightHalf, layout.MarginMm, layout.NumberPosition);
+        if (strip is null || layout.PageNumbers is null || !layout.PageNumbers.Numbers.TryGetValue(bookPage, out var number))
+        {
+            return;
+        }
+
+        var rect = rotate180 ? HalfSheetLayout.Rotate180(strip.Value, _sheetMm) : strip.Value;
+        var path = new System.Windows.Shapes.Path
+        {
+            Data = NumberGeometry(number, ToDip(PageNumbering.FontMm(_sheetMm))),
+            Fill = PageNumberBrush,
+        };
+        var bounds = path.Data.Bounds;
+        var centre = new Point(ToDip(rect.X + rect.Width / 2), ToDip(rect.Y + rect.Height / 2));
+        var move = new TranslateTransform(centre.X - (bounds.X + bounds.Width / 2), centre.Y - (bounds.Y + bounds.Height / 2));
+        path.RenderTransform = rotate180 ? new TransformGroup { Children = { move, new RotateTransform(180, centre.X, centre.Y) } } : move;
+        page.Children.Add(path);
+    }
+
+    /// <summary>The digits as outlines, so the caller can centre them by their real ink bounds rather than a line-height guess.</summary>
+    private static Geometry NumberGeometry(int number, double fontDip)
+    {
+        var text = new FormattedText(number.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NumberTypeface, fontDip, PageNumberBrush, NumberPixelsPerDip);
+        return text.BuildGeometry(new Point(0, 0));
+    }
+
+    private static Brush FrozenBrush(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
     }
 
     /// <summary>The visible part in the image's own coordinates; it turns with the image, so it is the same for a rotated page.</summary>

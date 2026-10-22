@@ -170,6 +170,11 @@ public sealed partial class MainViewModel
     /// <summary>Only the print properties the wizard shows trigger a refresh, and only of the parts they feed.</summary>
     private void OnPrintChanged(string? property)
     {
+        if (property == nameof(Printing.PrintViewModel.PageNumbers))
+        {
+            OnPropertyChanged(nameof(ShowsPageNumbers));
+        }
+
         if (_refreshing || property is null || !PrintPropertiesShown.Contains(property))
         {
             return;

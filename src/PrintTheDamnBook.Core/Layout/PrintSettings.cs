@@ -19,6 +19,9 @@ public sealed record PrintSettings
 
     public bool SeparateCoverJob { get; init; }
 
+    /// <summary>A missing value reads as Off.</summary>
+    public PageNumberPosition PageNumbers { get; init; } = PageNumberPosition.Off;
+
     public string? Printer { get; init; }
 
     /// <summary>Per printer name (case-insensitive).</summary>
@@ -127,6 +130,7 @@ public static class PrintSettingsJson
             Scaling = Enum.IsDefined(settings.Scaling) ? settings.Scaling : ScalingMode.Fit,
             Flip = Enum.IsDefined(settings.Flip) ? settings.Flip : FlipEdge.ShortEdge,
             Paper = Enum.IsDefined(settings.Paper) ? settings.Paper : PaperKind.A4,
+            PageNumbers = Enum.IsDefined(settings.PageNumbers) ? settings.PageNumbers : PageNumberPosition.Off,
             MarginMm = HalfSheetLayout.NormalizeMargin(settings.MarginMm),
             Printers = printers,
         };

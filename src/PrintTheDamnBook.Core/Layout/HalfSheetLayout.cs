@@ -20,7 +20,7 @@ public static class HalfSheetLayout
     /// </summary>
     public static RectD Fit(SizeD image, SizeD halfSheet, double margin)
     {
-        return Scale(image, halfSheet, margin, Math.Min);
+        return Scale(image, Available(halfSheet, margin), Math.Min);
     }
 
     /// <summary>
@@ -29,7 +29,7 @@ public static class HalfSheetLayout
     /// </summary>
     public static RectD Fill(SizeD image, SizeD halfSheet, double margin)
     {
-        return Scale(image, halfSheet, margin, Math.Max);
+        return Scale(image, Available(halfSheet, margin), Math.Max);
     }
 
     /// <summary>The area inside the margin of a half sheet, relative to the half's top-left corner.</summary>
@@ -38,24 +38,62 @@ public static class HalfSheetLayout
         return new RectD(margin, margin, halfSheet.Width - 2 * margin, halfSheet.Height - 2 * margin);
     }
 
-    private static RectD Scale(SizeD image, SizeD halfSheet, double margin, Func<double, double, double> pick)
+    /// <summary>
+    /// The area inside the margin that the page image may use, less the strip kept for the page number
+    /// (on the bottom for Below, on the top for Above).
+    /// </summary>
+    public static RectD Available(SizeD halfSheet, double margin, PageNumberPosition numbers, double numberBand)
+    {
+        return Split(halfSheet, margin, numbers, numberBand).Image;
+    }
+
+    /// <summary>
+    /// Splits the half sheet into the image area and the number strip. The strip keeps at least
+    /// <see cref="PageNumbering.MinEdgeDistanceMm"/> from the paper edge whatever the margin, and the image area is
+    /// what is left, so the two can never overlap.
+    /// </summary>
+    private static (RectD Image, RectD? Strip) Split(SizeD half, double margin, PageNumberPosition numbers, double band)
+    {
+        var area = Available(half, margin);
+        var edge = Math.Max(margin, PageNumbering.MinEdgeDistanceMm);
+        return numbers switch
+        {
+            PageNumberPosition.Below => BelowSplit(area, half, edge, band),
+            PageNumberPosition.Above => AboveSplit(area, half, edge, band),
+            _ => (area, null),
+        };
+    }
+
+    private static (RectD Image, RectD? Strip) BelowSplit(RectD area, SizeD half, double edge, double band)
+    {
+        var imageBottom = half.Height - edge - band;
+        var image = area with { Height = imageBottom - area.Y };
+        return (image, new RectD(0, imageBottom, half.Width, band));
+    }
+
+    private static (RectD Image, RectD? Strip) AboveSplit(RectD area, SizeD half, double edge, double band)
+    {
+        var imageTop = edge + band;
+        var image = area with { Y = imageTop, Height = area.Y + area.Height - imageTop };
+        return (image, new RectD(0, edge, half.Width, band));
+    }
+
+    private static RectD Scale(SizeD image, RectD area, Func<double, double, double> pick)
     {
         if (image.Width <= 0 || image.Height <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(image), image, "Image size must be positive.");
         }
 
-        var availableWidth = halfSheet.Width - 2 * margin;
-        var availableHeight = halfSheet.Height - 2 * margin;
-        if (margin < 0 || availableWidth <= 0 || availableHeight <= 0)
+        if (area.X < 0 || area.Width <= 0 || area.Height <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(margin), margin, "Margin leaves no room for the page.");
+            throw new ArgumentOutOfRangeException(nameof(area), area, "Margin leaves no room for the page.");
         }
 
-        var scale = pick(availableWidth / image.Width, availableHeight / image.Height);
+        var scale = pick(area.Width / image.Width, area.Height / image.Height);
         var width = image.Width * scale;
         var height = image.Height * scale;
-        return new RectD((halfSheet.Width - width) / 2, (halfSheet.Height - height) / 2, width, height);
+        return new RectD(area.X + (area.Width - width) / 2, area.Y + (area.Height - height) / 2, width, height);
     }
 
     public static SizeD HalfOf(SizeD sheet)
@@ -69,21 +107,34 @@ public static class HalfSheetLayout
         return Resolve(image, sheet, rightHalf, margin, ScalingMode.Fit).Image;
     }
 
-    /// <summary>The page's scaled rectangle and visible part in sheet coordinates for the left or right half.</summary>
-    public static PagePlacement Resolve(SizeD image, SizeD sheet, bool rightHalf, double margin, ScalingMode mode)
+    /// <summary>
+    /// The page's scaled rectangle and visible part in sheet coordinates for the left or right half. With a page
+    /// number the image is fitted into the area left after the number's strip.
+    /// </summary>
+    public static PagePlacement Resolve(SizeD image, SizeD sheet, bool rightHalf, double margin, ScalingMode mode, PageNumberPosition numbers = PageNumberPosition.Off)
     {
         var half = HalfOf(sheet);
         var offset = rightHalf ? half.Width : 0;
-        if (mode == ScalingMode.Fit)
+        var available = Available(half, margin, numbers, PageNumbering.BandMm(sheet));
+        var scaled = Scale(image, available, mode == ScalingMode.Fit ? Math.Min : Math.Max);
+        var visible = mode == ScalingMode.Fit ? scaled : available;
+        return new PagePlacement(scaled with { X = scaled.X + offset }, visible with { X = visible.X + offset });
+    }
+
+    /// <summary>
+    /// The strip that holds a page number, in sheet coordinates for the left or right half; null when numbers are off.
+    /// It is full half width, directly beside the image area, and never closer to the paper edge than
+    /// <see cref="PageNumbering.MinEdgeDistanceMm"/>.
+    /// </summary>
+    public static RectD? PageNumberRect(SizeD sheet, bool rightHalf, double margin, PageNumberPosition numbers)
+    {
+        var half = HalfOf(sheet);
+        if (Split(half, margin, numbers, PageNumbering.BandMm(sheet)).Strip is not { } strip)
         {
-            var fitted = Fit(image, half, margin);
-            fitted = fitted with { X = fitted.X + offset };
-            return new PagePlacement(fitted, fitted);
+            return null;
         }
 
-        var filled = Fill(image, half, margin);
-        var available = Available(half, margin);
-        return new PagePlacement(filled with { X = filled.X + offset }, available with { X = available.X + offset });
+        return strip with { X = rightHalf ? half.Width : 0 };
     }
 
     /// <summary>
