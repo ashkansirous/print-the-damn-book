@@ -69,11 +69,11 @@ New strings for both locales: none known; the site is English-only unless Slice 
 
 *From review:* two passes, 17 findings applied. A visual check at 1280 and 375 px fixed the hero overlap and the mobile stacking.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - The site lives in `site/` (`wrangler.jsonc` and `public/`). `site/public/_headers` sets the CSP to `default-src 'none'`: add any new script, style, font, image or connect source there. Deploy needs the repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. (Slice 10: docs/plan/slices/10-landing-site.md)
 
-#### For README.md
+#### For README.md (lifted 2026-10-22)
 
 - Website: https://print-the-damn-book.sirous.uk
 

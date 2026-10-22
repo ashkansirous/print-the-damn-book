@@ -113,11 +113,11 @@ New strings: all of the above, in both locales if the app is localised.
 
 **Open point: Fonts and icons offline.** The mock loads Inter from Google Fonts and Phosphor from unpkg. The plan bundles both, which is right; it needs the `regular` and `fill` Phosphor weights.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - UI tokens live in `src/PrintTheDamnBook.App/Themes/Nocturne.xaml` (from `docs/design/nocturne/styles.css`): use the brushes, never raw hex. Every focusable control uses the FocusRing style and has `AutomationProperties.Name`. Prompts go through `IPrintPrompts` / `NocturneDialog`, never `MessageBox`. (Slice 7: docs/plan/slices/07-wizard-redesign.md)
 
-#### For README.md
+#### For README.md (lifted 2026-10-22)
 
 - The app is now a three-step wizard (Open, Check, Print) ending with a fold guide.
 
