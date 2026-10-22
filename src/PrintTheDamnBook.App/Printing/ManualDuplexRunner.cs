@@ -69,10 +69,10 @@ internal sealed class ManualDuplexRunner(PrinterService printer, IPrintPrompts p
         var prompt = run.Part == PrintPart.TestSheet ? ReloadPromptTestSheet : ReloadPromptBooklet;
         while (true)
         {
-            session.PrintStatus = $"Sent the fronts of {text.Phrase} to {printerName}. Waiting for you to put the stack back.";
+            session.SetStatus($"Sent the fronts of {text.Phrase} to {printerName}. Waiting for you to put the stack back.", PrintStatusKind.Info);
             if (!prompts.ConfirmPrintBacks(prompt))
             {
-                session.PrintStatus = $"The fronts of {text.Phrase} were sent to the printer; the backs were not. \"{PrintBacksAgainLabel}\" prints them.";
+                session.SetStatus($"The fronts of {text.Phrase} were sent to the printer; the backs were not. \"{PrintBacksAgainLabel}\" prints them.", PrintStatusKind.Failure);
                 return PrintOutcome.FrontsOnly;
             }
 
@@ -83,7 +83,7 @@ internal sealed class ManualDuplexRunner(PrinterService printer, IPrintPrompts p
                 return PrintOutcome.Sent;
             }
 
-            session.PrintStatus = $"The fronts of {text.Phrase} were sent to the printer, but the backs could not be sent to {printerName}.";
+            session.SetStatus($"The fronts of {text.Phrase} were sent to the printer, but the backs could not be sent to {printerName}.", PrintStatusKind.Failure);
             if (!prompts.ConfirmRetryBacks(session.PrintStatus + " " + error + TryBacksAgain))
             {
                 return PrintOutcome.FrontsOnly;
@@ -97,7 +97,7 @@ internal sealed class ManualDuplexRunner(PrinterService printer, IPrintPrompts p
         var printerName = run.Target.PrinterName;
         try
         {
-            session.PrintStatus = $"Sending the backs of {text.Phrase} to {printerName}...";
+            session.SetStatus($"Sending the backs of {text.Phrase} to {printerName}...", PrintStatusKind.Info);
             var backs = ManualDuplexPlan.Build(run.Sheets, OptionsFor(run.Part)).Backs;
             await printer.PrintFacesAsync(printerName, run.Target.Paper, run.Target.Layout, backs, run.Target.BookName + text.JobSuffix + BacksSuffix);
             return null;
@@ -112,11 +112,11 @@ internal sealed class ManualDuplexRunner(PrinterService printer, IPrintPrompts p
     {
         var isTestSheet = run.Part == PrintPart.TestSheet;
         var sent = $"Sent the fronts and backs of {text.Phrase} to {run.Target.PrinterName}.";
-        session.PrintStatus = isTestSheet ? sent : sent + $" If the backs came out wrong, change the options and use \"{PrintBacksAgainLabel}\".";
+        session.SetStatus(isTestSheet ? sent : sent + $" If the backs came out wrong, change the options and use \"{PrintBacksAgainLabel}\".", PrintStatusKind.Info);
         if (isTestSheet && prompts.AskBackUpsideDown())
         {
             session.RotateBacks = !session.RotateBacks;
-            session.PrintStatus = $"Rotate backs 180° is now {(session.RotateBacks ? "on" : "off")}. Print the test sheet again to check.";
+            session.SetStatus($"Rotate backs 180° is now {(session.RotateBacks ? "on" : "off")}. Print the test sheet again to check.", PrintStatusKind.Info);
         }
     }
 

@@ -2,9 +2,9 @@ using System.Windows.Controls;
 
 namespace PrintTheDamnBook.App.Views;
 
-public partial class OptionsPanel : UserControl
+public partial class DoneStepView : UserControl
 {
-    public OptionsPanel()
+    public DoneStepView()
     {
         InitializeComponent();
     }

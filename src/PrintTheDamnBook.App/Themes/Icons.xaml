@@ -1,0 +1,25 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+  <!-- Phosphor 2.1.1 code points (regular and fill share them). -->
+  <sys:String x:Key="IconBookOpenText">&#xE8F2;</sys:String>
+  <sys:String x:Key="IconMinus">&#xE32A;</sys:String>
+  <sys:String x:Key="IconSquare">&#xE45E;</sys:String>
+  <sys:String x:Key="IconX">&#xE4F6;</sys:String>
+  <sys:String x:Key="IconCheck">&#xE182;</sys:String>
+  <sys:String x:Key="IconArrowLeft">&#xE058;</sys:String>
+  <sys:String x:Key="IconArrowRight">&#xE06C;</sys:String>
+  <sys:String x:Key="IconPrinter">&#xE3DC;</sys:String>
+  <sys:String x:Key="IconPlus">&#xE3D4;</sys:String>
+  <sys:String x:Key="IconFolderOpen">&#xE256;</sys:String>
+  <sys:String x:Key="IconArrowsClockwise">&#xE094;</sys:String>
+  <sys:String x:Key="IconCircleNotch">&#xEB44;</sys:String>
+  <sys:String x:Key="IconWarning">&#xE4E0;</sys:String>
+  <sys:String x:Key="IconPushPin">&#xE3E2;</sys:String>
+  <sys:String x:Key="IconFiles">&#xE710;</sys:String>
+  <sys:String x:Key="IconBookOpen">&#xE0E6;</sys:String>
+  <sys:String x:Key="IconArrowsCounterClockwise">&#xE096;</sys:String>
+  <sys:String x:Key="IconCaretDown">&#xE136;</sys:String>
+  <sys:String x:Key="IconCaretRight">&#xE13A;</sys:String>
+  <sys:String x:Key="IconCopy">&#xE1CA;</sys:String>
+</ResourceDictionary>
