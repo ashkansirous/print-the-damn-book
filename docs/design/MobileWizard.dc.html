@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/styles.css">
+<script src="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>@keyframes ptdb-spin{to{transform:rotate(360deg)}}</style>
+</helmet>
+<div style="position:relative;height:{{ rootH }};display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 55%, var(--color-bg)) 0%, var(--color-bg) 60%);color:var(--color-text);font-family:var(--font-body);font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased">
+
+  <sc-if value="{{ isIOS }}" hint-placeholder-val="{{ true }}">
+    <div style="height:54px;flex:none"></div>
+    <div style="height:44px;flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 8px">
+      <div style="display:flex">
+        <sc-if value="{{ hasBack }}"><button onClick="{{ goBack }}" disabled="{{ busy }}" style="display:flex;align-items:center;gap:2px;min-height:44px;padding:0 8px;background:none;border:0;color:var(--color-accent-300);font:inherit;font-size:16px;cursor:pointer"><i class="ph ph-caret-left" style="font-size:20px"></i>Back</button></sc-if>
+      </div>
+      <span style="font-size:15px;font-weight:500;color:var(--color-neutral-200)">{{ barTitle }}</span>
+      <div style="display:flex;justify-content:flex-end">
+        <sc-if value="{{ isCheck }}"><button onClick="{{ addPages }}" title="Add pages" style="width:44px;height:44px;display:grid;place-items:center;background:none;border:0;color:var(--color-accent-300);font-size:22px;cursor:pointer"><i class="ph ph-plus"></i></button></sc-if>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ isAndroid }}" hint-placeholder-val="{{ false }}">
+    <div style="height:64px;flex:none;display:flex;align-items:center;gap:4px;padding:0 4px">
+      <sc-if value="{{ hasBack }}"><button onClick="{{ goBack }}" disabled="{{ busy }}" style="width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:none;border:0;color:var(--color-neutral-200);font-size:22px;cursor:pointer" style-hover="background:color-mix(in srgb, var(--color-text) 8%, transparent)"><i class="ph ph-arrow-left"></i></button></sc-if>
+      <sc-if value="{{ noBack }}"><img src="icons/app-icon-sm.svg" alt="" style="width:28px;height:28px;margin:0 8px 0 12px"></sc-if>
+      <span style="flex:1;font-size:20px;font-weight:500">{{ barTitle }}</span>
+      <sc-if value="{{ isCheck }}"><button onClick="{{ addPages }}" title="Add pages" style="width:48px;height:48px;display:grid;place-items:center;border-radius:50%;background:none;border:0;color:var(--color-neutral-200);font-size:22px;cursor:pointer" style-hover="background:color-mix(in srgb, var(--color-text) 8%, transparent)"><i class="ph ph-plus"></i></button></sc-if>
+    </div>
+  </sc-if>
+
+  <div style="flex:none;display:flex;gap:6px;padding:2px 20px 0">
+    <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+        <div style="height:3px;border-radius:2px;background:{{ st.bar }};box-shadow:{{ st.glow }}"></div>
+        <span style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:{{ st.color }}">{{ st.title }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="flex:1;min-height:0;overflow-y:auto;padding:18px 20px 20px">
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:18px">
+      <h1 style="margin:0;font-family:var(--font-heading);font-weight:500;font-size:26px;line-height:1.15;letter-spacing:-0.015em;text-wrap:pretty">{{ heading }}</h1>
+      <p style="margin:0;color:var(--color-neutral-400);font-size:14px;text-wrap:pretty">{{ subheading }}</p>
+    </div>
+
+    <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ true }}">
+      <sc-if value="{{ notLoaded }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:18px;padding:24px 20px;border:1px dashed var(--color-neutral-700);border-radius:var(--radius-lg);background:radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--color-accent-900) 80%, transparent), transparent 65%)">
+          <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}"><i class="ph ph-images" style="font-size:40px;color:var(--color-accent)"></i></sc-if>
+          <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><i class="ph ph-circle-notch" style="font-size:40px;color:var(--color-accent);animation:ptdb-spin 0.9s linear infinite"></i></sc-if>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:17px;font-weight:500">{{ dropTitle }}</span>
+            <span style="font-size:14px;color:var(--color-neutral-400);text-wrap:pretty">From Photos, pick the cover first and the back cover last. From a folder, I go by the names. JPG or PNG; I don't touch the originals.</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-accent">Cover</span>
+            <span class="tag tag-neutral">1</span>
+            <span class="tag tag-neutral">2</span>
+            <span class="tag tag-neutral">3</span>
+            <span style="color:var(--color-neutral-500)">…</span>
+            <span class="tag tag-accent">Back cover</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn btn-primary" onClick="{{ openPhotos }}" disabled="{{ loading }}" style="height:48px;justify-content:center;font-size:15px"><i class="ph ph-images"></i>{{ photosLabel }}</button>
+            <button class="btn btn-secondary" onClick="{{ openFolder }}" disabled="{{ loading }}" style="height:48px;justify-content:center;font-size:15px"><i class="ph ph-folder-open"></i>{{ folderLabel }}</button>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ loaded }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:16px;align-items:center;padding:16px;border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+          <div style="width:72px;height:102px;flex:none;background:var(--color-neutral-100);overflow:hidden;box-shadow:var(--shadow-md);border-radius:2px"><img src="{{ coverSrc }}" alt="" style="width:100%;display:block"></div>
+          <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+            <span style="font-size:17px;font-weight:500">{{ folderName }}</span>
+            <span style="font-size:12px;color:var(--color-neutral-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sourceText }}</span>
+            <span style="font-size:14px;color:var(--color-neutral-300)">{{ statusText }}</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary" onClick="{{ openFolder }}" style="margin-top:12px;height:44px;justify-content:center;width:100%;font-size:15px"><i class="ph ph-arrows-clockwise"></i>Pick again</button>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ isCheck }}" hint-placeholder-val="{{ false }}">
+      <div class="seg" style="display:flex;margin-bottom:14px">
+        <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ viewName }}" checked="{{ isBookView }}" onChange="{{ setBookView }}"><i class="ph ph-book-open"></i>Reading order</label>
+        <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ viewName }}" checked="{{ isSheetView }}" onChange="{{ setSheetView }}"><i class="ph ph-files"></i>As printed</label>
+      </div>
+      <sc-if value="{{ hasNotes }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">
+          <sc-for list="{{ notes }}" as="nt" hint-placeholder-count="1">
+            <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:6px;color:{{ nt.color }};background:{{ nt.bg }}"><i class="ph-fill ph-warning"></i>{{ nt.text }}</span>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBookView }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:22px 16px">
+          <sc-for list="{{ spreads }}" as="sp" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;gap:2px">
+                <sc-for list="{{ sp.slots }}" as="t" hint-placeholder-count="2">
+                  <div style="flex:1;min-width:0">
+                    <sc-if value="{{ t.isReal }}">
+                      <button onClick="{{ t.onClick }}" style="display:flex;flex-direction:column;gap:5px;width:100%;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;opacity:{{ t.opacity }}">
+                        <div style="position:relative;width:100%;aspect-ratio:1 / 1.414;box-sizing:border-box;display:grid;place-items:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:{{ t.ring }};border-radius:2px;transition:box-shadow .15s">
+                          <sc-if value="{{ t.hasImg }}"><img src="{{ t.src }}" alt="" style="width:100%;display:block"></sc-if>
+                          <sc-if value="{{ t.isBlank }}"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:{{ t.blankColor }}">blank</span></sc-if>
+                          <sc-if value="{{ t.hasWarnBadge }}"><span style="position:absolute;left:4px;top:4px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:oklch(0.82 0.12 78);color:var(--color-bg);font-size:11px"><i class="ph-fill ph-warning"></i></span></sc-if>
+                        </div>
+                        <span style="display:flex;align-items:center;gap:4px;font-size:12px;color:{{ t.labelColor }};min-width:0">
+                          <sc-if value="{{ t.pinned }}"><i class="ph-fill ph-push-pin" style="font-size:10px;color:var(--color-neutral-500)"></i></sc-if>
+                          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+                        </span>
+                      </button>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">{{ sp.label }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSheetView }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ sheetCards }}" as="sh" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:14px;font-weight:500">{{ sh.title }}</span>
+                <sc-if value="{{ sh.isFirst }}"><span class="tag tag-accent">test sheet + covers</span></sc-if>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:14px">
+                <sc-for list="{{ sh.faces }}" as="f" hint-placeholder-count="2">
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500)">{{ f.name }}</span>
+                    <div style="display:flex;gap:1px">
+                      <sc-for list="{{ f.tiles }}" as="t" hint-placeholder-count="2">
+                        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+                          <div style="position:relative;width:100%;aspect-ratio:1 / 1.414;box-sizing:border-box;display:grid;place-items:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:{{ t.ring }}">
+                            <sc-if value="{{ t.hasImg }}"><img src="{{ t.src }}" alt="" style="width:100%;display:block"></sc-if>
+                            <sc-if value="{{ t.isBlank }}"><span style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:{{ t.blankColor }}">blank</span></sc-if>
+                            <sc-if value="{{ t.hasWarnBadge }}"><span style="position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:oklch(0.82 0.12 78);color:var(--color-bg);font-size:10px"><i class="ph-fill ph-warning"></i></span></sc-if>
+                          </div>
+                          <span style="font-size:11px;color:{{ t.labelColor }};text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </sc-if>
+
+    <sc-if value="{{ isPrint }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div style="display:flex;gap:16px;align-items:center">
+          <div style="position:relative;width:150px;height:112px;flex:none">
+            <sc-for list="{{ stackLayers }}" as="l" hint-placeholder-count="2">
+              <div style="position:absolute;left:{{ l.x }};top:{{ l.y }};width:132px;height:94px;background:var(--color-neutral-200);box-shadow:var(--shadow-sm)"></div>
+            </sc-for>
+            <div style="position:absolute;left:0;top:0;width:132px;height:94px;display:flex;background:var(--color-neutral-100);box-shadow:var(--shadow-md)">
+              <div style="flex:1;overflow:hidden;display:grid;place-items:center"><img src="{{ frontLeft }}" alt="" style="width:100%;display:block"></div>
+              <div style="width:1px;background:linear-gradient(180deg, transparent, var(--color-neutral-400), transparent)"></div>
+              <div style="flex:1;overflow:hidden;display:grid;place-items:center"><img src="{{ frontRight }}" alt="" style="width:100%;display:block"></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+            <span style="font-weight:500">{{ stackTitle }}</span>
+            <span style="font-size:12px;color:var(--color-neutral-400);text-wrap:pretty">Two pages per side. The line down the middle is where you fold.</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Paper</label>
+          <div class="seg" style="display:flex">
+            <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ paperName }}" checked="{{ isA4 }}" onChange="{{ setA4 }}">A4</label>
+            <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ paperName }}" checked="{{ isLetter }}" onChange="{{ setLetter }}">Letter</label>
+          </div>
+        </div>
+        <div class="field">
+          <label>Two-sided</label>
+          <div class="seg" style="display:flex">
+            <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ duplexName }}" checked="{{ isAuto }}" onChange="{{ setAuto }}">Printer does it</label>
+            <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ duplexName }}" checked="{{ isManual }}" onChange="{{ setManual }}">I flip the stack</label>
+          </div>
+          <span style="font-size:12px;color:var(--color-neutral-500);text-wrap:pretty">{{ duplexHint }}</span>
+        </div>
+
+        <sc-for list="{{ coverSwitch }}" as="sw" hint-placeholder-count="1">
+          <button onClick="{{ sw.toggle }}" role="switch" aria-checked="{{ sw.on }}" style="display:flex;align-items:flex-start;gap:12px;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer">
+            <span style="flex:1;display:flex;flex-direction:column;gap:2px">
+              <span>{{ sw.label }}</span>
+              <span style="font-size:12px;color:var(--color-neutral-500)">{{ sw.hint }}</span>
+            </span>
+            <span style="position:relative;width:44px;height:26px;flex:none;border-radius:13px;box-sizing:border-box;border:1px solid {{ sw.border }};background:{{ sw.bg }};transition:background .15s">
+              <span style="position:absolute;top:4px;left:{{ sw.left }};width:16px;height:16px;border-radius:50%;background:{{ sw.knob }};transition:left .15s"></span>
+            </span>
+          </button>
+        </sc-for>
+
+        <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <i class="ph ph-arrows-counter-clockwise" style="font-size:16px;color:var(--color-accent)"></i>
+            <span style="font-weight:500">First time with this printer?</span>
+          </div>
+          <span style="font-size:13px;color:var(--color-neutral-400);text-wrap:pretty">{{ testText }}</span>
+          <div><button class="btn btn-secondary" onClick="{{ printTest }}" disabled="{{ busy }}" style="height:40px"><i class="ph ph-printer"></i>Print test sheet</button></div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;border-radius:var(--radius-md);background:color-mix(in srgb, var(--color-surface) 60%, transparent);box-shadow:var(--shadow-sm)">
+          <button onClick="{{ toggleMore }}" aria-expanded="{{ moreOpen }}" style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 16px;background:none;border:0;color:inherit;font:inherit;text-align:left;cursor:pointer">
+            <i class="ph ph-sliders-horizontal" style="font-size:18px;color:var(--color-neutral-400)"></i>
+            <span style="flex:1;display:flex;flex-direction:column">
+              <span style="font-weight:500">More options</span>
+              <span style="font-size:12px;color:var(--color-neutral-500)">{{ moreSummary }}</span>
+            </span>
+            <i class="ph ph-caret-down" style="font-size:16px;color:var(--color-neutral-400);transform:rotate({{ caretRot }});transition:transform .15s"></i>
+          </button>
+          <sc-if value="{{ moreOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:16px;padding:4px 16px 18px">
+              <sc-if value="{{ isAuto }}">
+                <div class="field">
+                  <label>Flip edge</label>
+                  <div class="seg" style="display:flex">
+                    <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ flipName }}" checked="{{ isShort }}" onChange="{{ setShort }}">Short edge</label>
+                    <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ flipName }}" checked="{{ isLong }}" onChange="{{ setLong }}">Long edge</label>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-for list="{{ manualSwitches }}" as="sw" hint-placeholder-count="0">
+                <button onClick="{{ sw.toggle }}" role="switch" aria-checked="{{ sw.on }}" style="display:flex;align-items:flex-start;gap:12px;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer">
+                  <span style="flex:1;display:flex;flex-direction:column;gap:2px">
+                    <span>{{ sw.label }}</span>
+                    <span style="font-size:12px;color:var(--color-neutral-500)">{{ sw.hint }}</span>
+                  </span>
+                  <span style="position:relative;width:44px;height:26px;flex:none;border-radius:13px;box-sizing:border-box;border:1px solid {{ sw.border }};background:{{ sw.bg }};transition:background .15s">
+                    <span style="position:absolute;top:4px;left:{{ sw.left }};width:16px;height:16px;border-radius:50%;background:{{ sw.knob }};transition:left .15s"></span>
+                  </span>
+                </button>
+              </sc-for>
+              <div class="field">
+                <label>Scaling</label>
+                <div class="seg" style="display:flex">
+                  <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ scaleName }}" checked="{{ isFit }}" onChange="{{ setFit }}">Fit</label>
+                  <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ scaleName }}" checked="{{ isFill }}" onChange="{{ setFill }}">Fill and crop</label>
+                </div>
+              </div>
+              <div class="field">
+                <label>Margin</label>
+                <div style="display:flex;align-items:center;gap:8px"><input class="input" inputmode="decimal" value="{{ margin }}" onChange="{{ onMargin }}" style="width:80px"><span style="color:var(--color-neutral-500)">mm</span></div>
+              </div>
+              <div class="field">
+                <label>Page numbers</label>
+                <div class="seg" style="display:flex">
+                  <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ numName }}" checked="{{ numOff }}" onChange="{{ setNumOff }}">Off</label>
+                  <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ numName }}" checked="{{ numBelow }}" onChange="{{ setNumBelow }}">Below</label>
+                  <label class="seg-opt" style="flex:1;justify-content:center"><input type="radio" name="{{ numName }}" checked="{{ numAbove }}" onChange="{{ setNumAbove }}">Above</label>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <sc-for list="{{ foldSteps }}" as="fs" hint-placeholder-count="3">
+          <div style="display:flex;gap:14px;padding:16px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+            <span style="font-size:28px;font-weight:500;line-height:1;color:var(--color-accent)">{{ fs.n }}</span>
+            <span style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-weight:500">{{ fs.title }}</span>
+              <span style="font-size:13px;color:var(--color-neutral-400);text-wrap:pretty">{{ fs.body }}</span>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </div>
+
+  <div style="position:relative;flex:none;display:flex;flex-direction:column;gap:10px;padding:12px 20px 14px">
+    <div style="position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent)"></div>
+    <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:34px;height:48px;flex:none;background:var(--color-neutral-100);overflow:hidden;border-radius:2px;box-shadow:0 0 0 2px var(--color-accent)"><img src="{{ selSrc }}" alt="" style="width:100%;display:block"></div>
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ selLabel }}</span>
+          <span style="font-size:12px;color:{{ selNoteColor }};text-wrap:pretty">{{ selNote }}</span>
+        </div>
+        <button onClick="{{ removeSel }}" title="Remove from the book" style="width:44px;height:44px;display:grid;place-items:center;border-radius:50%;border:0;background:color-mix(in srgb, var(--color-text) 6%, transparent);color:var(--color-neutral-200);font-size:18px;cursor:pointer"><i class="ph ph-trash"></i></button>
+        <button onClick="{{ clearSel }}" title="Done" style="width:44px;height:44px;display:grid;place-items:center;border-radius:50%;border:0;background:none;color:var(--color-neutral-400);font-size:18px;cursor:pointer"><i class="ph ph-x"></i></button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:{{ footerColor }}">
+        <sc-if value="{{ busy }}"><i class="ph ph-circle-notch" style="animation:ptdb-spin 0.9s linear infinite"></i></sc-if>
+        <span style="text-wrap:pretty">{{ footerText }}</span>
+      </div>
+    </sc-if>
+    <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}">
+      <button class="btn btn-primary" onClick="{{ goNext }}" disabled="{{ nextDisabled }}" style="height:50px;justify-content:center;font-size:16px;box-shadow:{{ nextGlow }}"><sc-if value="{{ nextIconLead }}"><i class="ph ph-printer"></i></sc-if>{{ nextLabel }}<sc-if value="{{ nextIconTrail }}"><i class="ph ph-arrow-right"></i></sc-if></button>
+    </sc-if>
+    <sc-if value="{{ isDone }}">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn btn-secondary" onClick="{{ printAgain }}" style="height:48px;justify-content:center;font-size:15px"><i class="ph ph-printer"></i>Print another copy</button>
+        <button class="btn btn-ghost" onClick="{{ startOver }}" style="height:44px;justify-content:center;font-size:15px"><i class="ph ph-images"></i>Make another book</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ isIOS }}"><div style="height:20px"></div></sc-if>
+  </div>
+
+  <sc-if value="{{ dialog }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" style="position:absolute;z-index:8;padding:20px">
+      <div class="dialog">
+        <div class="dialog-title">{{ dlgTitle }}</div>
+        <div class="dialog-body">{{ dlgBody }}</div>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" onClick="{{ dialogCancel }}">Cancel</button>
+          <button class="btn btn-primary" onClick="{{ dialogOk }}">{{ dlgOk }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ sysIOS }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:9;background:rgba(0,0,0,.5);display:flex;flex-direction:column;justify-content:flex-end;font-family:-apple-system,'SF Pro Text',system-ui,sans-serif;color:#ffffff">
+      <div style="background:#1c1c1e;border-radius:14px 14px 0 0;display:flex;flex-direction:column;padding-bottom:34px">
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:56px;padding:0 16px">
+          <button onClick="{{ sysCancel }}" style="justify-self:start;background:none;border:0;color:#0a84ff;font:inherit;font-size:17px;cursor:pointer">Cancel</button>
+          <span style="font-size:17px;font-weight:600">Print Options</span>
+          <button onClick="{{ sysPrint }}" style="justify-self:end;background:none;border:0;color:#0a84ff;font:inherit;font-size:17px;font-weight:600;cursor:pointer">Print</button>
+        </div>
+        <div style="margin:0 16px;border-radius:10px;background:#2c2c2e;display:flex;flex-direction:column">
+          <sc-for list="{{ sysRows }}" as="r" hint-placeholder-count="4">
+            <div style="display:flex;align-items:center;min-height:44px;padding:0 16px;font-size:17px;box-shadow:{{ r.rule }}">
+              <span style="flex:1">{{ r.k }}</span>
+              <span style="color:rgba(235,235,245,.6)">{{ r.v }}</span>
+              <sc-if value="{{ r.chev }}"><i class="ph ph-caret-right" style="margin-left:6px;color:rgba(235,235,245,.3)"></i></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;gap:14px;overflow-x:auto;padding:22px 16px 6px">
+          <sc-for list="{{ sysFaces }}" as="f" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex:none">
+              <div style="width:150px;height:106px;display:flex;background:#ffffff;box-shadow:0 2px 8px rgba(0,0,0,.4)">
+                <div style="flex:1;overflow:hidden;display:grid;place-items:center"><sc-if value="{{ f.l }}"><img src="{{ f.l }}" alt="" style="width:100%;display:block;transform:{{ f.rot }}"></sc-if></div>
+                <div style="flex:1;overflow:hidden;display:grid;place-items:center"><sc-if value="{{ f.r }}"><img src="{{ f.r }}" alt="" style="width:100%;display:block;transform:{{ f.rot }}"></sc-if></div>
+              </div>
+              <span style="font-size:12px;color:rgba(235,235,245,.6)">{{ f.cap }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ sysAndroid }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:9;background:#141218;display:flex;flex-direction:column;font-family:Roboto,'Google Sans',system-ui,sans-serif;color:#e6e0e9">
+      <div style="height:64px;flex:none;display:flex;align-items:center;gap:8px;padding:0 4px;background:#211f26">
+        <button onClick="{{ sysCancel }}" style="width:48px;height:48px;display:grid;place-items:center;background:none;border:0;color:#e6e0e9;font-size:22px;cursor:pointer"><i class="ph ph-x"></i></button>
+        <span style="flex:1;display:flex;align-items:center;gap:6px;font-size:18px">{{ sysPrinter }}<i class="ph ph-caret-down" style="font-size:14px"></i></span>
+      </div>
+      <div style="flex:none;display:flex;gap:18px;padding:10px 20px 12px;background:#211f26;font-size:13px;color:#cac4d0">
+        <sc-for list="{{ sysRows }}" as="r" hint-placeholder-count="3"><span>{{ r.k }}: {{ r.v }}</span></sc-for>
+      </div>
+      <div style="flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:18px;padding:24px 20px 96px">
+        <sc-for list="{{ sysFaces }}" as="f" hint-placeholder-count="3">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div style="width:300px;height:212px;display:flex;background:#ffffff;box-shadow:0 2px 10px rgba(0,0,0,.5)">
+              <div style="flex:1;overflow:hidden;display:grid;place-items:center"><sc-if value="{{ f.l }}"><img src="{{ f.l }}" alt="" style="width:100%;display:block;transform:{{ f.rot }}"></sc-if></div>
+              <div style="flex:1;overflow:hidden;display:grid;place-items:center"><sc-if value="{{ f.r }}"><img src="{{ f.r }}" alt="" style="width:100%;display:block;transform:{{ f.rot }}"></sc-if></div>
+            </div>
+            <span style="font-size:12px;color:#cac4d0">{{ f.cap }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ sysPrint }}" title="Print" style="position:absolute;right:20px;bottom:24px;width:64px;height:64px;border-radius:18px;border:0;display:grid;place-items:center;background:#4f378b;color:#eaddff;font-size:26px;box-shadow:0 4px 12px rgba(0,0,0,.4);cursor:pointer"><i class="ph-fill ph-printer"></i></button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:402,&quot;height&quot;:874},&quot;platform&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ios&quot;,&quot;android&quot;],&quot;default&quot;:&quot;ios&quot;,&quot;tsType&quot;:&quot;'ios'|'android'&quot;},&quot;scenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;clean&quot;,&quot;issues&quot;],&quot;default&quot;:&quot;issues&quot;,&quot;tsType&quot;:&quot;'clean'|'issues'&quot;},&quot;startStep&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;min&quot;:0,&quot;max&quot;:3,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;},&quot;defaultView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;book&quot;,&quot;sheets&quot;],&quot;default&quot;:&quot;book&quot;,&quot;tsType&quot;:&quot;'book'|'sheets'&quot;},&quot;overlay&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;print-sheet&quot;,&quot;reload&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;'none'|'print-sheet'|'reload'&quot;},&quot;moreOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;selectFirst&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;height&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  static W = 'oklch(0.82 0.12 78)';
+  static PRINTER = 'Brother HL-L3220CW';
+  constructor(props) {
+    super(props);
+    this.uid = Math.random().toString(36).slice(2, 8);
+    this.timers = [];
+    this.pending = [];
+    this.state = this.initial(props);
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  componentDidUpdate(prev) {
+    const p = this.props;
+    if (prev.startStep !== p.startStep || prev.scenario !== p.scenario || prev.overlay !== p.overlay || prev.moreOpen !== p.moreOpen) { this.timers.forEach(clearTimeout); this.setState(this.initial(p)); }
+    else if (prev.defaultView !== p.defaultView) this.setState({ view: p.defaultView ?? 'book' });
+  }
+  initial(props) {
+    const step = Math.max(0, Math.min(3, Number(props.startStep ?? 0)));
+    const scen = props.scenario ?? 'issues';
+    const on = step > 0, ov = props.overlay ?? 'none';
+    return {
+      step, scen, loaded: on, loading: false, pages: on ? this.sample(scen) : [], source: on ? this.src(scen) : null,
+      view: props.defaultView ?? 'book', sel: props.selectFirst && on ? 'o1' : null, paper: 'A4', duplex: 'manual', flip: 'short', reverse: false, rotate: true,
+      scaling: 'fit', margin: '5', nums: 'off', more: !!props.moreOpen, sepCover: false, busy: false,
+      status: step === 3 ? `Sent the backs to ${Component.PRINTER}.` : '', testSent: false,
+      dialog: ov === 'reload' ? 'backs' : null, sys: ov === 'print-sheet' ? { what: 'the fronts', faces: 'fronts' } : null,
+    };
+  }
+  src(scen) { return scen === 'issues' ? { name: 'good enough draft', where: this.isIOS() ? 'Files › On My iPhone › Downloads' : 'Files › Downloads' } : { name: '12 photos', where: 'Photos · picked in order' }; }
+  isIOS() { return (this.props.platform ?? 'ios') === 'ios'; }
+  sample(scen) {
+    const P = n => ({ id: 'p' + n, label: String(n), src: `book/${n}.jpg`, kind: 'page' });
+    const cover = { id: 'cover', label: 'Cover', src: 'book/cover.jpg', kind: 'cover' };
+    const back = { id: 'back', label: 'Back cover', src: 'book/back.jpg', kind: 'back' };
+    const nums = k => Array.from({ length: k }, (_, i) => P(i + 1));
+    if (scen === 'issues') return [cover, ...nums(8),
+      { id: 'o1', label: 'IMG_2041.jpg', src: 'book/9.jpg', kind: 'other' },
+      { id: 'o2', label: 'scan final (2).png', src: 'book/10.jpg', kind: 'other' }];
+    return [cover, ...nums(10), back];
+  }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  pad(pages) {
+    const miss = (4 - pages.length % 4) % 4;
+    const blanks = Array.from({ length: miss }, (_, i) => ({ id: 'blank' + i, label: 'blank', kind: 'blank' }));
+    if (!pages.length || pages[pages.length - 1].kind !== 'back') return [...pages, ...blanks];
+    return [...pages.slice(0, -1), ...blanks, pages[pages.length - 1]];
+  }
+  impose(p) {
+    const n = p.length, out = [];
+    for (let k = 0; k < n / 4; k++) out.push({ num: k + 1, front: [p[n - 1 - 2 * k], p[2 * k]], back: [p[2 * k + 1], p[n - 2 - 2 * k]] });
+    return out;
+  }
+  move(from, to) {
+    const ps = [...this.state.pages];
+    const fi = ps.findIndex(p => p.id === from);
+    const target = ps.find(p => p.id === to);
+    if (fi < 0 || from === to || (target && target.kind === 'cover')) return this.setState({ sel: null });
+    const [item] = ps.splice(fi, 1);
+    if (!target || target.kind === 'back' || target.kind === 'blank') {
+      const bi = ps.findIndex(p => p.kind === 'back');
+      bi < 0 ? ps.push(item) : ps.splice(bi, 0, item);
+    } else ps.splice(ps.findIndex(p => p.id === to), 0, item);
+    this.setState({ pages: ps, sel: null });
+  }
+  addPages() {
+    const ps = [...this.state.pages];
+    const max = ps.reduce((m, p) => (p.kind === 'page' ? Math.max(m, +p.label) : m), 0);
+    const add = [1, 2].map(i => ({ id: 'a' + (max + i) + '-' + Date.now(), label: String(max + i), src: `book/${((max + i - 1) % 10) + 1}.jpg`, kind: 'page' }));
+    const bi = ps.findIndex(p => p.kind === 'back');
+    bi < 0 ? ps.push(...add) : ps.splice(bi, 0, ...add);
+    this.setState({ pages: ps });
+  }
+  // Each job hands a PDF to the system print sheet; manual two-sided is fronts → reload → backs.
+  run(seq) {
+    if (!seq.length) return this.setState({ step: this.state.testRun ? this.state.step : 3, testRun: false });
+    const [kind, arg, faces] = seq[0];
+    this.pending = seq.slice(1);
+    if (kind === 'dlg') this.setState({ dialog: arg });
+    else this.setState({ sys: { what: arg, faces } });
+  }
+  plan(test) {
+    const s = this.state, sc = this.impose(this.pad(s.pages)).length, man = s.duplex === 'manual';
+    const cover = !test && s.sepCover && sc >= 2, seq = [];
+    if (test) return man ? [['job', 'the test sheet fronts', 'test-f'], ['dlg', 'test'], ['job', 'the test sheet backs', 'test-b']] : [['job', 'the test sheet', 'test']];
+    if (cover) { seq.push(...(man ? [['job', 'the cover front', 'cover-f'], ['dlg', 'backs'], ['job', 'the cover back', 'cover-b']] : [['job', 'the cover sheet', 'cover']]), ['dlg', 'cover']); }
+    const of = cover ? ' of the rest' : '';
+    seq.push(...(man ? [['job', 'the fronts' + of, cover ? 'rest-f' : 'fronts'], ['dlg', 'backs'], ['job', 'the backs' + of, cover ? 'rest-b' : 'backs']] : [['job', cover ? 'the rest of the booklet' : 'the booklet', cover ? 'rest' : 'all']]));
+    return seq;
+  }
+  facesFor(key, sheets) {
+    const s = this.state, img = p => (p && p.src ? p.src : '');
+    const rot = s.rotate && s.duplex === 'manual' ? 'rotate(180deg)' : 'none';
+    const F = sh => ({ l: img(sh.front[0]), r: img(sh.front[1]), rot: 'none', cap: `Sheet ${sh.num} front` });
+    const B = sh => ({ l: img(sh.back[0]), r: img(sh.back[1]), rot, cap: `Sheet ${sh.num} back` });
+    let backs = sh => sh; if (s.reverse) backs = a => [...a].reverse();
+    const first = sheets.slice(0, 1), rest = sheets.slice(1);
+    const map = {
+      fronts: sheets.map(F), backs: backs(sheets).map(B), all: sheets.flatMap(sh => [F(sh), { ...B(sh), rot: 'none' }]),
+      'test-f': first.map(F), 'test-b': first.map(B), test: first.flatMap(sh => [F(sh), { ...B(sh), rot: 'none' }]),
+      'cover-f': first.map(F), 'cover-b': first.map(B), cover: first.flatMap(sh => [F(sh), { ...B(sh), rot: 'none' }]),
+      'rest-f': rest.map(F), 'rest-b': backs(rest).map(B), rest: rest.flatMap(sh => [F(sh), { ...B(sh), rot: 'none' }]),
+    };
+    return map[key] || [];
+  }
+  sw(label, hint, on, toggle) {
+    return { label, hint, on, toggle, bg: on ? 'color-mix(in srgb, var(--color-accent) 22%, transparent)' : 'transparent', border: on ? 'var(--color-accent)' : 'var(--color-neutral-600)', left: on ? '22px' : '4px', knob: on ? 'var(--color-accent)' : 'var(--color-neutral-400)' };
+  }
+  renderVals() {
+    const s = this.state, W = Component.W, ios = this.isIOS(), PR = Component.PRINTER;
+    const pages = s.pages, padded = this.pad(pages), sheets = this.impose(padded);
+    const n = pages.length, sc = sheets.length, man = s.duplex === 'manual';
+    const hasBackCover = n > 0 && pages[n - 1].kind === 'back';
+    const others = pages.filter(p => p.kind === 'other');
+    const idxOf = new Map(padded.map((p, i) => [p.id, i]));
+    const statusText = n ? `${n} ${n === 1 ? 'page' : 'pages'} on ${sc} ${sc === 1 ? 'sheet' : 'sheets'}` : 'Pick your page images to begin.';
+    const noteOf = p => {
+      const i = idxOf.get(p.id), lastBlank = p.kind === 'blank' && i === padded.length - 1 && !hasBackCover;
+      if (p.kind === 'other') return ["Name not recognised, so it went to the end.", true];
+      if (lastBlank) return ['No “Back cover” file, so the back stays blank.', true];
+      if (p.kind === 'blank') return ['Filler: a sheet holds 4 pages.', false];
+      if (p.kind === 'cover' || p.kind === 'back') return ['Covers stay at the ends.', false];
+      return ['Tap another page to move this one there.', false];
+    };
+    const tile = (p, interactive) => {
+      const isBlank = p.kind === 'blank', [, warn] = noteOf(p);
+      const editable = p.kind === 'page' || p.kind === 'other';
+      const isSel = interactive && s.sel === p.id;
+      return {
+        id: p.id, isReal: true, label: p.label, src: p.src, hasImg: !isBlank, isBlank, pinned: p.kind === 'cover' || p.kind === 'back',
+        hasWarnBadge: warn && !isBlank, bg: isBlank ? 'transparent' : 'var(--color-neutral-100)',
+        border: isBlank ? `1px dashed ${warn ? W : 'var(--color-neutral-700)'}` : '0', blankColor: warn ? W : 'var(--color-neutral-600)',
+        labelColor: warn ? W : isBlank ? 'var(--color-neutral-500)' : 'var(--color-neutral-300)',
+        ring: isSel ? '0 0 0 2px var(--color-accent), 0 0 18px color-mix(in srgb, var(--color-accent) 55%, transparent)' : warn && !isBlank ? `0 0 0 2px ${W}` : isBlank ? 'none' : 'var(--shadow-md)',
+        opacity: s.sel && !isSel && p.kind === 'cover' ? 0.5 : 1,
+        onClick: () => {
+          const cur = this.state.sel;
+          if (cur && cur !== p.id) return this.move(cur, p.id);
+          if (cur === p.id) return this.setState({ sel: null });
+          if (editable || warn) this.setState({ sel: p.id });
+        },
+      };
+    };
+    const empty = { isReal: false };
+    const spreads = [];
+    if (padded.length) {
+      spreads.push({ label: 'Front cover', slots: [empty, tile(padded[0], true)] });
+      for (let i = 1; i < padded.length - 1; i += 2) spreads.push({ label: `Spread ${(i + 1) / 2}`, slots: [tile(padded[i], true), tile(padded[i + 1], true)] });
+      spreads.push({ label: 'Back cover', slots: [tile(padded[padded.length - 1], true), empty] });
+    }
+    const sheetCards = sheets.map(sh => ({ title: `Sheet ${sh.num}`, isFirst: sh.num === 1, faces: [{ name: 'Front', tiles: sh.front.map(p => tile(p, false)) }, { name: 'Back', tiles: sh.back.map(p => tile(p, false)) }] }));
+    const chip = text => ({ text, color: W, bg: `color-mix(in oklch, ${W} 14%, transparent)` });
+    const notes = [];
+    if (sc > 6) notes.push(chip(`${sc} sheets is too thick to fold flat. 24 pages is about the limit.`));
+    if (others.length) notes.push(chip(`${others.length} ${others.length === 1 ? 'file has a name' : 'files have names'} I don't recognise`));
+    if (n && !hasBackCover) notes.push(chip('No Back cover file'));
+
+    const selP = s.sel ? padded.find(p => p.id === s.sel) : null;
+    const [selNote, selWarn] = selP ? noteOf(selP) : ['', false];
+    const selEditable = selP && (selP.kind === 'page' || selP.kind === 'other');
+
+    const cur = Math.min(s.step, 2), finished = s.step === 3;
+    const steps = ['Open', 'Check', 'Print'].map((title, i) => {
+      const st = finished || i < cur ? 'done' : i === cur ? 'current' : 'todo';
+      return { title, bar: st === 'todo' ? 'var(--color-divider)' : st === 'done' ? 'var(--color-accent-700)' : 'var(--color-accent)', glow: st === 'current' ? '0 0 10px color-mix(in srgb, var(--color-accent) 60%, transparent)' : 'none', color: st === 'todo' ? 'var(--color-neutral-600)' : st === 'current' ? 'var(--color-accent-300)' : 'var(--color-neutral-400)' };
+    });
+    const heads = [
+      [s.loaded ? 'Got your pages' : 'Point me at your pages', s.loaded ? 'Happy with these? Next you check the order.' : "Cover, 1, 2, 3 … Back cover. I'll work out which page goes where on each sheet."],
+      ['Check the order', s.view === 'book' ? 'This is how the book reads. Tap a page, then tap where it should go.' : 'This is what comes out of the printer. Fold the stack and it reads in order.'],
+      ['Send it to the printer', man ? `Two passes: I print the fronts, you flip the stack, I print the backs. ${sc} sheets of ${s.paper}.` : `One job, double-sided. ${sc} ${sc === 1 ? 'sheet' : 'sheets'} of ${s.paper}.`],
+      ['Sent. Now fold the damn thing.', "Three steps and it's a book."],
+    ];
+    const nexts = [
+      { label: 'Next: check the order', dis: !s.loaded, fn: () => this.setState({ step: 1 }) },
+      { label: 'Next: printing', dis: !n, fn: () => this.setState({ step: 2, sel: null }) },
+      { label: 'Print the damn book', lead: true, dis: s.busy || !n, fn: () => this.run(this.plan(false)) },
+    ];
+    const nx = nexts[Math.min(s.step, 2)];
+    const failed = /not printed|didn't/.test(s.status);
+    const front = sheets[0] ? sheets[0].front : [];
+    const load = scen => {
+      if (this.state.loading) return;
+      this.setState({ loading: true, loaded: false, scen });
+      this.later(() => this.setState({ loading: false, loaded: true, pages: this.sample(scen), source: this.src(scen), step: 1 }), 900);
+    };
+    const dlgs = {
+      backs: ['Fronts are done', 'Take the stack out, turn it printed side up and put it back in the tray as it is, same edge first. Then I print the backs.', 'Print the backs'],
+      test: ['Front of the test sheet is out', 'Put it back in the tray printed side up, arrow edge first. Then I print its back.', 'Print the back'],
+      cover: ["Cover's away", 'The cover sheet has been sent. Load the paper for the inside pages, then tap OK to print the rest.', 'OK, print the rest'],
+    };
+    const dl = dlgs[s.dialog] || dlgs.backs;
+    const sysFaces = s.sys ? this.facesFor(s.sys.faces, sheets) : [];
+    const sysRows = ios
+      ? [{ k: 'Printer', v: PR, chev: true }, { k: 'Copies', v: '1' }, { k: 'Paper Size', v: s.paper, chev: true }, { k: 'Double-sided', v: man ? 'Off' : 'On' }, { k: 'Range', v: `All ${sysFaces.length} ${sysFaces.length === 1 ? 'page' : 'pages'}` }]
+      : [{ k: 'Copies', v: '1' }, { k: 'Paper size', v: s.paper }, { k: 'Two-sided', v: man ? 'Off' : 'Short edge' }];
+    sysRows.forEach((r, i) => { r.rule = i ? 'inset 0 1px 0 rgba(84,84,88,.6)' : 'none'; r.chev = !!r.chev; });
+    const more = [man ? 'flip the stack' : `${s.flip} edge`, s.scaling === 'fit' ? 'fit' : 'fill', `${s.margin} mm`, s.nums === 'off' ? 'no page numbers' : `numbers ${s.nums}`].join(' · ');
+    const set = o => () => this.setState(o);
+    return {
+      rootH: this.props.height ?? '100%', isIOS: ios, isAndroid: !ios, sysIOS: !!s.sys && ios, sysAndroid: !!s.sys && !ios,
+      barTitle: finished ? 'Done' : s.step === 0 ? 'Print the damn book' : ['Open', 'Check', 'Print'][s.step],
+      steps, heading: heads[s.step][0], subheading: heads[s.step][1],
+      isOpen: s.step === 0, isCheck: s.step === 1, isPrint: s.step === 2, isDone: finished,
+      loaded: s.loaded, notLoaded: !s.loaded, loading: s.loading, notLoading: !s.loading,
+      dropTitle: s.loading ? 'Reading images…' : 'Pick your pages',
+      photosLabel: ios ? 'Choose from Photos' : 'Choose photos', folderLabel: ios ? 'Choose a folder in Files' : 'Choose a folder',
+      openPhotos: () => load('clean'), openFolder: () => load(this.state.scen === 'clean' && this.state.loaded ? 'issues' : this.state.scen),
+      folderName: s.source ? s.source.name : '', sourceText: s.source ? s.source.where : '', coverSrc: pages[0] ? pages[0].src : '', statusText,
+      viewName: 'mv-' + this.uid, isBookView: s.view === 'book', isSheetView: s.view === 'sheets',
+      setBookView: set({ view: 'book', sel: null }), setSheetView: set({ view: 'sheets', sel: null }),
+      addPages: () => this.addPages(), notes, hasNotes: notes.length > 0, spreads, sheetCards,
+      hasSel: !!selP && s.step === 1, noSel: !(selP && s.step === 1), selSrc: selP && selP.src ? selP.src : '', selLabel: selP ? selP.label : '',
+      selNote: selEditable && selWarn ? selNote + ' Tap where it should go.' : selNote, selNoteColor: selWarn ? W : 'var(--color-neutral-400)',
+      removeSel: () => this.setState({ pages: this.state.pages.filter(x => x.id !== this.state.sel), sel: null }), clearSel: set({ sel: null }),
+      paperName: 'mp-' + this.uid, isA4: s.paper === 'A4', isLetter: s.paper === 'Letter', setA4: set({ paper: 'A4' }), setLetter: set({ paper: 'Letter' }),
+      duplexName: 'md-' + this.uid, isAuto: !man, isManual: man, setAuto: set({ duplex: 'auto' }), setManual: set({ duplex: 'manual' }),
+      duplexHint: man ? `${PR} can't print two-sided, so I print the fronts, then ask you to put the stack back for the backs.` : 'Your printer flips the paper. Pick a printer that can do two-sided in the print sheet.',
+      coverSwitch: [this.sw('Print the cover sheet on its own', "I'll pause after it so you can load thicker paper for the rest.", s.sepCover, () => this.setState({ sepCover: !this.state.sepCover }))],
+      manualSwitches: man ? [
+        this.sw('Reverse order of backs', 'Turn on if the stack comes out face up.', s.reverse, () => this.setState({ reverse: !this.state.reverse })),
+        this.sw('Rotate backs 180°', 'On by default: the same edge feeds first both times.', s.rotate, () => this.setState({ rotate: !this.state.rotate })),
+      ] : [],
+      testText: s.testSent ? (man ? 'Test sheet sent. Is the back upside down? Switch Rotate backs 180° under More options.' : 'Test sheet sent. Flip it over: page 1 should sit behind the cover, the right way up. Upside down? Change Flip edge under More options.') : (man ? 'Prints only Sheet 1 over two passes, with an arrow on the edge that feeds first, so you can check the back lines up.' : 'Prints only Sheet 1, so you can check the printer flips the paper the right way before you spend the rest.'),
+      printTest: () => { this.setState({ testRun: true }); this.run(this.plan(true)); }, busy: s.busy,
+      moreOpen: s.more, toggleMore: set({ more: !s.more }), caretRot: s.more ? '180deg' : '0deg', moreSummary: more,
+      flipName: 'mf-' + this.uid, isShort: s.flip === 'short', isLong: s.flip === 'long', setShort: set({ flip: 'short' }), setLong: set({ flip: 'long' }),
+      scaleName: 'ms-' + this.uid, isFit: s.scaling === 'fit', isFill: s.scaling === 'fill', setFit: set({ scaling: 'fit' }), setFill: set({ scaling: 'fill' }),
+      margin: s.margin, onMargin: e => this.setState({ margin: e.target.value }),
+      numName: 'mn-' + this.uid, numOff: s.nums === 'off', numBelow: s.nums === 'below', numAbove: s.nums === 'above',
+      setNumOff: set({ nums: 'off' }), setNumBelow: set({ nums: 'below' }), setNumAbove: set({ nums: 'above' }),
+      stackLayers: Array.from({ length: Math.max(0, Math.min(sc, 5) - 1) }, (_, i) => ({ x: `${(Math.min(sc, 5) - 1 - i) * 4}px`, y: `${(Math.min(sc, 5) - 1 - i) * 4}px` })),
+      frontLeft: front[0] && front[0].src ? front[0].src : '', frontRight: front[1] && front[1].src ? front[1].src : '',
+      stackTitle: `${sc} ${sc === 1 ? 'sheet' : 'sheets'} · ${n} pages · ${s.paper}`,
+      foldSteps: [
+        { n: '1', title: 'Grab the stack', body: `Take all ${sc} sheets off the tray. Keep them in the order they came out.` },
+        { n: '2', title: 'Fold it in half', body: 'Fold the whole stack at once, cover on the outside. Run a thumbnail along the crease.' },
+        { n: '3', title: 'Staple the spine', body: "Two staples on the fold. That's a book. Go read it to someone." },
+      ],
+      printAgain: set({ step: 2, status: '' }),
+      startOver: () => { this.timers.forEach(clearTimeout); this.setState({ ...this.initial({ ...this.props, startStep: 0, overlay: 'none' }) }); },
+      footerText: s.status || (s.step === 1 && n ? 'Tap a page to move or remove it.' : statusText + (n ? '.' : '')),
+      footerColor: failed ? W : s.status ? 'var(--color-accent-300)' : 'var(--color-neutral-400)',
+      hasBack: s.step === 1 || s.step === 2, noBack: !(s.step === 1 || s.step === 2), goBack: set({ step: Math.max(0, s.step - 1), sel: null }),
+      hasNext: s.step < 3, nextLabel: nx.label, nextIconLead: !!nx.lead, nextIconTrail: !nx.lead, nextDisabled: nx.dis, goNext: nx.fn,
+      nextGlow: s.step === 2 && !nx.dis ? '0 0 18px color-mix(in srgb, var(--color-accent) 35%, transparent)' : 'none',
+      dialog: !!s.dialog, dlgTitle: dl[0], dlgBody: dl[1], dlgOk: dl[2],
+      dialogOk: () => { this.setState({ dialog: null }); this.run(this.pending); },
+      dialogCancel: () => this.setState({ dialog: null, testRun: false, status: s.dialog === 'cover' ? 'The cover sheet was sent, but the rest of the booklet was not printed. You chose not to continue.' : "The fronts printed, but the backs didn't. You chose not to continue." }),
+      sysPrinter: PR, sysRows, sysFaces,
+      sysCancel: () => this.setState({ sys: null, testRun: false, status: /backs|back$/.test(s.sys ? s.sys.what : '') ? "The fronts printed, but the backs didn't. You cancelled the print sheet." : 'Nothing was printed.' }),
+      sysPrint: () => {
+        const what = this.state.sys.what;
+        this.setState({ sys: null, busy: true, status: `Sending ${what} to ${PR}…` });
+        this.later(() => {
+          this.setState({ busy: false, status: `Sent ${what} to ${PR}.`, testSent: this.state.testRun ? true : this.state.testSent });
+          this.run(this.pending);
+        }, 1200);
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>
