@@ -1,6 +1,6 @@
 ### Slice 10 — Landing site at print-the-damn-book.sirous.uk
 
-*Planned.*
+*In progress (wave 2026-10-22b), draft PR.*
 
 **Touches:** `site/**`, `.github/workflows/site.yml`
 
