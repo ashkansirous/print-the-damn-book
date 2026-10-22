@@ -1,6 +1,6 @@
 ### Slice 04 — Options: fill or fit, flip edge, remembered printer
 
-*Built 2026-10-22, awaiting merge. Desktop-tested with the PDF printer only; real duplex printer not yet tested.*
+*Built 2026-10-22, merged in PR #10. Desktop-tested with the PDF printer only; real duplex printer not yet tested.*
 
 **Touches:** `src/PrintTheDamnBook.App/Settings/**`, `src/PrintTheDamnBook.App/Views/OptionsPanel.xaml`,
 `src/PrintTheDamnBook.App/Views/OptionsPanel.xaml.cs`, `src/PrintTheDamnBook.App/Views/PageResources.xaml`,
@@ -47,11 +47,11 @@ stay set between runs.
 
 *Desktop test 2026-10-22 (PDF printer only):* options panel, Fill fills the halves in the PDF, settings persist across restart, corrupt JSON falls back to defaults, PDF printer goes to Manual with a reason. Margin "3,5" bug found and fixed.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - Settings live in `Core/Layout/PrintSettings` (JSON at `%LOCALAPPDATA%\PrintTheDamnBook\settings.json`). Only a user-chosen Two-sided mode is persisted, never a probe-forced one. (Slice 4: docs/plan/slices/04-options-and-settings.md)
 
-#### For README.md
+#### For README.md (lifted 2026-10-22)
 
 - Options (scaling, flip edge, margin, paper, printer, two-sided) are remembered between runs.
 

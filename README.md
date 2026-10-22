@@ -16,6 +16,8 @@ Windows only. Input: JPG and PNG. Paper: A4 (default) or Letter.
 3. Pick your printer, click **Print test sheet** the first time to confirm the flip edge,
    then **Print**.
 
+Options (scaling, flip edge, margin, paper, printer, two-sided) are remembered between runs.
+
 Printers without two-sided printing: choose Manual; print the test sheet once to check the backs' rotation.
 
 ## Download
