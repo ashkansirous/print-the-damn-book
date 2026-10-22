@@ -12,7 +12,7 @@ namespace PrintTheDamnBook.App.Printing;
 /// <summary>Printer, paper and print commands for the main window. Fed the current sheets via <see cref="SetSheets"/>.</summary>
 public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSession
 {
-    private const string CoverPrompt = "The cover sheet has been sent. Load the cover paper, then press OK to print the rest.";
+    private const string CoverPrompt = "The cover sheet has been sent. Load the paper for the inside pages, then press OK to print the rest.";
 
     private const string NoDuplexReason = " does not report two-sided printing on the ";
     private const string NoDuplexSuffix = ", so manual two-sided printing is selected.";
@@ -120,6 +120,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsManual))]
     [NotifyPropertyChangedFor(nameof(IsAutomatic))]
+    [NotifyPropertyChangedFor(nameof(DuplexMode))]
     public partial DuplexChoice SelectedDuplex { get; set; } = DuplexChoice.All[0];
 
     /// <summary>Why Manual was selected for the chosen printer; null when the user picked it or the printer does duplex.</summary>
@@ -134,12 +135,43 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     [ObservableProperty]
     public partial bool RotateBacks { get; set; } = ManualDuplexPlan.DefaultRotateBacks;
 
+    /// <summary>The selected Two-sided mode, for the segmented control.</summary>
+    public DuplexMode DuplexMode
+    {
+        get => SelectedDuplex.Mode;
+        set => SelectedDuplex = DuplexChoices.First(c => c.Mode == value);
+    }
+
     public bool IsManual => SelectedDuplex.Mode == DuplexMode.Manual;
 
     public bool IsAutomatic => !IsManual;
 
     [ObservableProperty]
     public partial string? PrintStatus { get; set; }
+
+    /// <summary>Whether <see cref="PrintStatus"/> reports a failure; set together with the text by <see cref="SetStatus"/>.</summary>
+    [ObservableProperty]
+    public partial PrintStatusKind PrintStatusKind { get; set; }
+
+    public void SetStatus(string text, PrintStatusKind kind)
+    {
+        PrintStatusKind = kind;
+        PrintStatus = text;
+    }
+
+    /// <summary>Clears the status text and its kind together.</summary>
+    public void ClearStatus()
+    {
+        PrintStatusKind = PrintStatusKind.Info;
+        PrintStatus = null;
+    }
+
+    /// <summary>True after the test sheet was sent for the current printer and paper; changes the test-sheet text.</summary>
+    [ObservableProperty]
+    public partial bool TestSheetSent { get; set; }
+
+    /// <summary>Raised when the whole booklet has been sent to the printer (not for a test sheet or a partial send).</summary>
+    public event EventHandler? BookletSent;
 
     /// <summary>True while a job is being rendered and sent; the print buttons are disabled meanwhile.</summary>
     [ObservableProperty]
@@ -165,7 +197,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            PrintStatus = $"Could not list printers: {ex.Message}";
+            SetStatus($"Could not list printers: {ex.Message}", PrintStatusKind.Failure);
         }
         finally
         {
@@ -178,6 +210,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     {
         _sheets = sheets;
         _bookName = string.IsNullOrWhiteSpace(bookName) ? FallbackJobName : bookName;
+        TestSheetSent = false;
         ClearStatusUnlessBusy();
         ForgetLastRun();
         PrintCommand.NotifyCanExecuteChanged();
@@ -186,6 +219,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     partial void OnSelectedPrinterChanged(PrinterChoice? value)
     {
+        TestSheetSent = false;
         ClearStatusUnlessBusy();
         ForgetLastRun();
         ApplyPrinterSettings(value);
@@ -201,6 +235,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     partial void OnFlipChanged(FlipEdge value)
     {
+        TestSheetSent = false;
         Persist();
         if (!_manualForced)
         {
@@ -253,11 +288,13 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     partial void OnReverseBacksChanged(bool value)
     {
+        TestSheetSent = false;
         Persist();
     }
 
     partial void OnRotateBacksChanged(bool value)
     {
+        TestSheetSent = false;
         Persist();
     }
 
@@ -471,6 +508,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
             return;
         }
 
+        TestSheetSent = false;
         _manualForced = false;
         _chosenDuplex = value.Mode;
         DuplexNote = null;
@@ -483,6 +521,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     partial void OnSelectedPaperChanged(PaperKind value)
     {
+        TestSheetSent = false;
         Persist();
         ClearStatusUnlessBusy();
         ForgetLastRun();
@@ -546,8 +585,16 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     [RelayCommand(CanExecute = nameof(CanPrint))]
     private Task PrintTestSheetAsync()
     {
+        return RunBusyAsync(SendTestSheetAsync);
+    }
+
+    private async Task SendTestSheetAsync()
+    {
         var sheet = ManualDuplexPlan.PickTestSheet(_sheets)!;
-        return RunBusyAsync(() => SendAsync(CurrentTarget(), [sheet], PrintPart.TestSheet));
+        var rotateBefore = RotateBacks;
+        var outcome = await SendAsync(CurrentTarget(), [sheet], PrintPart.TestSheet);
+        // Answering "upside down" flips RotateBacks during the send; that sheet no longer matches the options.
+        TestSheetSent = outcome == PrintOutcome.Sent && RotateBacks == rotateBefore;
     }
 
     private bool CanPrintBacksAgain()
@@ -571,7 +618,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
         _manual.Forget();
         if (!SeparateCoverJob || sheets.Count < 2)
         {
-            await SendAsync(target, sheets, PrintPart.Booklet);
+            NotifyIfSent(await SendAsync(target, sheets, PrintPart.Booklet));
             return;
         }
 
@@ -582,14 +629,24 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
         if (!_prompts.ConfirmContinue(CoverPrompt))
         {
-            PrintStatus = CoverSentRestNotPrinted + RestCancelled;
+            SetStatus(CoverSentRestNotPrinted + RestCancelled, PrintStatusKind.Failure);
             return;
         }
 
         var outcome = await SendAsync(target, sheets.Skip(1).ToList(), PrintPart.Rest);
         if (outcome != PrintOutcome.Sent)
         {
-            PrintStatus = CoverPrefix(outcome) + " " + PrintStatus;
+            SetStatus(CoverPrefix(outcome) + " " + PrintStatus, PrintStatusKind.Failure);
+        }
+
+        NotifyIfSent(outcome);
+    }
+
+    private void NotifyIfSent(PrintOutcome outcome)
+    {
+        if (outcome == PrintOutcome.Sent)
+        {
+            BookletSent?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -608,19 +665,19 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
         var text = PrintParts.Text(part);
         try
         {
-            PrintStatus = $"Sending {text.Phrase} to {target.PrinterName}...";
+            SetStatus($"Sending {text.Phrase} to {target.PrinterName}…", PrintStatusKind.Info);
             if (IsManual)
             {
                 return await _manual.RunAsync(target, sheets, part);
             }
 
             await _printer.PrintAsync(target.PrinterName, target.Paper, target.Layout, sheets, target.BookName + text.JobSuffix);
-            PrintStatus = $"Sent {text.Phrase} to {target.PrinterName}.";
+            SetStatus($"Sent {text.Phrase} to {target.PrinterName}.", PrintStatusKind.Info);
             return PrintOutcome.Sent;
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            PrintStatus = $"Could not send {text.Phrase} to {target.PrinterName}.";
+            SetStatus($"Could not send {text.Phrase} to {target.PrinterName}.", PrintStatusKind.Failure);
             _prompts.ShowError(PrintErrors.JobFailure(ex, target.PrinterName));
             return PrintErrors.OutcomeOf(ex);
         }

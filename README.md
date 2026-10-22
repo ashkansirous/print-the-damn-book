@@ -26,6 +26,12 @@ Get `PrintTheDamnBook.exe` from the [Releases page](https://github.com/ashkansir
 self-contained file: no .NET install needed, just run it.
 The exe is unsigned, so Windows SmartScreen may warn about an unknown publisher: click **More info**, then **Run anyway**.
 
+## Licences
+
+The Inter and Phosphor fonts are bundled under their own licences. The release is a single exe, so the texts are embedded in it:
+click **Licences** at the bottom of the left rail to read them. They are also online at https://print-the-damn-book.sirous.uk/licenses
+and live in `src/PrintTheDamnBook.App/Fonts/`.
+
 ## Build from source
 
 ```powershell

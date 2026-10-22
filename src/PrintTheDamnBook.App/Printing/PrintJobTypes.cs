@@ -35,7 +35,16 @@ internal interface IManualDuplexSession
 
     bool RotateBacks { get; set; }
 
-    string? PrintStatus { get; set; }
+    string? PrintStatus { get; }
+
+    void SetStatus(string text, PrintStatusKind kind);
+}
+
+/// <summary>How the footer shows the print status: neutral progress or success, or a failure that needs attention.</summary>
+public enum PrintStatusKind
+{
+    Info,
+    Failure,
 }
 
 internal static class PrintParts

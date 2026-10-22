@@ -1,6 +1,6 @@
 ### Slice 07 — Redesign: the Open → Check → Print wizard in Nocturne
 
-*Planned.*
+*Built 2026-10-22, awaiting merge. Desktop-tested 2026-10-22 on a PDF printer only; 141 tests.*
 
 **Touches:** `src/PrintTheDamnBook.App/**`, `tests/PrintTheDamnBook.Core.Tests/**` (only if a Core helper is added)
 
@@ -39,14 +39,27 @@ user through three steps and ends with a fold guide, in the Nocturne dark theme.
 
 **Work.**
 
-- [ ] Nocturne resource dictionary, bundled Inter and Phosphor, and base control styles (primary,
+- [x] Nocturne resource dictionary, bundled Inter and Phosphor, and base control styles (primary,
       secondary and ghost buttons, segmented control, switch, input, tag, card, dialog).
-- [ ] Window shell: WindowChrome title bar, the left rail with step summaries and the cover block, the footer.
-- [ ] Open step, with folder drop and the loaded card.
-- [ ] Check step: Reading order spreads and As printed sheets, drag/remove/add, inline warnings.
-- [ ] Print step: printer, paper, cover switch, test-sheet card, stack preview, More options.
-- [ ] Done step: fold guide, Print another copy, Make another book.
-- [ ] Every control, including the remove buttons, gets an `AutomationProperties.Name` (this closes the Slice 3 gap).
+- [x] Window shell: WindowChrome title bar, the left rail with step summaries and the cover block, the footer.
+- [x] Open step, with folder drop and the loaded card.
+- [x] Check step: Reading order spreads and As printed sheets, drag/remove/add, inline warnings.
+- [x] Print step: printer, paper, cover switch, test-sheet card, stack preview, More options.
+- [x] Done step: fold guide, Print another copy, Make another book.
+- [x] Every control, including the remove buttons, gets an `AutomationProperties.Name` (this closes the Slice 3 gap).
+
+**Changed while building:**
+
+- Added `Core/Spreads.cs` (with tests) for the reading-order spreads.
+- README gained a Licences note (Inter OFL, Phosphor MIT; texts embedded and shown from a Licences link in the rail).
+- The heading row wraps (toggle group follows the heading) instead of docking right. Print left column has MinWidth 260 / MaxWidth 420.
+- A dropped folder is accepted on the Open step only.
+- Uppercase captions have no letter-spacing. The sheet preview no longer shows the Fill crop.
+- Warning colour converted to sRGB `#EFBA64` (from `oklch(0.82 0.12 78)`) in `Themes/Nocturne.xaml`.
+- Copy added where the mock is silent: missing cover / duplicate covers / unreadable images chips, dialog titles, the manual-mode line.
+- `NocturneDialog` replaces the MessageBox prompts; `PrintStatusKind` enum drives the footer tone.
+
+**From review:** two passes, 21 findings applied. Desktop test 2026-10-22 (PDF printer only) passed 6 of 7; the layout bugs found were fixed (min-size wrap/clip, caption alignment, footer wrap, focus rings, drag tooltip, Alt+Right first press).
 
 **Verification.**
 
@@ -99,3 +112,18 @@ New strings: all of the above, in both locales if the app is localised.
 **Open point: Paper choices.** Mock Paper is only A4 / Letter. Default: keep the two as a `.seg`; any other sizes the app offers go to More options.
 
 **Open point: Fonts and icons offline.** The mock loads Inter from Google Fonts and Phosphor from unpkg. The plan bundles both, which is right; it needs the `regular` and `fill` Phosphor weights.
+
+#### For CLAUDE.md
+
+- UI tokens live in `src/PrintTheDamnBook.App/Themes/Nocturne.xaml` (from `docs/design/nocturne/styles.css`): use the brushes, never raw hex. Every focusable control uses the FocusRing style and has `AutomationProperties.Name`. Prompts go through `IPrintPrompts` / `NocturneDialog`, never `MessageBox`. (Slice 7: docs/plan/slices/07-wizard-redesign.md)
+
+#### For README.md
+
+- The app is now a three-step wizard (Open, Check, Print) ending with a fold guide.
+
+#### Not yet verified
+
+- Focus ring on the A4/Letter radios and switches, seen on screen.
+- Done-step footer wrap, seen on screen.
+- The stuck drag tooltip (not reproduced).
+- Snap layout on a high-DPI monitor.

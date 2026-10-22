@@ -18,6 +18,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The font licence texts are embedded too: the release is a single exe, and the Licences dialog shows them. -->
+    <Resource Include="Fonts\*.ttf;Fonts\*.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\PrintTheDamnBook.Core\PrintTheDamnBook.Core.csproj" />
   </ItemGroup>
 

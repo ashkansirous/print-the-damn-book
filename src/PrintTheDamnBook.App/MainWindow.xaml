@@ -3,107 +3,248 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:PrintTheDamnBook.App.ViewModels"
         xmlns:views="clr-namespace:PrintTheDamnBook.App.Views"
-        Title="Print the damn book" Width="1100" Height="800" MinWidth="700" MinHeight="500">
-  <Window.Resources>
-    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
-    <!-- One printed face: two pages side by side. -->
-    <DataTemplate x:Key="FaceTemplate" DataType="{x:Type vm:FaceViewModel}">
-      <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
-        <ContentControl Content="{Binding Left}" ContentTemplate="{StaticResource FacePageTemplate}" />
-        <ContentControl Content="{Binding Right}" ContentTemplate="{StaticResource FacePageTemplate}" />
+        Title="Print the damn book" Width="1100" Height="800" MinWidth="760" MinHeight="560"
+        Style="{StaticResource {x:Type Window}}" AllowDrop="True" DragOver="OnWindowDragOver" DragLeave="OnWindowDragLeave" Drop="OnWindowDrop">
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="32" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
+
+  <Grid x:Name="Root">
+    <Grid.Style>
+      <Style TargetType="Grid">
+        <Style.Triggers>
+          <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}" Value="Maximized">
+            <Setter Property="Margin" Value="{x:Static SystemParameters.WindowResizeBorderThickness}" />
+          </DataTrigger>
+        </Style.Triggers>
+      </Style>
+    </Grid.Style>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="32" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!-- Title bar -->
+    <Grid Grid.Row="0">
+      <StackPanel Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center">
+        <TextBlock Style="{StaticResource PhFill}" Text="{StaticResource IconBookOpenText}" Foreground="{StaticResource AccentBrush}" />
+        <TextBlock Text="Print the damn book" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Foreground="{StaticResource Neutral300Brush}" />
+        <TextBlock Text="{Binding TitleSuffix}" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                   Foreground="{StaticResource Neutral500Brush}" />
       </StackPanel>
-    </DataTemplate>
-  </Window.Resources>
-
-  <DockPanel Margin="12">
-    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-      <Button DockPanel.Dock="Left" Content="Open folder..." Padding="14,6" Command="{Binding OpenFolderCommand}" />
-      <TextBlock Text="{Binding FolderPath}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
-    </DockPanel>
-
-    <views:OptionsPanel DockPanel.Dock="Top" DataContext="{Binding Print}" />
-
-    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8" DataContext="{Binding Print}">
-      <Button Content="Print test sheet" Padding="14,6" Command="{Binding PrintTestSheetCommand}" />
-      <Button Content="Print booklet" Padding="14,6" Margin="8,0,0,0" Command="{Binding PrintCommand}" />
-      <Button Content="Print backs again" Padding="14,6" Margin="8,0,0,0" Command="{Binding PrintBacksAgainCommand}"
-              Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibility}}" />
-      <TextBlock Text="{Binding PrintStatus}" VerticalAlignment="Center" Margin="12,0,0,0" />
-    </WrapPanel>
-
-    <TextBlock DockPanel.Dock="Top" Margin="0,0,0,8" TextWrapping="Wrap" DataContext="{Binding Print}" Text="{Binding DuplexNote}">
-      <TextBlock.Style>
-        <Style TargetType="TextBlock">
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding DuplexNote}" Value="{x:Null}">
-              <Setter Property="Visibility" Value="Collapsed" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </TextBlock.Style>
-    </TextBlock>
-
-    <TextBlock DockPanel.Dock="Top" Margin="0,0,0,8" TextWrapping="Wrap" DataContext="{Binding Print}" Text="{Binding SettingsStatus}">
-      <TextBlock.Style>
-        <Style TargetType="TextBlock">
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding SettingsStatus}" Value="{x:Null}">
-              <Setter Property="Visibility" Value="Collapsed" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </TextBlock.Style>
-    </TextBlock>
-
-    <Border DockPanel.Dock="Top" Background="#FFF4CE" BorderBrush="#E0B000" BorderThickness="1" Padding="8" Margin="0,0,0,8">
-      <Border.Style>
-        <Style TargetType="Border">
-          <Setter Property="Visibility" Value="Visible" />
-          <Style.Triggers>
-            <DataTrigger Binding="{Binding Warning}" Value="{x:Null}">
-              <Setter Property="Visibility" Value="Collapsed" />
-            </DataTrigger>
-          </Style.Triggers>
-        </Style>
-      </Border.Style>
-      <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" />
-    </Border>
-
-    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Status}" Margin="0,8,0,0" />
-
-    <Grid>
-      <Grid.RowDefinitions>
-        <RowDefinition Height="Auto" />
-        <RowDefinition Height="*" />
-      </Grid.RowDefinitions>
-
-      <views:PageStrip Grid.Row="0" />
-
-      <GroupBox Grid.Row="1" Header="Sheets as they will print" Margin="0,8,0,0">
-        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-          <ItemsControl ItemsSource="{Binding Sheets}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate DataType="{x:Type vm:SheetViewModel}">
-                <Border BorderBrush="LightGray" BorderThickness="1" Padding="8" Margin="0,0,0,8">
-                  <StackPanel>
-                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-                    <StackPanel Orientation="Horizontal">
-                      <StackPanel>
-                        <TextBlock Text="Front" Foreground="Gray" />
-                        <ContentControl Content="{Binding Front}" ContentTemplate="{StaticResource FaceTemplate}" />
-                      </StackPanel>
-                      <StackPanel>
-                        <TextBlock Text="Back" Foreground="Gray" />
-                        <ContentControl Content="{Binding Back}" ContentTemplate="{StaticResource FaceTemplate}" />
-                      </StackPanel>
-                    </StackPanel>
-                  </StackPanel>
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </ScrollViewer>
-      </GroupBox>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True">
+        <Button x:Name="MinimizeButton" Style="{StaticResource CaptionButton}" views:Ui.Icon="{StaticResource IconMinus}" FontSize="14"
+                AutomationProperties.Name="Minimize" Click="OnMinimizeClick" />
+        <Button x:Name="MaximizeButton" Style="{StaticResource CaptionButton}" views:Ui.Icon="{StaticResource IconSquare}" FontSize="12"
+                AutomationProperties.Name="Maximize" Click="OnMaximizeClick" />
+        <Button Style="{StaticResource CloseCaptionButton}" views:Ui.Icon="{StaticResource IconX}" FontSize="14"
+                AutomationProperties.Name="Close" Click="OnCloseClick" />
+      </StackPanel>
     </Grid>
-  </DockPanel>
+
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="236" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+
+      <!-- Left rail -->
+      <DockPanel Grid.Column="0" Margin="10,14">
+        <Button DockPanel.Dock="Bottom" Style="{StaticResource GhostButton}" Content="Licences" FontSize="11" HorizontalAlignment="Left"
+                Click="OnLicencesClick" AutomationProperties.Name="Licences" />
+        <Grid DockPanel.Dock="Bottom" Margin="12" Visibility="{Binding IsLoaded, Converter={StaticResource BoolToVisibility}}">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Border Width="42" Height="59" Background="{StaticResource Neutral100Brush}" CornerRadius="2" Effect="{StaticResource ShadowMd}"
+                  BorderBrush="{StaticResource Neutral700Brush}" BorderThickness="1" VerticalAlignment="Center">
+            <Image Source="{Binding CoverImage}" Stretch="Uniform" />
+          </Border>
+          <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+            <TextBlock Text="{Binding FolderName}" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
+            <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="{StaticResource Neutral500Brush}" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </Grid>
+        <ItemsControl ItemsSource="{Binding RailSteps}" KeyboardNavigation.TabNavigation="Continue">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type vm:RailStepViewModel}">
+              <Button Margin="0,0,0,4" Command="{Binding DataContext.GoToStepCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                      CommandParameter="{Binding Index}" AutomationProperties.Name="{Binding Title}"
+                      AutomationProperties.HelpText="{Binding Summary}" FocusVisualStyle="{StaticResource FocusRing}" ToolTip="{Binding Tooltip}">
+                <Button.Template>
+                  <ControlTemplate TargetType="Button">
+                    <Border x:Name="Row" CornerRadius="8" Padding="12,10" Background="Transparent" Cursor="Arrow">
+                      <Grid>
+                        <Border x:Name="Mark" Width="3" HorizontalAlignment="Left" Margin="-12,2" CornerRadius="2" Visibility="Collapsed"
+                                Background="{StaticResource AccentBrush}" />
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                          </Grid.ColumnDefinitions>
+                          <Border x:Name="Circle" Width="26" Height="26" CornerRadius="13" BorderThickness="1"
+                                  BorderBrush="{StaticResource DividerBrush}" Background="Transparent" VerticalAlignment="Center">
+                            <Grid>
+                              <TextBlock x:Name="Number" Text="{Binding Number}" FontSize="12" FontWeight="Medium" HorizontalAlignment="Center"
+                                         VerticalAlignment="Center" Foreground="{StaticResource Neutral500Brush}" />
+                              <TextBlock x:Name="Check" Style="{StaticResource Ph}" FontSize="13" Text="{StaticResource IconCheck}" Visibility="Collapsed"
+                                         HorizontalAlignment="Center" Foreground="{StaticResource Accent200Brush}" />
+                            </Grid>
+                          </Border>
+                          <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock x:Name="Title" Text="{Binding Title}" FontWeight="Medium" Foreground="{StaticResource Neutral500Brush}" />
+                            <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="{StaticResource Neutral500Brush}" TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                        </Grid>
+                      </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                        <Setter TargetName="Row" Property="Background" Value="{StaticResource Text6Brush}" />
+                        <Setter TargetName="Mark" Property="Visibility" Value="Visible" />
+                        <Setter TargetName="Circle" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+                        <Setter TargetName="Circle" Property="Effect" Value="{StaticResource StepGlow}" />
+                        <Setter TargetName="Number" Property="Foreground" Value="{StaticResource AccentBrush}" />
+                        <Setter TargetName="Title" Property="Foreground" Value="{StaticResource TextBrush}" />
+                      </DataTrigger>
+                      <DataTrigger Binding="{Binding IsDone}" Value="True">
+                        <Setter TargetName="Circle" Property="Background" Value="{StaticResource Accent800Brush}" />
+                        <Setter TargetName="Circle" Property="BorderBrush" Value="Transparent" />
+                        <Setter TargetName="Number" Property="Visibility" Value="Collapsed" />
+                        <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+                        <Setter TargetName="Title" Property="Foreground" Value="{StaticResource TextBrush}" />
+                      </DataTrigger>
+                      <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                          <Condition Binding="{Binding IsReachable}" Value="True" />
+                          <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter TargetName="Row" Property="Background" Value="{StaticResource Text6Brush}" />
+                      </MultiDataTrigger>
+                      <DataTrigger Binding="{Binding IsReachable}" Value="True">
+                        <Setter TargetName="Row" Property="Cursor" Value="Hand" />
+                      </DataTrigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </Button.Template>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </DockPanel>
+
+      <!-- Main panel -->
+      <Border Grid.Column="1" CornerRadius="14,0,0,0" BorderBrush="{StaticResource Neutral800Brush}" BorderThickness="1,1,0,0">
+        <Border.Background>
+          <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#1D1F2D" Offset="0" />
+            <GradientStop Color="{StaticResource BgColor}" Offset="0.7" />
+          </LinearGradientBrush>
+        </Border.Background>
+        <Grid>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+          </Grid.RowDefinitions>
+
+          <ScrollViewer x:Name="ContentScroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28,24">
+              <WrapPanel Margin="0,0,0,18">
+                <StackPanel MinWidth="260" Margin="0,0,16,0">
+                  <TextBlock Style="{StaticResource Heading}" Text="{Binding Heading}" />
+                  <TextBlock Style="{StaticResource Muted}" Text="{Binding Subheading}" MaxWidth="560" HorizontalAlignment="Left" Margin="0,6,0,0" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,12,0,0"
+                            Visibility="{Binding IsCheckStep, Converter={StaticResource BoolToVisibility}}">
+                  <Border Style="{StaticResource SegBorder}" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                      <RadioButton Style="{StaticResource SegOption}" Content="Reading order" views:Ui.Icon="{StaticResource IconBookOpen}" GroupName="BookView"
+                                   AutomationProperties.Name="Reading order"
+                                   IsChecked="{Binding View, Converter={StaticResource EnumBool}, ConverterParameter={x:Static vm:BookView.Reading}}" />
+                      <Rectangle Style="{StaticResource SegDivider}" />
+                      <RadioButton Style="{StaticResource SegOption}" Content="As printed" views:Ui.Icon="{StaticResource IconFiles}" GroupName="BookView"
+                                   AutomationProperties.Name="As printed"
+                                   IsChecked="{Binding View, Converter={StaticResource EnumBool}, ConverterParameter={x:Static vm:BookView.Sheets}}" />
+                    </StackPanel>
+                  </Border>
+                  <Button Style="{StaticResource SecondaryButton}" Content="Add pages…" views:Ui.Icon="{StaticResource IconPlus}"
+                          IsEnabled="{Binding CanAddPages}" AutomationProperties.Name="Add pages" Click="OnAddPagesClick" />
+                </StackPanel>
+              </WrapPanel>
+
+              <views:OpenStepView Visibility="{Binding IsOpenStep, Converter={StaticResource BoolToVisibility}}" />
+              <views:CheckStepView Visibility="{Binding IsCheckStep, Converter={StaticResource BoolToVisibility}}" />
+              <views:PrintStepView Visibility="{Binding IsPrintStep, Converter={StaticResource BoolToVisibility}}" />
+              <views:DoneStepView Visibility="{Binding IsDoneStep, Converter={StaticResource BoolToVisibility}}" />
+            </StackPanel>
+          </ScrollViewer>
+
+          <!-- Footer -->
+          <Grid Grid.Row="1" MinHeight="56">
+            <Rectangle Height="1" VerticalAlignment="Top">
+              <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                  <GradientStop Color="Transparent" Offset="0" />
+                  <GradientStop Color="#29E9E9ED" Offset="0.06" />
+                  <GradientStop Color="#29E9E9ED" Offset="0.94" />
+                  <GradientStop Color="Transparent" Offset="1" />
+                </LinearGradientBrush>
+              </Rectangle.Fill>
+            </Rectangle>
+            <Grid Margin="28,10">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                <TextBlock Style="{StaticResource Spinner}" Text="{StaticResource IconCircleNotch}" Margin="0,0,8,0" Foreground="{StaticResource Neutral400Brush}"
+                           Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                <TextBlock Text="{Binding FooterText}" TextWrapping="Wrap" VerticalAlignment="Center" AutomationProperties.Name="Status">
+                  <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                      <Setter Property="Foreground" Value="{StaticResource Neutral400Brush}" />
+                      <Style.Triggers>
+                        <DataTrigger Binding="{Binding FooterTone}" Value="Accent">
+                          <Setter Property="Foreground" Value="{StaticResource Accent300Brush}" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding FooterTone}" Value="Warning">
+                          <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                        </DataTrigger>
+                      </Style.Triggers>
+                    </Style>
+                  </TextBlock.Style>
+                </TextBlock>
+              </StackPanel>
+              <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Back" views:Ui.Icon="{StaticResource IconArrowLeft}"
+                      Command="{Binding BackCommand}" Margin="0,0,12,0" AutomationProperties.Name="Back"
+                      Visibility="{Binding HasBack, Converter={StaticResource BoolToVisibility}}" />
+              <Button Grid.Column="2" Content="{Binding NextLabel}" Command="{Binding NextCommand}" AutomationProperties.Name="{Binding NextLabel}"
+                      Visibility="{Binding HasNext, Converter={StaticResource BoolToVisibility}}">
+                <Button.Style>
+                  <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                    <Setter Property="views:Ui.TrailingIcon" Value="{StaticResource IconArrowRight}" />
+                    <Style.Triggers>
+                      <DataTrigger Binding="{Binding NextIsPrint}" Value="True">
+                        <Setter Property="views:Ui.TrailingIcon" Value="" />
+                        <Setter Property="views:Ui.Icon" Value="{StaticResource IconPrinter}" />
+                      </DataTrigger>
+                      <MultiDataTrigger>
+                        <MultiDataTrigger.Conditions>
+                          <Condition Binding="{Binding NextIsPrint}" Value="True" />
+                          <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsEnabled}" Value="True" />
+                        </MultiDataTrigger.Conditions>
+                        <Setter Property="Effect" Value="{StaticResource NextGlow}" />
+                      </MultiDataTrigger>
+                    </Style.Triggers>
+                  </Style>
+                </Button.Style>
+              </Button>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Border>
+    </Grid>
+  </Grid>
 </Window>
