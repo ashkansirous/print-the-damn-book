@@ -1,8 +1,8 @@
 ### Slice 11 — Microsoft Store: MSIX package, listing and submission
 
-*Planned.* Needs Slice 08 (the assets) and Slice 10 (the privacy URL).
+*In progress (wave 2026-10-22b), draft PR.* Needs Slice 08 (the assets) and Slice 10 (the privacy URL).
 
-**Touches:** `packaging/msix/**`, `.github/workflows/release.yml`, `docs/store/**`, `README.md`
+**Touches:** `packaging/msix/**`, `.github/workflows/release.yml`, `docs/store/**`, `README.md`, `assets/store/**`, `tools/store-assets/**` (re-shoot the screenshots from the real app, carried over from Slice 8)
 
 **Why.** User request, 2026-10-22: register the app in the Microsoft Store. The user chose the full route:
 an MSIX package, the listing and the submission. The parts that need the user's own login are guided one
