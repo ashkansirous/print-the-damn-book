@@ -9,6 +9,8 @@ public enum PageKind
     Blank,
     DuplicateCover,
     DuplicateBackCover,
+    /// <summary>Added by hand with "Add pages"; the user chose it, so it raises no warning.</summary>
+    Added,
 }
 
 /// <summary>One page of the book. <see cref="Path"/> is null for blank padding pages.</summary>
