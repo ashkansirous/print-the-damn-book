@@ -25,6 +25,7 @@ builds the exe on release, no Dockerfile.
 | 3 | Reorder, add and remove pages | planned | | | [03](docs/plan/slices/03-reorder-pages.md) |
 | 4 | Options: fill or fit, flip edge, remembered printer | planned | | | [04](docs/plan/slices/04-options-and-settings.md) |
 | 5 | Release build on GitHub | planned | | | [05](docs/plan/slices/05-release-pipeline.md) |
+| 6 | Manual two-sided printing (before Slice 4) | planned | | | [06](docs/plan/slices/06-manual-duplex.md) |
 
 Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 
