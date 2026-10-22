@@ -1,6 +1,4 @@
 using System.Collections.Concurrent;
-using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -39,23 +37,8 @@ public sealed class ThumbnailLoader
         return image;
     }
 
-    private static BitmapImage? Decode(string path)
+    private static BitmapSource? Decode(string path)
     {
-        try
-        {
-            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.StreamSource = stream;
-            bitmap.DecodePixelWidth = DecodeWidth;
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.EndInit();
-            bitmap.Freeze();
-            return bitmap;
-        }
-        catch (Exception ex) when (ex is COMException or IOException or NotSupportedException or UnauthorizedAccessException or FileFormatException or InvalidOperationException or ArgumentException)
-        {
-            return null;
-        }
+        return ImageDecoder.Decode(path, DecodeWidth);
     }
 }
