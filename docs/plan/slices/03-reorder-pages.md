@@ -1,10 +1,10 @@
 ### Slice 03 — Reorder, add and remove pages
 
-*Planned.*
+*In progress (wave 2026-10-22), draft PR.*
 
 **Touches:** `src/PrintTheDamnBook.App/Views/PageStrip.xaml`, `src/PrintTheDamnBook.App/Views/PageStrip.xaml.cs`,
-`src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.Core/Ordering/**`,
-`tests/PrintTheDamnBook.Core.Tests/Ordering*`
+`src/PrintTheDamnBook.App/MainWindow.xaml` (swap the inline strip for the PageStrip view), `src/PrintTheDamnBook.App/ViewModels/**`,
+`src/PrintTheDamnBook.Core/Ordering/**`, `src/PrintTheDamnBook.Core/PageOrdering.cs`, `tests/PrintTheDamnBook.Core.Tests/Ordering*`
 
 **Why.** Filenames get the order right most of the time; the user still needs to fix a
 mis-numbered page, drop one, or add a file from elsewhere without renaming on disk.
