@@ -1,6 +1,6 @@
 ### Slice 05 — Release build on GitHub
 
-*Planned.*
+*In progress (wave 2026-10-22), draft PR.*
 
 **Touches:** `.github/workflows/release.yml`, `README.md`, `src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj`
 
