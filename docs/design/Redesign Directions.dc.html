@@ -14,6 +14,56 @@
 <style>body{margin:0;background:#0f1019;font-family:Inter,system-ui,sans-serif;color:#e9e9ed}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(255,255,255,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-accent);color:var(--color-bg);border-radius:4px;text-decoration:none}.dv-tname{font:500 15px/1.2 Inter,system-ui,sans-serif;color:#e9e9ed}.dv-intro{margin:0 0 24px;max-width:90ch;font-size:13px;line-height:1.55;color:var(--color-neutral-400)}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(255,255,255,.1);color:#e9e9ed;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.4 Inter,system-ui,sans-serif;color:var(--color-neutral-400);max-width:1100px}.dv-card{max-width:100%;overflow:hidden;border-radius:8px}.dv-opt:target .dv-oid{background:var(--color-accent);color:var(--color-bg)}.dv-next{margin:24px 0 0;font:12px/1.5 Inter,system-ui,sans-serif;color:var(--color-neutral-500)}</style>
 </helmet>
 
+<section class="dv-turn" id="t4">
+  <div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">iOS and Android (Slices 12–13, .NET MAUI)</span></div>
+  <p class="dv-intro">The same three steps on a phone, one shared design with native chrome per platform. Pages come from Photos (cover first, back cover last, in pick order) or a folder in Files (sorted by name, like Windows). Reorder is tap-to-select, tap-to-place; the selected page's warning and a Remove button sit in the bottom bar. Printing hands a PDF to the system print sheet (AirPrint / Android print framework); since two-sided depends on the printer, Manual is the default: fronts, a reload prompt, then backs. Every frame is clickable; the working prototype is <a href="MobileWizard.dc.html">MobileWizard</a>.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="4a">
+      <div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>iOS · Open</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px"><dc-import name="MobileWizard" platform="ios" scenario="issues" start-step="{{ 0 }}" style="height:100%" hint-size="100%,100%"></dc-import></x-import>
+    </div>
+    <div class="dv-opt" id="4b">
+      <div class="dv-olabel"><a class="dv-oid" href="#4b">4b</a>iOS · Check, a warned page selected</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px"><dc-import name="MobileWizard" platform="ios" scenario="issues" start-step="{{ 1 }}" select-first="{{ true }}" style="height:100%" hint-size="100%,100%"></dc-import></x-import>
+    </div>
+    <div class="dv-opt" id="4c">
+      <div class="dv-olabel"><a class="dv-oid" href="#4c">4c</a>iOS · Print, More options open</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px"><dc-import name="MobileWizard" platform="ios" scenario="clean" start-step="{{ 2 }}" more-open="{{ true }}" style="height:100%" hint-size="100%,100%"></dc-import></x-import>
+    </div>
+    <div class="dv-opt" id="4d">
+      <div class="dv-olabel"><a class="dv-oid" href="#4d">4d</a>iOS · AirPrint sheet, pass 1 (fronts)</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px"><dc-import name="MobileWizard" platform="ios" scenario="clean" start-step="{{ 2 }}" overlay="print-sheet" style="height:100%" hint-size="100%,100%"></dc-import></x-import>
+    </div>
+    <div class="dv-opt" id="4e">
+      <div class="dv-olabel"><a class="dv-oid" href="#4e">4e</a>Android · Check, As printed</div>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px"><dc-import name="MobileWizard" platform="android" scenario="issues" start-step="{{ 1 }}" default-view="sheets" style="height:100%" hint-size="100%,100%"></dc-import></x-import>
+    </div>
+    <div class="dv-opt" id="4f">
+      <div class="dv-olabel"><a class="dv-oid" href="#4f">4f</a>Android · system print preview, pass 1</div>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px"><dc-import name="MobileWizard" platform="android" scenario="clean" start-step="{{ 2 }}" overlay="print-sheet" style="height:100%" hint-size="100%,100%"></dc-import></x-import>
+    </div>
+    <div class="dv-opt" id="4g">
+      <div class="dv-olabel"><a class="dv-oid" href="#4g">4g</a>Android · reload prompt between passes</div>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ true }}" hint-size="412px,892px"><dc-import name="MobileWizard" platform="android" scenario="clean" start-step="{{ 2 }}" overlay="reload" style="height:100%" hint-size="100%,100%"></dc-import></x-import>
+    </div>
+  </div>
+</section>
+
+<section class="dv-turn" id="t3">
+  <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Plan update: More options, manual two-sided and page numbers (Slices 4, 6, 9)</span></div>
+  <p class="dv-intro">The Print step now has a Two-sided choice under Paper (auto-set to Manual, with the reason, when the printer can't duplex) and a collapsed More options card: Flip edge (Automatic only), Reverse order of backs and Rotate backs 180° (Manual only), Fit / Fill and crop, margin, and Page numbers Off / Below / Above. The test-sheet text now points at those options. Manual printing runs fronts → reload dialog → backs. The title bar uses the app icon. These changes are live in every frame above and below.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="3a">
+      <div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Print step on the Brother HL-L3220CW (no duplex), More options open</div>
+      <div class="dv-card" style="width:1100px;height:760px"><dc-import name="BookWizard" variant="rail" scenario="clean" start-step="{{ 2 }}" printer="brother" more-open="{{ true }}" framed="{{ true }}" height="760px" hint-size="1100px,760px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="3b">
+      <div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>The reload dialog between the two passes</div>
+      <div class="dv-card" style="width:1100px;height:760px"><dc-import name="BookWizard" variant="rail" scenario="clean" start-step="{{ 2 }}" printer="brother" overlay="reload" framed="{{ true }}" height="760px" hint-size="1100px,760px"></dc-import></div>
+    </div>
+  </div>
+</section>
+
 <section class="dv-turn" id="t1">
   <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Three takes on the Open → Check → Print wizard</span></div>
   <p class="dv-intro">All three are the same working prototype with a different frame. They share: a Windows 11 title bar, inline warnings on the affected thumbnails (amber ring + note), a Reading order / As printed toggle, a test-sheet card on the print step, and a fold-it guide at the end. Each one is fully clickable: drag pages, remove them, add pages, print. The working prototype is <a href="BookWizard.dc.html">BookWizard</a>, set to <a class="dv-oid" href="#1b">1b</a> by default.</p>
