@@ -42,4 +42,10 @@ public static class HalfSheetLayout
         var offset = rightHalf ? half.Width : 0;
         return fitted with { X = fitted.X + offset };
     }
+
+    /// <summary>The rectangle after the whole sheet is turned 180 degrees about its centre (a point reflection).</summary>
+    public static RectD Rotate180(RectD rect, SizeD sheet)
+    {
+        return new RectD(sheet.Width - rect.X - rect.Width, sheet.Height - rect.Y - rect.Height, rect.Width, rect.Height);
+    }
 }

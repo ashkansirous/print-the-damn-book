@@ -5,6 +5,7 @@
         xmlns:views="clr-namespace:PrintTheDamnBook.App.Views"
         Title="Print the damn book" Width="1100" Height="800" MinWidth="700" MinHeight="500">
   <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
     <!-- One printed face: two pages side by side. -->
     <DataTemplate x:Key="FaceTemplate" DataType="{x:Type vm:FaceViewModel}">
       <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
@@ -22,14 +23,34 @@
 
     <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8" DataContext="{Binding Print}">
       <TextBlock Text="Printer:" VerticalAlignment="Center" Margin="0,0,6,0" />
-      <ComboBox Width="260" ItemsSource="{Binding Printers}" SelectedItem="{Binding SelectedPrinter}" DisplayMemberPath="Name" />
+      <ComboBox Width="260" IsEnabled="{Binding IsIdle}" ItemsSource="{Binding Printers}" SelectedItem="{Binding SelectedPrinter}" DisplayMemberPath="Name" />
       <TextBlock Text="Paper:" VerticalAlignment="Center" Margin="12,0,6,0" />
-      <ComboBox Width="80" ItemsSource="{Binding PaperSizes}" SelectedItem="{Binding SelectedPaper}" />
-      <CheckBox Content="Print cover sheet as a separate job" VerticalAlignment="Center" Margin="12,0,0,0" IsChecked="{Binding SeparateCoverJob}" />
+      <ComboBox Width="80" IsEnabled="{Binding IsIdle}" ItemsSource="{Binding PaperSizes}" SelectedItem="{Binding SelectedPaper}" />
+      <TextBlock Text="Two-sided:" VerticalAlignment="Center" Margin="12,0,6,0" />
+      <ComboBox Width="220" IsEnabled="{Binding IsIdle}" ItemsSource="{Binding DuplexChoices}" SelectedItem="{Binding SelectedDuplex}" DisplayMemberPath="Label" />
+      <CheckBox Content="Reverse order of backs" VerticalAlignment="Center" Margin="12,0,0,0" IsChecked="{Binding ReverseBacks}" IsEnabled="{Binding IsIdle}"
+                Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibility}}" />
+      <CheckBox Content="Rotate backs 180°" VerticalAlignment="Center" Margin="12,0,0,0" IsChecked="{Binding RotateBacks}" IsEnabled="{Binding IsIdle}"
+                Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibility}}" />
+      <CheckBox Content="Print cover sheet as a separate job" VerticalAlignment="Center" Margin="12,0,0,0" IsChecked="{Binding SeparateCoverJob}" IsEnabled="{Binding IsIdle}" />
       <Button Content="Print test sheet" Padding="14,6" Margin="12,0,0,0" Command="{Binding PrintTestSheetCommand}" />
       <Button Content="Print booklet" Padding="14,6" Margin="8,0,0,0" Command="{Binding PrintCommand}" />
+      <Button Content="Print backs again" Padding="14,6" Margin="8,0,0,0" Command="{Binding PrintBacksAgainCommand}"
+              Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibility}}" />
       <TextBlock Text="{Binding PrintStatus}" VerticalAlignment="Center" Margin="12,0,0,0" />
     </WrapPanel>
+
+    <TextBlock DockPanel.Dock="Top" Margin="0,0,0,8" TextWrapping="Wrap" DataContext="{Binding Print}" Text="{Binding DuplexNote}">
+      <TextBlock.Style>
+        <Style TargetType="TextBlock">
+          <Style.Triggers>
+            <DataTrigger Binding="{Binding DuplexNote}" Value="{x:Null}">
+              <Setter Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+          </Style.Triggers>
+        </Style>
+      </TextBlock.Style>
+    </TextBlock>
 
     <Border DockPanel.Dock="Top" Background="#FFF4CE" BorderBrush="#E0B000" BorderThickness="1" Padding="8" Margin="0,0,0,8">
       <Border.Style>

@@ -1,13 +1,14 @@
 using System.ComponentModel;
 using System.Printing;
 using System.Runtime.InteropServices;
+using System.Windows.Documents;
 using System.Windows.Xps;
 using PrintTheDamnBook.Core;
 using PrintTheDamnBook.Core.Layout;
 
 namespace PrintTheDamnBook.App.Printing;
 
-/// <summary>Lists printers and sends sheets to one as a duplex job. Orientation, duplex and paper are always set on the ticket.</summary>
+/// <summary>Lists printers and sends sheets to one, as a duplex job or as single-sided passes. Orientation, duplex and paper are always set on the ticket.</summary>
 public sealed class PrinterService
 {
     private const Duplexing RequiredDuplex = Duplexing.TwoSidedShortEdge;
@@ -26,10 +27,28 @@ public sealed class PrinterService
         return StaThread.Run(ListPrinters);
     }
 
+    /// <summary>Whether the printer reports short-edge duplex; null when it could not be checked.</summary>
+    public Task<bool?> ProbeShortEdgeDuplexAsync(string printerName)
+    {
+        return StaThread.Run(() => ProbeShortEdgeDuplex(printerName));
+    }
+
     /// <summary>Prints the sheets as one duplex job (front, back, front, back, ...) on a worker thread.</summary>
     public Task PrintAsync(string printerName, PaperKind paper, IReadOnlyList<Sheet> sheets, string jobName)
     {
-        return StaThread.Run(() => Print(printerName, paper, sheets, jobName));
+        return StaThread.Run(() => Send(printerName, paper, jobName, RequiredDuplex, renderer => renderer.Render(sheets)));
+    }
+
+    /// <summary>Prints the faces as one single-sided job (manual two-sided printing) on a worker thread.</summary>
+    public Task PrintFacesAsync(string printerName, PaperKind paper, IReadOnlyList<PlannedFace> faces, string jobName)
+    {
+        return StaThread.Run(() => Send(printerName, paper, jobName, Duplexing.OneSided, renderer => renderer.Render(faces)));
+    }
+
+    /// <summary>Checks that every image of the faces is readable, so a problem is found before the first pass prints.</summary>
+    public Task CheckReadableAsync(IReadOnlyList<PlannedFace> faces)
+    {
+        return StaThread.Run(() => FaceRenderer.CheckReadable(faces));
     }
 
     private static IReadOnlyList<PrinterChoice> ListPrinters()
@@ -48,20 +67,52 @@ public sealed class PrinterService
         return choices.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
     }
 
-    private static void Print(string printerName, PaperKind paper, IReadOnlyList<Sheet> sheets, string jobName)
+    private static bool SupportsRequiredDuplex(PrintQueue queue)
+    {
+        return queue.GetPrintCapabilities().DuplexingCapability.Contains(RequiredDuplex);
+    }
+
+    private static bool? ProbeShortEdgeDuplex(string printerName)
+    {
+        try
+        {
+            using var server = new LocalPrintServer();
+            using var queue = server.GetPrintQueue(printerName);
+            return SupportsRequiredDuplex(queue);
+        }
+        catch (Exception ex) when (IsPrintingError(ex))
+        {
+            return null;
+        }
+    }
+
+    private static void Send(string printerName, PaperKind paper, string jobName, Duplexing duplexing, Func<FaceRenderer, FixedDocument> render)
     {
         try
         {
             using var server = new LocalPrintServer();
             using var queue = OpenQueue(server, printerName);
-            var ticket = BuildTicket(queue, paper);
-            var document = new FaceRenderer(paper, HalfSheetLayout.DefaultMarginMm).Render(sheets);
+            var ticket = BuildTicket(queue, paper, duplexing);
+            var document = render(new FaceRenderer(paper, HalfSheetLayout.DefaultMarginMm));
             queue.CurrentJobSettings.Description = jobName;
-            PrintQueue.CreateXpsDocumentWriter(queue).Write(document, ticket);
+            WriteJob(queue, document, ticket, printerName);
         }
         catch (Exception ex) when (IsPrintingError(ex))
         {
             throw new PrintFailedException($"Printing to {printerName} failed: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>Hands the document to the spooler; a failure from here on may have left pages in the printer.</summary>
+    private static void WriteJob(PrintQueue queue, FixedDocument document, PrintTicket ticket, string printerName)
+    {
+        try
+        {
+            PrintQueue.CreateXpsDocumentWriter(queue).Write(document, ticket);
+        }
+        catch (Exception ex) when (IsPrintingError(ex))
+        {
+            throw new PrintFailedException($"Printing to {printerName} failed: {ex.Message}", ex, mayHavePrinted: true);
         }
     }
 
@@ -91,40 +142,54 @@ public sealed class PrinterService
         return queue;
     }
 
-    private static PrintTicket BuildTicket(PrintQueue queue, PaperKind paper)
+    private static PrintTicket BuildTicket(PrintQueue queue, PaperKind paper, Duplexing duplexing)
     {
-        var capabilities = queue.GetPrintCapabilities();
-        if (!capabilities.DuplexingCapability.Contains(RequiredDuplex))
+        if (duplexing == RequiredDuplex && !SupportsRequiredDuplex(queue))
         {
-            throw new PrintFailedException($"{queue.FullName} does not support two-sided printing with a short-edge flip, so the booklet cannot be printed on it. Nothing was printed.");
+            throw new PrintFailedException($"{queue.FullName} does not support two-sided printing with a short-edge flip. Choose manual two-sided printing instead.");
         }
 
         var requested = new PrintTicket
         {
             PageOrientation = PageOrientation.Landscape,
-            Duplexing = RequiredDuplex,
+            Duplexing = duplexing,
             PageMediaSize = new PageMediaSize(ToMediaSizeName(paper)),
         };
         var validated = queue.MergeAndValidatePrintTicket(new PrintTicket(), requested).ValidatedPrintTicket;
-        EnsureHonoured(queue, validated, paper);
+        EnsureHonoured(queue, validated, paper, duplexing);
         return validated;
     }
 
-    private static void EnsureHonoured(PrintQueue queue, PrintTicket validated, PaperKind paper)
+    /// <summary>
+    /// A two-sided job needs the validated ticket to keep the requested duplexing. A one-sided job is refused when the
+    /// queue turns it into a two-sided one (it would print the fronts on both sides of the paper); a queue with no duplex
+    /// feature drops the setting (null), which is fine.
+    /// </summary>
+    private static bool IsDuplexHonoured(Duplexing? validated, Duplexing requested)
     {
-        if (validated.Duplexing != RequiredDuplex)
+        if (requested == Duplexing.OneSided)
         {
-            throw new PrintFailedException($"{queue.FullName} would not accept two-sided printing with a short-edge flip. Nothing was printed.");
+            return validated is null or Duplexing.OneSided;
+        }
+
+        return validated == requested;
+    }
+
+    private static void EnsureHonoured(PrintQueue queue, PrintTicket validated, PaperKind paper, Duplexing duplexing)
+    {
+        if (!IsDuplexHonoured(validated.Duplexing, duplexing))
+        {
+            throw new PrintFailedException($"{queue.FullName} would not accept the two-sided setting for this job.");
         }
 
         if (validated.PageOrientation != PageOrientation.Landscape)
         {
-            throw new PrintFailedException($"{queue.FullName} would not accept landscape orientation. Nothing was printed.");
+            throw new PrintFailedException($"{queue.FullName} would not accept landscape orientation.");
         }
 
         if (!IsRequestedPaper(validated.PageMediaSize, paper))
         {
-            throw new PrintFailedException($"{queue.FullName} does not support {paper} paper. Nothing was printed.");
+            throw new PrintFailedException($"{queue.FullName} does not support {paper} paper.");
         }
     }
 

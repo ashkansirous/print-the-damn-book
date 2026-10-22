@@ -1,6 +1,6 @@
 ### Slice 06 — Manual two-sided printing for printers without duplex
 
-*In progress (wave 2026-10-22), draft PR.* Comes before Slice 4, because both edit `Printing/**`.
+*Built 2026-10-22 (84 tests), awaiting merge; desktop-tested on Microsoft Print to PDF, not yet verified on the Brother.* Comes before Slice 4, because both edit `Printing/**`.
 
 **Touches:** `src/PrintTheDamnBook.App/Printing/**`, `src/PrintTheDamnBook.App/MainWindow.xaml`,
 `src/PrintTheDamnBook.Core/Layout/**`, `tests/PrintTheDamnBook.Core.Tests/Layout*`,
@@ -38,15 +38,15 @@ again and print the odd ones"; details are recommended defaults, veto any):
 
 **Work.**
 
-- [ ] Core `ManualDuplexPlan` with tests: 1, 2 and 3 sheets; reverse and rotate on/off; the
+- [x] Core `ManualDuplexPlan` with tests: 1, 2 and 3 sheets; reverse and rotate on/off; the
       cover split into its own run.
-- [ ] Printing: a OneSided ticket path, a two-pass runner on the existing STA print thread,
+- [x] Printing: a OneSided ticket path, a two-pass runner on the existing STA print thread,
       the reload dialog between the passes, and a cancel message.
-- [ ] The Two-sided choice in the print panel: auto-select Manual (with a reason line) when
+- [x] The Two-sided choice in the print panel: auto-select Manual (with a reason line) when
       duplex isn't supported. This replaces Slice 2's dead-end refusal.
-- [ ] Options *Reverse order of backs* and *Rotate backs 180°*, shown in Manual mode only.
-- [ ] Test sheet in Manual mode: sheet 1 over two passes, with the feed-edge arrow on the front.
-- [ ] CLAUDE.md printing rule updated (via the index pass after merge).
+- [x] Options *Reverse order of backs* and *Rotate backs 180°*, shown in Manual mode only.
+- [x] Test sheet in Manual mode: sheet 1 over two passes, with the feed-edge arrow on the front.
+- [x] CLAUDE.md printing rule updated (via the index pass after merge).
 
 **Verification.**
 
@@ -58,3 +58,26 @@ again and print the odd ones"; details are recommended defaults, veto any):
 - On the user's Brother (needs paper, so ask first): run the test sheet once, set the
   rotation option if needed, then print `Book sample` and fold it. Pages must read Cover, 1..10,
   Back cover.
+
+*Changed while building:*
+
+- *Rotate backs 180°* defaults ON, not off: the reload instruction keeps the same edge leading in both passes, so a short-edge flip needs the backs rotated 180°.
+- The test sheet asks "Is the back upside down?" and toggles the rotation. It is the first sheet with a two-sided back.
+- A failed duplex probe selects Manual. The app never switches Manual to Automatic by itself. "Nothing was printed" shows only when no job was submitted.
+- Also built: `HalfSheetLayout.Rotate180`, `Printing/ManualDuplexRunner` (reload dialog, retry backs, *Print backs again* for booklet, cover and rest runs), `PrintJobTypes`, `DuplexChoice`, a lazy duplex probe on printer select, and a reason line in `MainWindow`.
+
+*From review:* two passes, 24 findings applied, including: manual pass 1 was refused on printers without duplex; stale backs reprinted; the test-sheet label covered content.
+
+*Desktop test 2026-10-22 (Microsoft Print to PDF):* Brother and PDF auto-select Manual with a reason. Fronts: Back cover|Cover, 9|2, 7|4. Backs: 1|10, 3|8, 5|6, rotated 180° by default and upright when off. Test-sheet label and upside-down prompt work; *Print backs again* enables and disables correctly. Known nit: the test-sheet label slightly overlaps the cover's top-left corner (sky only).
+
+#### For CLAUDE.md
+
+- Replace the duplex rule: Automatic needs a validated `TwoSidedShortEdge`; Manual sends two explicit `OneSided` jobs (fronts, reload, backs) and refuses a validated `TwoSided*`; never silently simplex. The two-pass flow lives in `Printing/ManualDuplexRunner.cs`; order and rotation maths in `Core/Layout/ManualDuplexPlan.cs`. (Slice 6: docs/plan/slices/06-manual-duplex.md)
+
+#### For README.md
+
+- Printers without two-sided printing: choose Manual; print the test sheet once to check the backs' rotation.
+
+#### Not yet verified
+
+- Test sheet and a full booklet on the user's Brother HL-L3220CW, then fold (needs paper; ask the user).
