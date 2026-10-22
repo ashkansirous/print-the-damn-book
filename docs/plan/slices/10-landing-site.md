@@ -2,7 +2,7 @@
 
 *Planned.*
 
-**Touches:** `site/**`, `.github/workflows/site.yml`, `.github/workflows/release.yml` (the exe upload step only)
+**Touches:** `site/**`, `.github/workflows/site.yml`
 
 **Why.** The app needs a public home: what it does, how to get it, and the privacy and support pages
 that the Microsoft Store listing (Slice 11) has to link to.
@@ -22,24 +22,23 @@ that the Microsoft Store listing (Slice 11) has to link to.
 - **Hosting:** a Cloudflare Worker with static assets (`wrangler.jsonc` in `site/`) on the custom domain
   `print-the-damn-book.sirous.uk`. The `sirous.uk` zone is already on Cloudflare (nameservers
   `eve`/`vern.ns.cloudflare.com`, checked 2026-10-22).
-- **Download:** the GitHub repo is private, so release assets aren't publicly downloadable. Download points
-  to the Microsoft Store once it is live (Slice 11). Until then, and as a direct alternative, `/download`
-  serves the latest exe from an R2 bucket bound to the same Worker; `release.yml` uploads the exe there on
-  each tag. This keeps one domain and avoids the 25 MiB static-asset limit, since the exe is about 62 MB.
+- **Download** (updated 2026-10-22: the repo is now public): the button links to the latest GitHub release
+  asset, `https://github.com/ashkansirous/print-the-damn-book/releases/latest/download/PrintTheDamnBook.exe`,
+  and the Microsoft Store badge joins it once Slice 11 is live. No R2 bucket and no `release.yml` change.
 - **Deploy:** `site.yml` runs `wrangler deploy` on pushes to `main` that touch `site/**`. The Cloudflare API
   token and account id are repo secrets, created and recorded through the `manage-secrets` skill.
 
 **Work.**
 
 - [ ] `site/` pages, styles and assets; responsive down to phone width.
-- [ ] Worker config, custom domain, R2 bucket and binding, and the `/download` route.
-- [ ] `site.yml` deploy workflow, and the R2 upload step in `release.yml`; secrets via `manage-secrets`.
+- [ ] Worker config and the custom domain.
+- [ ] `site.yml` deploy workflow; secrets via `manage-secrets`.
 
 **Verification.**
 
 - `https://print-the-damn-book.sirous.uk/`, `/privacy` and `/support` load over HTTPS, and Lighthouse reports no
   accessibility errors.
-- `/download` returns the exe from the latest tag, with the right size and a `Content-Disposition` filename.
+- The Download link resolves to the exe from the latest release (once the first `v*` tag exists).
 
 #### Design (Nocturne + Store Kit mock, sections 2d-2f, added 2026-10-22)
 
