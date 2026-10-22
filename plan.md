@@ -20,7 +20,7 @@ builds the exe on release, no Dockerfile.
 
 | Slice | Title | Status | PR | Issue | File |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Open a folder and preview the imposed sheets | planned | | | [01](docs/plan/slices/01-folder-to-sheet-preview.md) |
+| 1 | Open a folder and preview the imposed sheets | built | #2 | | [01](docs/plan/slices/01-folder-to-sheet-preview.md) |
 | 2 | Print the booklet duplex | planned | | | [02](docs/plan/slices/02-print-booklet.md) |
 | 3 | Reorder, add and remove pages | planned | | | [03](docs/plan/slices/03-reorder-pages.md) |
 | 4 | Options: fill or fit, flip edge, remembered printer | planned | | | [04](docs/plan/slices/04-options-and-settings.md) |
@@ -30,7 +30,7 @@ Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 
 ## Outstanding work
 
-_(nothing built yet)_
+- Slice 1: visual check by eye of thumbnail aspect ratio and scrolling on the sample folder ([slice 01](docs/plan/slices/01-folder-to-sheet-preview.md)).
 
 ## Out of Scope
 

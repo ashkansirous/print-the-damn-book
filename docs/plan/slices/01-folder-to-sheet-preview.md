@@ -1,6 +1,6 @@
 ### Slice 01 — Open a folder and preview the imposed sheets
 
-*Built 2026-10-22 (awaiting merge). Desktop-tested 2026-10-22; thumbnail look not yet checked by eye.*
+*Built 2026-10-22, merged in PR #2. Desktop-tested 2026-10-22; thumbnail look not yet checked by eye.*
 
 **Touches:** `PrintTheDamnBook.slnx`, `global.json`, `Directory.Build.props`, `.editorconfig`,
 `src/PrintTheDamnBook.Core/**`, `src/PrintTheDamnBook.App/**`,
@@ -62,7 +62,7 @@ smallest useful thing is: open the folder, see the sheets laid out exactly as th
 
 *Desktop test 2026-10-22:* the 12-page sample folder gave 3 sheets in the expected order with no banner; a scratch folder produced the correct warnings.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - `dotnet format PrintTheDamnBook.slnx --verify-no-changes` is a check command and CI enforces it; run it before pushing. (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
 - Files are LF (`.gitattributes`, `.editorconfig`); don't convert line endings. (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
