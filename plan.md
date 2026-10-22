@@ -18,7 +18,9 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Next wave (2026-10-22): 7, 8 and 10 in parallel; then 9 (needs 7's Print step) and 11 (needs 8's assets and 10's privacy page). 12 and 13 are parked.
+Slices 7, 8 and 10 merged 2026-10-22. Next: 9 (needs 7's Print step) and 11 (needs 8's assets and 10's privacy page). 12 and 13 are parked.
+
+The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
 | Slice | Title | Status | PR | Issue | File |
 | --- | --- | --- | --- | --- | --- |
@@ -28,10 +30,10 @@ Next wave (2026-10-22): 7, 8 and 10 in parallel; then 9 (needs 7's Print step) a
 | 4 | Options: fill or fit, flip edge, remembered printer | built | #10 | | [04](docs/plan/slices/04-options-and-settings.md) |
 | 5 | Release build on GitHub | built | #5 | | [05](docs/plan/slices/05-release-pipeline.md) |
 | 6 | Manual two-sided printing (before Slice 4) | built | #8 | | [06](docs/plan/slices/06-manual-duplex.md) |
-| 7 | Redesign: Open → Check → Print wizard (Nocturne) | planned | | | [07](docs/plan/slices/07-wizard-redesign.md) |
-| 8 | App icon and Store Kit assets | planned | | | [08](docs/plan/slices/08-icon-and-store-assets.md) |
+| 7 | Redesign: Open → Check → Print wizard (Nocturne) | built | #15 | | [07](docs/plan/slices/07-wizard-redesign.md) |
+| 8 | App icon and Store Kit assets | built | #16 | | [08](docs/plan/slices/08-icon-and-store-assets.md) |
 | 9 | Optional page numbers, below or above (after 7) | planned | | | [09](docs/plan/slices/09-page-numbers.md) |
-| 10 | Landing site at print-the-damn-book.sirous.uk | planned | | | [10](docs/plan/slices/10-landing-site.md) |
+| 10 | Landing site at print-the-damn-book.sirous.uk | built | #17 | | [10](docs/plan/slices/10-landing-site.md) |
 | 11 | Microsoft Store: MSIX, listing, submission (after 8, 10) | planned | | | [11](docs/plan/slices/11-microsoft-store.md) |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
@@ -40,6 +42,9 @@ Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 
 ## Outstanding work
 
+- Slice 7: focus ring on the A4/Letter radios and switches, done-step footer wrap, the stuck drag tooltip (not reproduced), snap layout on a high-DPI monitor, all seen on screen ([slice 07](docs/plan/slices/07-wizard-redesign.md)).
+- Slice 8: the icon by eye in Explorer, title bar and taskbar, light and dark. The screenshot re-shoot from the real app is carried by Slice 11 ([slice 08](docs/plan/slices/08-icon-and-store-assets.md)).
+- Slice 10: set the `CLOUDFLARE_API_TOKEN` repo secret (Workers-edit token from the Cloudflare dashboard); until then the CI deploy skips. First deploy and custom domain are live (done 2026-10-22). Still open: Lighthouse run, download link once the first release exists ([slice 10](docs/plan/slices/10-landing-site.md)).
 - Slice 2: a real duplex print and fold; an EXIF-rotated JPEG checked by eye; busy-disable of the buttons seen in the UI ([slice 02](docs/plan/slices/02-print-booklet.md)).
 - Slice 2: the user's Brother HL-L3220CW has no duplex; resolved by Slice 6 (manual two-sided), see the next item ([slice 06](docs/plan/slices/06-manual-duplex.md)).
 - Slice 6: test sheet and a full booklet on the user's Brother HL-L3220CW, then fold (needs paper; ask the user) ([slice 06](docs/plan/slices/06-manual-duplex.md)).

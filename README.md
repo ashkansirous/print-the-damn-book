@@ -11,6 +11,8 @@ Windows only. Input: JPG and PNG. Paper: A4 (default) or Letter.
 
 ## Use
 
+The app is a three-step wizard (Open, Check, Print) ending with a fold guide. Website: https://print-the-damn-book.sirous.uk
+
 1. Open the folder with your pages.
 2. Check the sheet preview (drag pages in the strip to fix the order).
 3. Pick your printer, click **Print test sheet** the first time to confirm the flip edge,
