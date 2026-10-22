@@ -1,6 +1,6 @@
 ### Slice 07 — Redesign: the Open → Check → Print wizard in Nocturne
 
-*Planned.*
+*In progress (wave 2026-10-22b), draft PR.*
 
 **Touches:** `src/PrintTheDamnBook.App/**`, `tests/PrintTheDamnBook.Core.Tests/**` (only if a Core helper is added)
 
