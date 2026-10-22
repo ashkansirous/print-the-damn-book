@@ -100,4 +100,15 @@ public class ImpositionTests
     {
         Assert.Equal(expected, Imposition.IsTooThick(sheets));
     }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(5)]
+    [InlineData(6)]
+    public void Impose_RejectsUnpaddedCounts(int count)
+    {
+        var pages = Enumerable.Repeat(BookPage.Blank, count).ToList();
+
+        Assert.Throws<ArgumentException>(() => Imposition.Impose(pages));
+    }
 }

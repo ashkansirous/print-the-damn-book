@@ -13,9 +13,14 @@ public sealed class ThumbnailLoader
 
     private readonly ConcurrentDictionary<string, ImageSource?> _cache = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Decodes every path once (off the UI thread) and returns the paths that could not be decoded.</summary>
-    public IReadOnlyList<string> Preload(IEnumerable<string?> paths) =>
-        paths.OfType<string>().Where(p => Load(p) is null).ToList();
+    /// <summary>Decodes every path once (off the UI thread) so later <see cref="Load"/> calls hit the cache.</summary>
+    public void Preload(IEnumerable<string?> paths)
+    {
+        foreach (var path in paths.OfType<string>())
+        {
+            Load(path);
+        }
+    }
 
     public ImageSource? Load(string? path)
     {
