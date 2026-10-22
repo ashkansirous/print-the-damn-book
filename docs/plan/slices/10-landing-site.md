@@ -1,6 +1,6 @@
 ### Slice 10 — Landing site at print-the-damn-book.sirous.uk
 
-*In progress (wave 2026-10-22b), draft PR.*
+*Built 2026-10-22, awaiting merge; not yet verified live (first deploy, custom domain, Lighthouse).*
 
 **Touches:** `site/**`, `.github/workflows/site.yml`
 
@@ -30,9 +30,9 @@ that the Microsoft Store listing (Slice 11) has to link to.
 
 **Work.**
 
-- [ ] `site/` pages, styles and assets; responsive down to phone width.
-- [ ] Worker config and the custom domain.
-- [ ] `site.yml` deploy workflow; secrets via `manage-secrets`.
+- [x] `site/` pages, styles and assets; responsive down to phone width.
+- [x] Worker config and the custom domain.
+- [x] `site.yml` deploy workflow. The deploy step skips with a notice until `CLOUDFLARE_API_TOKEN` is set (secrets still to be created).
 
 **Verification.**
 
@@ -57,3 +57,29 @@ New strings for both locales: none known; the site is English-only unless Slice 
 **Open point: Art is re-rendered.** Plan: reuse the Store Kit art. Mock: the panels embed the wizard at 0.56 scale. Default: use the PNGs Slice 08 renders, and swap in the real-app captures when Slice 08 re-shoots them; serve them as 1× and 2× variants (the exports are 2×) and compress, so the page stays light.
 
 **Open point: Landing starter template is not copied.** `nocturne/readme.md` points to `templates/landing/` and `components/*.html`; the import did not include them. Default: build the page from `styles.css` and the class table; re-import if the template is wanted.
+
+
+#### Built (2026-10-22)
+
+`site/` (`wrangler.jsonc`: Worker `print-the-damn-book-site`, assets `./public`, custom domain `print-the-damn-book.sirous.uk`, `workers_dev` and preview URLs off). Pages `/`, `/privacy`, `/support`, `/licenses`, 404. Nocturne `styles.css` plus `site.css`; Inter bundled locally (`OFL.txt`) and a Phosphor sprite (MIT licence); hero art and the three screenshots from Slice 8 as WebP with PNG fallback. `_headers` sets a strict CSP (`default-src 'none'`), nosniff, a referrer policy and `/assets` caching. Contact is `ashkan.sirous@gmail.com` (user's choice). Download links to `releases/latest/download/PrintTheDamnBook.exe`, with an All releases link.
+
+`.github/workflows/site.yml`: a PR check job (local link check and `wrangler@4.152.0 deploy --dry-run`, no secrets); deploy on push to `main` touching `site/**` via `cloudflare/wrangler-action@v4` with `wranglerVersion` 4.152.0.
+
+*Changed while building:* no R2 (the repo is public). The step cards are the screenshots with a "Step N" label (the text is baked into the images; the alt text carries it). A `/licenses` page was added.
+
+*From review:* two passes, 17 findings applied. A visual check at 1280 and 375 px fixed the hero overlap and the mobile stacking.
+
+#### For CLAUDE.md
+
+- The site lives in `site/` (`wrangler.jsonc` and `public/`). `site/public/_headers` sets the CSP to `default-src 'none'`: add any new script, style, font, image or connect source there. Deploy needs the repo secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. (Slice 10: docs/plan/slices/10-landing-site.md)
+
+#### For README.md
+
+- Website: https://print-the-damn-book.sirous.uk
+
+#### Not yet verified
+
+- First deploy, and the custom domain live over HTTPS.
+- `CLOUDFLARE_API_TOKEN` repo secret (a Workers-edit token the user creates in the Cloudflare dashboard).
+- Lighthouse run (no accessibility errors).
+- Download link, once the first release exists.

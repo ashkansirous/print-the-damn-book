@@ -1,0 +1,63 @@
+name: Site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/site.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && github.ref || 'site-deploy' }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check local links and assets
+        working-directory: site/public
+        run: |
+          status=0
+          for f in *.html; do
+            for ref in $(grep -oE '(href|src)="/[^"#?]*' "$f" | sed -E 's/^(href|src)="//' | sort -u); do
+              [ "$ref" = "/" ] && continue
+              if [ ! -e ".${ref}" ] && [ ! -e ".${ref}.html" ]; then
+                echo "$f: broken local reference $ref"; status=1
+              fi
+            done
+          done
+          exit $status
+      - name: Dry-run deploy (no secrets)
+        working-directory: site
+        run: npx --yes wrangler@4.152.0 deploy --dry-run
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - name: Skip notice when token is missing
+        if: env.CLOUDFLARE_API_TOKEN == ''
+        run: echo "::notice::CLOUDFLARE_API_TOKEN not set; skipping deploy"
+      - uses: actions/checkout@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+      - uses: cloudflare/wrangler-action@v4
+        if: env.CLOUDFLARE_API_TOKEN != ''
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.152.0"
+          workingDirectory: site
+          command: deploy
