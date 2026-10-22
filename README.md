@@ -16,6 +16,12 @@ Windows only. Input: JPG and PNG. Paper: A4 (default) or Letter.
 3. Pick your printer, click **Print test sheet** the first time to confirm the flip edge,
    then **Print**.
 
+## Download
+
+Get `PrintTheDamnBook.exe` from the [Releases page](https://github.com/ashkansirous/print-the-damn-book/releases/latest). It is a single
+self-contained file: no .NET install needed, just run it.
+The exe is unsigned, so Windows SmartScreen may warn about an unknown publisher: click **More info**, then **Run anyway**.
+
 ## Build from source
 
 ```powershell

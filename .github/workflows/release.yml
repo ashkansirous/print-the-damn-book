@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags: ['v[0-9]*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate tag and compute version
+        id: version
+        shell: bash
+        run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Tag $GITHUB_REF_NAME is not a SemVer tag (vMAJOR.MINOR.PATCH[-prerelease])"; exit 1
+          fi
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Tagged commit $GITHUB_SHA is not reachable from origin/main"; exit 1
+          fi
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Verify format
+        run: dotnet format PrintTheDamnBook.slnx --verify-no-changes
+      - name: Test
+        run: dotnet test PrintTheDamnBook.slnx --configuration Release
+      - name: Publish single-file exe
+        shell: bash
+        run: >
+          dotnet publish src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj
+          --configuration Release --runtime win-x64 --self-contained true
+          -p:Version=${{ steps.version.outputs.version }}
+          --output publish
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PrintTheDamnBook-exe
+          path: publish/PrintTheDamnBook.exe
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: PrintTheDamnBook-exe
+          path: publish
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          flags=()
+          if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags=(--prerelease); fi
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" publish/PrintTheDamnBook.exe --clobber
+            if [[ ${#flags[@]} -gt 0 ]]; then gh release edit "$GITHUB_REF_NAME" "${flags[@]}"; fi
+          else
+            gh release create "$GITHUB_REF_NAME" publish/PrintTheDamnBook.exe --verify-tag --generate-notes --title "$GITHUB_REF_NAME" "${flags[@]}"
+          fi
