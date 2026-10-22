@@ -21,16 +21,20 @@ builds the exe on release, no Dockerfile.
 | Slice | Title | Status | PR | Issue | File |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Open a folder and preview the imposed sheets | built | #2 | | [01](docs/plan/slices/01-folder-to-sheet-preview.md) |
-| 2 | Print the booklet duplex | planned | | | [02](docs/plan/slices/02-print-booklet.md) |
-| 3 | Reorder, add and remove pages | planned | | | [03](docs/plan/slices/03-reorder-pages.md) |
+| 2 | Print the booklet duplex | built | #3 | | [02](docs/plan/slices/02-print-booklet.md) |
+| 3 | Reorder, add and remove pages | built | #4 | | [03](docs/plan/slices/03-reorder-pages.md) |
 | 4 | Options: fill or fit, flip edge, remembered printer | planned | | | [04](docs/plan/slices/04-options-and-settings.md) |
-| 5 | Release build on GitHub | planned | | | [05](docs/plan/slices/05-release-pipeline.md) |
+| 5 | Release build on GitHub | built | #5 | | [05](docs/plan/slices/05-release-pipeline.md) |
 | 6 | Manual two-sided printing (before Slice 4) | planned | | | [06](docs/plan/slices/06-manual-duplex.md) |
 
 Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 
 ## Outstanding work
 
+- Slice 2: a real duplex print and fold; an EXIF-rotated JPEG checked by eye; busy-disable of the buttons seen in the UI ([slice 02](docs/plan/slices/02-print-booklet.md)).
+- Slice 2: the user's Brother HL-L3220CW has no duplex, so a real duplex print is blocked until Slice 6 (manual two-sided) ([slice 06](docs/plan/slices/06-manual-duplex.md)).
+- Slice 3: Remove buttons are absent from the UI Automation tree (needs `AutomationProperties`); decide whether Cover and Back cover should be removable ([slice 03](docs/plan/slices/03-reorder-pages.md)).
+- Slice 5: `release.yml` has never run on GitHub (needs a first tag, e.g. `v0.1.0`); app icon is missing ([slice 05](docs/plan/slices/05-release-pipeline.md)).
 - Slice 1: visual check by eye of thumbnail aspect ratio and scrolling on the sample folder ([slice 01](docs/plan/slices/01-folder-to-sheet-preview.md)).
 
 ## Out of Scope
