@@ -23,10 +23,16 @@ public static class Imposition
         return [.. pages.Take(pages.Count - 1), .. blanks, pages[^1]];
     }
 
-    public static Sheet[] Compute(IReadOnlyList<BookPage> pages)
+    public static Sheet[] Compute(IReadOnlyList<BookPage> pages) => Impose(Pad(pages));
+
+    /// <summary>Lays out pages that are already padded to a multiple of 4 (see <see cref="Pad"/>).</summary>
+    public static Sheet[] Impose(IReadOnlyList<BookPage> p)
     {
-        var p = Pad(pages);
         var n = p.Count;
+        if (n % PagesPerSheet != 0)
+        {
+            throw new ArgumentException($"Page count must be a multiple of {PagesPerSheet}; pad first.", nameof(p));
+        }
 
         return Enumerable.Range(0, n / PagesPerSheet)
             .Select(k => new Sheet(
