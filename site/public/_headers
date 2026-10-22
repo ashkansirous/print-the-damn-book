@@ -1,0 +1,9 @@
+/*
+  Content-Security-Policy: default-src 'none'; img-src 'self'; font-src 'self'; style-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/assets/*
+  Cache-Control: public, max-age=86400
+
+# CSP is default-src 'none': any new script, connect or media source (e.g. Slice 11) must be added to it explicitly.
