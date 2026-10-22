@@ -37,6 +37,17 @@
       <TextBlock Text="{Binding FolderPath}" VerticalAlignment="Center" Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
     </DockPanel>
 
+    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,8" DataContext="{Binding Print}">
+      <TextBlock Text="Printer:" VerticalAlignment="Center" Margin="0,0,6,0" />
+      <ComboBox Width="260" ItemsSource="{Binding Printers}" SelectedItem="{Binding SelectedPrinter}" DisplayMemberPath="Name" />
+      <TextBlock Text="Paper:" VerticalAlignment="Center" Margin="12,0,6,0" />
+      <ComboBox Width="80" ItemsSource="{Binding PaperSizes}" SelectedItem="{Binding SelectedPaper}" />
+      <CheckBox Content="Print cover sheet as a separate job" VerticalAlignment="Center" Margin="12,0,0,0" IsChecked="{Binding SeparateCoverJob}" />
+      <Button Content="Print test sheet" Padding="14,6" Margin="12,0,0,0" Command="{Binding PrintTestSheetCommand}" />
+      <Button Content="Print booklet" Padding="14,6" Margin="8,0,0,0" Command="{Binding PrintCommand}" />
+      <TextBlock Text="{Binding PrintStatus}" VerticalAlignment="Center" Margin="12,0,0,0" />
+    </WrapPanel>
+
     <Border DockPanel.Dock="Top" Background="#FFF4CE" BorderBrush="#E0B000" BorderThickness="1" Padding="8" Margin="0,0,0,8">
       <Border.Style>
         <Style TargetType="Border">

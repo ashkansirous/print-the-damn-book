@@ -1,5 +1,6 @@
 using System.Windows;
 using Microsoft.Win32;
+using PrintTheDamnBook.App.Printing;
 using PrintTheDamnBook.App.ViewModels;
 
 namespace PrintTheDamnBook.App;
@@ -9,7 +10,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        DataContext = new MainViewModel(PickFolder);
+        var print = new PrintViewModel(new PrinterService(), new MessageBoxPrompts());
+        DataContext = new MainViewModel(PickFolder, print);
+        Loaded += async (_, _) => await print.LoadPrintersAsync();
     }
 
     private string? PickFolder()

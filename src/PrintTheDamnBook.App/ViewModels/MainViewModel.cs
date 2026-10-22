@@ -1,6 +1,7 @@
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PrintTheDamnBook.App.Printing;
 using PrintTheDamnBook.App.Services;
 using PrintTheDamnBook.Core;
 
@@ -11,10 +12,13 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly Func<string?> _pickFolder;
     private int _loadVersion;
 
-    public MainViewModel(Func<string?> pickFolder)
+    public MainViewModel(Func<string?> pickFolder, PrintViewModel print)
     {
         _pickFolder = pickFolder;
+        Print = print;
     }
+
+    public PrintViewModel Print { get; }
 
     [ObservableProperty]
     public partial IReadOnlyList<PageViewModel> Pages { get; set; } = [];
@@ -74,6 +78,7 @@ public sealed partial class MainViewModel : ObservableObject
     {
         Pages = [];
         Sheets = [];
+        Print.SetSheets([]);
         FolderPath = string.Empty;
         Warning = null;
         Status = $"Could not read this folder: {ex.Message}";
@@ -88,6 +93,7 @@ public sealed partial class MainViewModel : ObservableObject
         FolderPath = folder;
         Pages = pages.Select(p => ToViewModel(p, loaded.Thumbnails, cache)).ToList();
         Sheets = sheets.Select(s => ToViewModel(s, loaded.Thumbnails, cache)).ToList();
+        Print.SetSheets(sheets, Path.GetFileName(Path.TrimEndingDirectorySeparator(folder)));
         Status = BuildStatus(pages.Count, sheets.Length);
         Warning = BuildWarning(BookChecks.Find(pages, sheets.Length), sheets.Length, loaded.Failed);
     }
