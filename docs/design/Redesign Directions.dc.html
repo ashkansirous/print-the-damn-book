@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/styles.css">
+<script src="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/_ds_bundle.js"></script>
+<style>body{margin:0;background:#0f1019;font-family:Inter,system-ui,sans-serif;color:#e9e9ed}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(255,255,255,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:var(--color-accent);color:var(--color-bg);border-radius:4px;text-decoration:none}.dv-tname{font:500 15px/1.2 Inter,system-ui,sans-serif;color:#e9e9ed}.dv-intro{margin:0 0 24px;max-width:90ch;font-size:13px;line-height:1.55;color:var(--color-neutral-400)}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:10px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(255,255,255,.1);color:#e9e9ed;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 12px/1.4 Inter,system-ui,sans-serif;color:var(--color-neutral-400);max-width:1100px}.dv-card{max-width:100%;overflow:hidden;border-radius:8px}.dv-opt:target .dv-oid{background:var(--color-accent);color:var(--color-bg)}.dv-next{margin:24px 0 0;font:12px/1.5 Inter,system-ui,sans-serif;color:var(--color-neutral-500)}</style>
+</helmet>
+
+<section class="dv-turn" id="t1">
+  <div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Three takes on the Open → Check → Print wizard</span></div>
+  <p class="dv-intro">All three are the same working prototype with a different frame. They share: a Windows 11 title bar, inline warnings on the affected thumbnails (amber ring + note), a Reading order / As printed toggle, a test-sheet card on the print step, and a fold-it guide at the end. Each one is fully clickable: drag pages, remove them, add pages, print. The working prototype is <a href="BookWizard.dc.html">BookWizard</a>, set to <a class="dv-oid" href="#1b">1b</a> by default.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="1a">
+      <div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Top stepper. The closest to today's single-window layout: steps run across the top, actions sit bottom-right. Clean folder, Reading order.</div>
+      <div class="dv-card" style="width:1100px;height:760px"><dc-import name="BookWizard" variant="stepper" scenario="clean" start-step="{{ 1 }}" framed="{{ true }}" height="760px" hint-size="1100px,760px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="1b">
+      <div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Left rail, Windows 11 settings-style. Each step shows a live summary under it, and the book's cover stays visible bottom-left. A folder with problems: unrecognised files and no back cover.</div>
+      <div class="dv-card" style="width:1100px;height:760px"><dc-import name="BookWizard" variant="rail" scenario="issues" start-step="{{ 1 }}" framed="{{ true }}" height="760px" hint-size="1100px,760px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="1c">
+      <div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Focus. No step list, just a glowing progress line, a "Step 3 of 3" kicker and a bigger heading. The quietest option. Shown on the print step.</div>
+      <div class="dv-card" style="width:1100px;height:760px"><dc-import name="BookWizard" variant="focus" scenario="clean" start-step="{{ 2 }}" framed="{{ true }}" height="760px" hint-size="1100px,760px"></dc-import></div>
+    </div>
+    <div class="dv-opt" id="1d">
+      <div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>The <a class="dv-oid" href="#1b">1b</a> rail on the As printed view: front and back of every sheet, with the same inline warnings.</div>
+      <div class="dv-card" style="width:1100px;height:760px"><dc-import name="BookWizard" variant="rail" scenario="issues" start-step="{{ 1 }}" default-view="sheets" framed="{{ true }}" height="760px" hint-size="1100px,760px"></dc-import></div>
+    </div>
+  </div>
+  <p class="dv-next">Try next: "go with <a class="dv-oid" href="#1b">1b</a> but use the bigger headings from <a class="dv-oid" href="#1c">1c</a>" · "make the sheet preview bigger in <a class="dv-oid" href="#1d">1d</a>" · "add a light theme"</p>
+</section>
+
+<section class="dv-turn" id="t0">
+  <div class="dv-thd"><a class="dv-tid" href="#t0">0</a><span class="dv-tname">Today: the current app, recreated from MainWindow.xaml</span></div>
+  <p class="dv-intro">Everything sits on one screen: folder, printer settings, warnings, the page strip and the sheet list all compete for attention, and the Print button is in the middle of a toolbar. The same "good enough draft" folder as <a class="dv-oid" href="#1b">1b</a>.</p>
+  <div class="dv-opts">
+    <div class="dv-opt" id="0a">
+      <div class="dv-olabel"><a class="dv-oid" href="#0a">0a</a>Current UI, default WPF styling</div>
+      <div class="dv-card" style="width:1100px;height:760px;background:#ffffff;color:#000000;font-family:'Segoe UI',system-ui,sans-serif;font-size:12px;display:flex;flex-direction:column">
+        <div style="height:30px;flex:none;display:flex;align-items:center;padding-left:10px;background:#ffffff;border-bottom:1px solid #e5e5e5;gap:8px">
+          <span style="flex:1">Print the damn book</span>
+          <span style="width:46px;text-align:center">—</span><span style="width:46px;text-align:center">☐</span><span style="width:46px;text-align:center">✕</span>
+        </div>
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:12px;background:#ffffff;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <span style="padding:5px 14px;background:#e1e1e1;border:1px solid #adadad">Open folder...</span>
+            <span>C:\Users\Ashkan\Downloads\good enough draft</span>
+          </div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-bottom:8px">
+            <span style="margin-right:6px">Printer:</span>
+            <span style="width:260px;box-sizing:border-box;padding:2px 6px;border:1px solid #acacac;background:linear-gradient(#f0f0f0,#e5e5e5);display:flex;justify-content:space-between"><span>HP OfficeJet Pro 9010</span><span>⌄</span></span>
+            <span style="margin:0 6px 0 12px">Paper:</span>
+            <span style="width:80px;box-sizing:border-box;padding:2px 6px;border:1px solid #acacac;background:linear-gradient(#f0f0f0,#e5e5e5);display:flex;justify-content:space-between"><span>A4</span><span>⌄</span></span>
+            <span style="margin-left:12px;display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border:1px solid #333333;background:#ffffff"></span>Print cover sheet as a separate job</span>
+            <span style="margin-left:12px;padding:5px 14px;background:#e1e1e1;border:1px solid #adadad">Print test sheet</span>
+            <span style="margin-left:8px;padding:5px 14px;background:#e1e1e1;border:1px solid #adadad">Print booklet</span>
+          </div>
+          <div style="background:#fff4ce;border:1px solid #e0b000;padding:8px;margin-bottom:8px;line-height:1.45">No Back cover file found; the back of the book will be blank.<br>These files have names the app does not recognise: IMG_2041.jpg, scan final (2).png.</div>
+          <div style="border:1px solid #d5dfe5;border-radius:3px;padding:6px;position:relative;margin-top:6px">
+            <div style="position:absolute;top:-9px;left:8px;background:#ffffff;padding:0 3px;display:flex;align-items:center;gap:12px"><span>Pages in order</span><span style="padding:1px 10px;background:#e1e1e1;border:1px solid #adadad">Add pages...</span><span style="color:#808080">Drag a page to move it; the covers stay at the ends.</span></div>
+            <div style="display:flex;gap:0;overflow:hidden;padding-top:8px">
+              <div style="flex:none;margin:2px;padding:2px;display:flex;flex-direction:column;align-items:center"><div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/cover.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>Cover</span></div></div>
+<div style="flex:none;margin:2px;padding:2px;display:flex;flex-direction:column;align-items:center"><div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/1.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>1</span></div><span style="padding:1px 8px;margin-top:2px;background:#e1e1e1;border:1px solid #adadad">Remove</span></div>
+<div style="flex:none;margin:2px;padding:2px;display:flex;flex-direction:column;align-items:center"><div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/2.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>2</span></div><span style="padding:1px 8px;margin-top:2px;background:#e1e1e1;border:1px solid #adadad">Remove</span></div>
+<div style="flex:none;margin:2px;padding:2px;display:flex;flex-direction:column;align-items:center"><div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/3.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>3</span></div><span style="padding:1px 8px;margin-top:2px;background:#e1e1e1;border:1px solid #adadad">Remove</span></div>
+<div style="flex:none;margin:2px;padding:2px;display:flex;flex-direction:column;align-items:center"><div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/4.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>4</span></div><span style="padding:1px 8px;margin-top:2px;background:#e1e1e1;border:1px solid #adadad">Remove</span></div>
+<div style="flex:none;margin:2px;padding:2px;display:flex;flex-direction:column;align-items:center"><div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/5.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>5</span></div><span style="padding:1px 8px;margin-top:2px;background:#e1e1e1;border:1px solid #adadad">Remove</span></div>
+            </div>
+          </div>
+          <div style="flex:1;min-height:0;border:1px solid #d5dfe5;border-radius:3px;padding:6px;position:relative;margin-top:14px;overflow:hidden">
+            <div style="position:absolute;top:-9px;left:8px;background:#ffffff;padding:0 3px">Sheets as they will print</div>
+            <div style="border:1px solid #d3d3d3;padding:8px;margin-top:6px">
+              <div style="font-weight:600">Sheet 1</div>
+              <div style="display:flex">
+                <div><div style="color:#808080">Front</div><div style="display:flex;margin-right:16px">
+                  <div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:grid;place-items:center;color:#808080">blank</div><span>blank</span></div>
+                  <div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/cover.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>Cover</span></div>
+                </div></div>
+                <div><div style="color:#808080">Back</div><div style="display:flex;margin-right:16px">
+                  <div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/1.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>1</span></div>
+                  <div style="margin:4px;width:150px;display:flex;flex-direction:column;align-items:center"><div style="width:150px;height:190px;box-sizing:border-box;border:1px solid #808080;background:#f5f5f5;display:flex;overflow:hidden"><img src="book/10.jpg" alt="" style="flex:1;min-width:0;min-height:0;width:100%;height:100%;object-fit:contain;display:block"></div><span>scan final (2)</span></div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:8px">11 pages on 3 sheets.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

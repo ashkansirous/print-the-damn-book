@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/styles.css">
+<script src="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>html,body{margin:0;height:100%;background:var(--color-bg)}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}@keyframes ptdb-spin{to{transform:rotate(360deg)}}</style>
+</helmet>
+<div style="position:relative;display:flex;flex-direction:column;width:100%;height:{{ rootH }};overflow:hidden;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:13px;line-height:1.4;border-radius:{{ winRadius }};box-shadow:{{ winShadow }}">
+
+  <div style="height:32px;flex:none;display:flex;align-items:center;user-select:none">
+    <div style="display:flex;align-items:center;gap:8px;padding-left:12px;flex:1;min-width:0">
+      <i class="ph-fill ph-book-open-text" style="font-size:16px;color:var(--color-accent)"></i>
+      <span style="font-size:12px;color:var(--color-neutral-300)">Print the damn book</span>
+      <sc-if value="{{ hasFolder }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-neutral-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· {{ folderName }}</span></sc-if>
+    </div>
+    <div style="display:flex;height:100%">
+      <div style="width:46px;display:grid;place-items:center;color:var(--color-neutral-300);font-size:14px" style-hover="background:color-mix(in srgb, var(--color-text) 8%, transparent)"><i class="ph ph-minus"></i></div>
+      <div style="width:46px;display:grid;place-items:center;color:var(--color-neutral-300);font-size:12px" style-hover="background:color-mix(in srgb, var(--color-text) 8%, transparent)"><i class="ph ph-square"></i></div>
+      <div style="width:46px;display:grid;place-items:center;color:var(--color-neutral-300);font-size:14px" style-hover="background:#c42b1c;color:var(--color-neutral-100)"><i class="ph ph-x"></i></div>
+    </div>
+  </div>
+
+  <sc-if value="{{ isStepper }}" hint-placeholder-val="{{ true }}">
+    <div style="position:relative;flex:none;display:flex;align-items:center;gap:12px;padding:10px 28px 14px">
+      <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+        <div style="display:flex;align-items:center;gap:12px;flex:{{ st.flex }};min-width:0">
+          <button onClick="{{ st.onClick }}" style="display:flex;align-items:center;gap:10px;background:none;border:0;padding:4px 6px;margin:-4px -6px;border-radius:var(--radius-md);color:inherit;font:inherit;cursor:{{ st.cursor }}" style-hover="background:color-mix(in srgb, var(--color-text) 6%, transparent)">
+            <span style="width:24px;height:24px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:500;background:{{ st.numBg }};color:{{ st.numColor }};box-shadow:{{ st.numRing }}">
+              <sc-if value="{{ st.isDone }}"><i class="ph ph-check" style="font-size:13px"></i></sc-if>
+              <sc-if value="{{ st.notDone }}">{{ st.num }}</sc-if>
+            </span>
+            <span style="display:flex;flex-direction:column;align-items:flex-start;min-width:0">
+              <span style="font-size:13px;font-weight:500;color:{{ st.titleColor }};white-space:nowrap">{{ st.title }}</span>
+              <span style="font-size:11px;color:var(--color-neutral-500);white-space:nowrap">{{ st.sub }}</span>
+            </span>
+          </button>
+          <sc-if value="{{ st.hasConnector }}"><div style="flex:1;height:1px;min-width:24px;background:{{ st.connector }}"></div></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isFocus }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative;flex:none;height:2px;background:var(--color-divider)">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:{{ progressPct }};background:linear-gradient(90deg, var(--color-accent-700), var(--color-accent));box-shadow:0 0 12px var(--color-accent);transition:width .4s ease"></div>
+    </div>
+  </sc-if>
+
+  <div style="flex:1;min-height:0;display:flex">
+
+    <sc-if value="{{ isRail }}" hint-placeholder-val="{{ false }}">
+      <div style="width:236px;flex:none;display:flex;flex-direction:column;gap:4px;padding:14px 10px 14px 10px">
+        <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+          <button onClick="{{ st.onClick }}" style="position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;border:0;border-radius:var(--radius-md);text-align:left;color:inherit;font:inherit;background:{{ st.railBg }};cursor:{{ st.cursor }}" style-hover="background:color-mix(in srgb, var(--color-text) 6%, transparent)">
+            <span style="position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:2px;background:{{ st.railMark }}"></span>
+            <span style="width:26px;height:26px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:500;background:{{ st.numBg }};color:{{ st.numColor }};box-shadow:{{ st.numRing }}">
+              <sc-if value="{{ st.isDone }}"><i class="ph ph-check" style="font-size:13px"></i></sc-if>
+              <sc-if value="{{ st.notDone }}">{{ st.num }}</sc-if>
+            </span>
+            <span style="display:flex;flex-direction:column;min-width:0">
+              <span style="font-size:13px;font-weight:500;color:{{ st.titleColor }}">{{ st.title }}</span>
+              <span style="font-size:11px;color:var(--color-neutral-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ st.sub }}</span>
+            </span>
+          </button>
+        </sc-for>
+        <div style="flex:1"></div>
+        <sc-if value="{{ hasFolder }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:12px;align-items:center;padding:12px">
+            <div style="width:42px;height:59px;flex:none;background:var(--color-neutral-100);display:grid;place-items:center;overflow:hidden;box-shadow:var(--shadow-md);border-radius:2px"><img src="{{ coverSrc }}" alt="" style="width:100%;display:block"></div>
+            <div style="display:flex;flex-direction:column;min-width:0">
+              <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ folderName }}</span>
+              <span style="font-size:11px;color:var(--color-neutral-500)">{{ statusText }}</span>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;position:relative;background:linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 55%, var(--color-bg)) 0%, var(--color-bg) 70%);border-top-left-radius:{{ mainRadius }};box-shadow:{{ mainShadow }}">
+      <div style="position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent);opacity:{{ topRuleOpacity }}"></div>
+
+      <div style="flex:1;min-height:0;overflow:auto;padding:{{ contentPad }}">
+
+        <div style="display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div style="flex:1;min-width:260px;display:flex;flex-direction:column;gap:6px">
+            <sc-if value="{{ isFocus }}" hint-placeholder-val="{{ false }}"><span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent)">{{ kicker }}</span></sc-if>
+            <h1 style="margin:0;font-family:var(--font-heading);font-weight:500;font-size:{{ headingSize }};line-height:1.15;letter-spacing:-0.01em;text-wrap:pretty">{{ heading }}</h1>
+            <p style="margin:0;color:var(--color-neutral-400);max-width:62ch;text-wrap:pretty">{{ subheading }}</p>
+          </div>
+          <sc-if value="{{ isCheck }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="seg">
+                <label class="seg-opt"><input type="radio" name="{{ viewName }}" checked="{{ isBookView }}" onChange="{{ setBookView }}"><i class="ph ph-book-open"></i>Reading order</label>
+                <label class="seg-opt"><input type="radio" name="{{ viewName }}" checked="{{ isSheetView }}" onChange="{{ setSheetView }}"><i class="ph ph-files"></i>As printed</label>
+              </div>
+              <button class="btn btn-secondary" onClick="{{ addPages }}"><i class="ph ph-plus"></i>Add pages…</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ notLoaded }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;align-items:flex-start;gap:16px;max-width:620px;padding:36px 32px;border:1px dashed var(--color-neutral-700);border-radius:var(--radius-lg);background:radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--color-accent-900) 80%, transparent), transparent 60%)">
+              <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}">
+                <i class="ph ph-folder-open" style="font-size:40px;color:var(--color-accent)"></i>
+              </sc-if>
+              <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+                <i class="ph ph-circle-notch" style="font-size:40px;color:var(--color-accent);animation:ptdb-spin 0.9s linear infinite"></i>
+              </sc-if>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-size:17px;font-weight:500">{{ dropTitle }}</span>
+                <span style="color:var(--color-neutral-400)">One image per page. JPG or PNG. I don't touch the files.</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span class="tag tag-accent">Cover</span>
+                <span class="tag tag-neutral">1</span>
+                <span class="tag tag-neutral">2</span>
+                <span class="tag tag-neutral">3</span>
+                <span style="color:var(--color-neutral-500)">…</span>
+                <span class="tag tag-accent">Back cover</span>
+              </div>
+              <button class="btn btn-primary" onClick="{{ openFolder }}" disabled="{{ loading }}"><i class="ph ph-folder-open"></i>Open folder…</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{ loaded }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:20px;align-items:center;max-width:620px;padding:20px;border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+              <div style="width:84px;height:119px;flex:none;background:var(--color-neutral-100);display:grid;place-items:center;overflow:hidden;box-shadow:var(--shadow-md);border-radius:2px"><img src="{{ coverSrc }}" alt="" style="width:100%;display:block"></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
+                <span style="font-size:17px;font-weight:500">{{ folderName }}</span>
+                <span style="font-size:12px;color:var(--color-neutral-500);font-family:ui-monospace,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ folder }}</span>
+                <span style="color:var(--color-neutral-300)">{{ statusText }}</span>
+                <div style="display:flex;gap:8px;margin-top:4px">
+                  <button class="btn btn-secondary" onClick="{{ openFolder }}"><i class="ph ph-arrows-clockwise"></i>Pick a different folder</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isCheck }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ hasNotes }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 18px">
+              <sc-for list="{{ notes }}" as="nt" hint-placeholder-count="1">
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:6px;color:{{ nt.color }};background:{{ nt.bg }}"><i class="ph-fill ph-warning"></i>{{ nt.text }}</span>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isBookView }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-wrap:wrap;gap:28px 30px;align-items:flex-start">
+              <sc-for list="{{ spreads }}" as="sp" hint-placeholder-count="4">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;gap:2px;align-items:flex-start">
+                    <sc-for list="{{ sp.slots }}" as="t" hint-placeholder-count="2">
+                      <div style="width:128px">
+                        <sc-if value="{{ t.isReal }}">
+                          <div draggable="{{ t.draggable }}" onDragStart="{{ t.onDragStart }}" onDragOver="{{ t.onDragOver }}" onDragLeave="{{ t.onDragLeave }}" onDrop="{{ t.onDrop }}" onDragEnd="{{ t.onDragEnd }}" title="{{ t.title }}" style="display:flex;flex-direction:column;gap:6px;opacity:{{ t.opacity }};cursor:{{ t.cursor }};transition:opacity .15s">
+                            <div style="position:relative;width:128px;height:181px;box-sizing:border-box;display:grid;place-items:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:{{ t.ring }};border-radius:2px;transition:box-shadow .15s">
+                              <sc-if value="{{ t.hasImg }}"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;display:block;pointer-events:none"></sc-if>
+                              <sc-if value="{{ t.isBlank }}"><span style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:{{ t.blankColor }}">blank</span></sc-if>
+                              <sc-if value="{{ t.hasWarnBadge }}"><span style="position:absolute;left:6px;top:6px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:oklch(0.82 0.12 78);color:var(--color-bg);font-size:13px"><i class="ph-fill ph-warning"></i></span></sc-if>
+                              <sc-if value="{{ t.canRemove }}"><button onClick="{{ t.onRemove }}" title="Remove from the book" style="position:absolute;right:6px;top:6px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;border:0;padding:0;cursor:pointer;background:color-mix(in srgb, var(--color-bg) 70%, transparent);color:var(--color-neutral-200);font-size:12px;opacity:.75" style-hover="opacity:1;background:var(--color-bg);color:var(--color-accent-300)"><i class="ph ph-x"></i></button></sc-if>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:{{ t.labelColor }};min-width:0">
+                              <sc-if value="{{ t.pinned }}"><i class="ph-fill ph-push-pin" title="Stays at the end" style="font-size:11px;color:var(--color-neutral-500)"></i></sc-if>
+                              <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+                            </div>
+                            <sc-if value="{{ t.hasNote }}"><div style="font-size:11px;line-height:1.35;color:{{ t.noteColor }};text-wrap:pretty">{{ t.note }}</div></sc-if>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">{{ sp.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isSheetView }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-start">
+              <sc-for list="{{ sheetCards }}" as="sh" hint-placeholder-count="3">
+                <div style="display:flex;flex-direction:column;gap:12px;padding:14px 16px 16px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:13px;font-weight:500">{{ sh.title }}</span>
+                    <sc-if value="{{ sh.isFirst }}"><span class="tag tag-accent">test sheet + covers</span></sc-if>
+                  </div>
+                  <div style="display:flex;gap:20px">
+                    <sc-for list="{{ sh.faces }}" as="f" hint-placeholder-count="2">
+                      <div style="display:flex;flex-direction:column;gap:6px">
+                        <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500)">{{ f.name }}</span>
+                        <div style="display:flex;gap:1px;padding:0;position:relative">
+                          <sc-for list="{{ f.tiles }}" as="t" hint-placeholder-count="2">
+                            <div title="{{ t.title }}" style="display:flex;flex-direction:column;gap:4px;width:84px">
+                              <div style="position:relative;width:84px;height:119px;box-sizing:border-box;display:grid;place-items:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:{{ t.ring }}">
+                                <sc-if value="{{ t.hasImg }}"><img src="{{ t.src }}" alt="" style="width:100%;display:block"></sc-if>
+                                <sc-if value="{{ t.isBlank }}"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:{{ t.blankColor }}">blank</span></sc-if>
+                                <sc-if value="{{ t.hasWarnBadge }}"><span style="position:absolute;left:4px;top:4px;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;background:oklch(0.82 0.12 78);color:var(--color-bg);font-size:11px"><i class="ph-fill ph-warning"></i></span></sc-if>
+                              </div>
+                              <span style="font-size:11px;color:{{ t.labelColor }};text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isPrint }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start">
+            <div style="flex:1 1 340px;max-width:420px;display:flex;flex-direction:column;gap:18px">
+              <div class="field">
+                <label>Printer</label>
+                <select class="input" value="{{ printer }}" onChange="{{ onPrinter }}">
+                  <sc-for list="{{ printers }}" as="p" hint-placeholder-count="3"><option value="{{ p.name }}">{{ p.label }}</option></sc-for>
+                </select>
+              </div>
+              <div class="field">
+                <label>Paper</label>
+                <div class="seg">
+                  <label class="seg-opt"><input type="radio" name="{{ paperName }}" checked="{{ isA4 }}" onChange="{{ setA4 }}">A4</label>
+                  <label class="seg-opt"><input type="radio" name="{{ paperName }}" checked="{{ isLetter }}" onChange="{{ setLetter }}">Letter</label>
+                </div>
+              </div>
+              <button onClick="{{ toggleSep }}" role="switch" aria-checked="{{ sepCover }}" style="display:flex;align-items:flex-start;gap:12px;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer">
+                <span style="position:relative;width:36px;height:20px;flex:none;margin-top:1px;border-radius:10px;box-sizing:border-box;border:1px solid {{ switchBorder }};background:{{ switchBg }};transition:background .15s">
+                  <span style="position:absolute;top:3px;left:{{ knobLeft }};width:12px;height:12px;border-radius:50%;background:{{ knobColor }};transition:left .15s"></span>
+                </span>
+                <span style="display:flex;flex-direction:column;gap:2px">
+                  <span>Print the cover sheet on its own</span>
+                  <span style="font-size:12px;color:var(--color-neutral-500)">I'll pause after it so you can load thicker paper for the rest.</span>
+                </span>
+              </button>
+              <div style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <i class="ph ph-arrows-counter-clockwise" style="font-size:16px;color:var(--color-accent)"></i>
+                  <span style="font-weight:500">First time with this printer?</span>
+                </div>
+                <span style="font-size:12px;color:var(--color-neutral-400);text-wrap:pretty">{{ testText }}</span>
+                <div><button class="btn btn-secondary" onClick="{{ printTest }}" disabled="{{ busy }}"><i class="ph ph-printer"></i>Print test sheet</button></div>
+              </div>
+            </div>
+            <div style="flex:0 1 320px;display:flex;flex-direction:column;gap:16px">
+              <div style="position:relative;width:300px;height:220px">
+                <sc-for list="{{ stackLayers }}" as="l" hint-placeholder-count="2">
+                  <div style="position:absolute;left:{{ l.x }};top:{{ l.y }};width:264px;height:187px;background:var(--color-neutral-200);box-shadow:var(--shadow-sm)"></div>
+                </sc-for>
+                <div style="position:absolute;left:0;top:0;width:264px;height:187px;display:flex;background:var(--color-neutral-100);box-shadow:var(--shadow-md)">
+                  <div style="flex:1;display:grid;place-items:center;overflow:hidden"><img src="{{ frontLeft }}" alt="" style="width:100%;display:block"></div>
+                  <div style="width:1px;background:linear-gradient(180deg, transparent, var(--color-neutral-400), transparent)"></div>
+                  <div style="flex:1;display:grid;place-items:center;overflow:hidden"><img src="{{ frontRight }}" alt="" style="width:100%;display:block"></div>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <span style="font-weight:500">{{ stackTitle }}</span>
+                <span style="font-size:12px;color:var(--color-neutral-400);text-wrap:pretty">Two pages per side, printed both sides. The line down the middle is where you fold.</span>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:14px;max-width:780px">
+            <sc-for list="{{ foldSteps }}" as="fs" hint-placeholder-count="3">
+              <div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+                <span style="font-size:28px;font-weight:500;line-height:1;color:var(--color-accent)">{{ fs.n }}</span>
+                <span style="font-weight:500">{{ fs.title }}</span>
+                <span style="font-size:12px;color:var(--color-neutral-400);text-wrap:pretty">{{ fs.body }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:22px">
+            <button class="btn btn-secondary" onClick="{{ printAgain }}"><i class="ph ph-printer"></i>Print another copy</button>
+            <button class="btn btn-ghost" onClick="{{ startOver }}"><i class="ph ph-folder-open"></i>Make another book</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="position:relative;flex:none;min-height:56px;display:flex;align-items:center;gap:12px;padding:10px 28px">
+        <div style="position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent)"></div>
+        <div style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;color:{{ footerColor }}">
+          <sc-if value="{{ busy }}" hint-placeholder-val="{{ false }}"><i class="ph ph-circle-notch" style="animation:ptdb-spin 0.9s linear infinite"></i></sc-if>
+          <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ footerText }}</span>
+        </div>
+        <sc-if value="{{ hasBack }}" hint-placeholder-val="{{ false }}"><button class="btn btn-secondary" onClick="{{ goBack }}" disabled="{{ busy }}"><i class="ph ph-arrow-left"></i>Back</button></sc-if>
+        <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}"><button class="btn btn-primary" onClick="{{ goNext }}" disabled="{{ nextDisabled }}" style="box-shadow:{{ nextGlow }}"><sc-if value="{{ nextIconLead }}"><i class="ph ph-printer"></i></sc-if>{{ nextLabel }}<sc-if value="{{ nextIconTrail }}"><i class="ph ph-arrow-right"></i></sc-if></button></sc-if>
+      </div>
+
+      <sc-if value="{{ dialog }}" hint-placeholder-val="{{ false }}">
+        <div class="dialog-backdrop" style="position:absolute;z-index:5">
+          <div class="dialog">
+            <div class="dialog-title">Cover's away</div>
+            <div class="dialog-body">The cover sheet has been sent. Load the paper for the inside pages, then press OK to print the rest.</div>
+            <div class="dialog-actions">
+              <button class="btn btn-secondary" onClick="{{ dialogCancel }}">Cancel</button>
+              <button class="btn btn-primary" onClick="{{ dialogOk }}">OK, print the rest</button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;stepper&quot;,&quot;rail&quot;,&quot;focus&quot;],&quot;default&quot;:&quot;rail&quot;,&quot;tsType&quot;:&quot;'stepper'|'rail'|'focus'&quot;},&quot;scenario&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;clean&quot;,&quot;issues&quot;],&quot;default&quot;:&quot;issues&quot;,&quot;tsType&quot;:&quot;'clean'|'issues'&quot;},&quot;startStep&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;min&quot;:0,&quot;max&quot;:3,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;},&quot;defaultView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;book&quot;,&quot;sheets&quot;],&quot;default&quot;:&quot;book&quot;,&quot;tsType&quot;:&quot;'book'|'sheets'&quot;},&quot;framed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;height&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  static W = 'oklch(0.82 0.12 78)';
+  static PRINTERS = [
+    { name: 'HP OfficeJet Pro 9010', label: 'HP OfficeJet Pro 9010 (default)' },
+    { name: 'Brother HL-L2350DW', label: 'Brother HL-L2350DW' },
+    { name: 'Microsoft Print to PDF', label: 'Microsoft Print to PDF' },
+  ];
+  static FOLDERS = { clean: 'C:\\Users\\Ashkan\\Pictures\\Good Enough', issues: 'C:\\Users\\Ashkan\\Downloads\\good enough draft' };
+
+  constructor(props) {
+    super(props);
+    this.uid = Math.random().toString(36).slice(2, 8);
+    this.timers = [];
+    this.state = this.initial(props);
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  componentDidUpdate(prev) {
+    const p = this.props;
+    if (prev.startStep !== p.startStep || prev.scenario !== p.scenario) { this.timers.forEach(clearTimeout); this.setState(this.initial(p)); }
+    else if (prev.defaultView !== p.defaultView) this.setState({ view: p.defaultView ?? 'book' });
+  }
+  initial(props) {
+    const step = Math.max(0, Math.min(3, Number(props.startStep ?? 0)));
+    const scen = props.scenario ?? 'issues';
+    const on = step > 0;
+    return {
+      step, scen, loaded: on, loading: false, pages: on ? this.sample(scen) : [], folder: on ? Component.FOLDERS[scen] : '',
+      view: props.defaultView ?? 'book', dragId: null, overId: null, printer: Component.PRINTERS[0].name, paper: 'A4',
+      sepCover: false, busy: false, printStatus: step === 3 ? 'Sent the booklet to HP OfficeJet Pro 9010.' : '', testSent: false, dialog: false,
+    };
+  }
+  sample(scen) {
+    const P = n => ({ id: 'p' + n, label: String(n), src: `book/${n}.jpg`, kind: 'page' });
+    const cover = { id: 'cover', label: 'Cover', src: 'book/cover.jpg', kind: 'cover' };
+    const back = { id: 'back', label: 'Back cover', src: 'book/back.jpg', kind: 'back' };
+    const nums = k => Array.from({ length: k }, (_, i) => P(i + 1));
+    if (scen === 'issues') return [cover, ...nums(8),
+      { id: 'o1', label: 'IMG_2041.jpg', src: 'book/9.jpg', kind: 'other' },
+      { id: 'o2', label: 'scan final (2).png', src: 'book/10.jpg', kind: 'other' }];
+    return [cover, ...nums(10), back];
+  }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  pad(pages) {
+    const miss = (4 - pages.length % 4) % 4;
+    const blanks = Array.from({ length: miss }, (_, i) => ({ id: 'blank' + i, label: 'blank', kind: 'blank' }));
+    if (!pages.length || pages[pages.length - 1].kind !== 'back') return [...pages, ...blanks];
+    return [...pages.slice(0, -1), ...blanks, pages[pages.length - 1]];
+  }
+  impose(p) {
+    const n = p.length, out = [];
+    for (let k = 0; k < n / 4; k++) out.push({ num: k + 1, front: [p[n - 1 - 2 * k], p[2 * k]], back: [p[2 * k + 1], p[n - 2 - 2 * k]] });
+    return out;
+  }
+  move(from, to) {
+    const ps = [...this.state.pages];
+    const fi = ps.findIndex(p => p.id === from);
+    const target = ps.find(p => p.id === to);
+    const ti = ps.findIndex(p => p.id === to);
+    const done = { dragId: null, overId: null };
+    if (fi < 0 || from === to || (target && target.kind === 'cover')) return this.setState(done);
+    const [item] = ps.splice(fi, 1);
+    if (!target || target.kind === 'back') {
+      const bi = ps.findIndex(p => p.kind === 'back');
+      bi < 0 ? ps.push(item) : ps.splice(bi, 0, item);
+    } else ps.splice(ti, 0, item);
+    this.setState({ ...done, pages: ps });
+  }
+  addPages() {
+    const ps = [...this.state.pages];
+    const max = ps.reduce((m, p) => (p.kind === 'page' ? Math.max(m, +p.label) : m), 0);
+    const add = [1, 2].map(i => ({ id: 'a' + (max + i) + '-' + Date.now(), label: String(max + i), src: `book/${((max + i - 1) % 10) + 1}.jpg`, kind: 'page' }));
+    const bi = ps.findIndex(p => p.kind === 'back');
+    bi < 0 ? ps.push(...add) : ps.splice(bi, 0, ...add);
+    this.setState({ pages: ps });
+  }
+  send(phrase, then) {
+    const pr = this.state.printer;
+    this.setState({ busy: true, printStatus: `Sending ${phrase} to ${pr}…` });
+    this.later(() => { this.setState({ busy: false, printStatus: `Sent ${phrase} to ${pr}.` }); then && then(); }, 1400);
+  }
+  print() {
+    const s = this.state, sheets = this.impose(this.pad(s.pages)).length;
+    if (!s.sepCover || sheets < 2) this.send('the booklet', () => this.setState({ step: 3 }));
+    else this.send('the cover sheet', () => this.setState({ dialog: true }));
+  }
+  renderVals() {
+    const s = this.state, W = Component.W, v = this.props.variant ?? 'rail';
+    const pages = s.pages, padded = this.pad(pages), sheets = this.impose(padded);
+    const n = pages.length, sc = sheets.length;
+    const hasBackCover = n > 0 && pages[n - 1].kind === 'back';
+    const others = pages.filter(p => p.kind === 'other');
+    const tooThick = sc > 6;
+    const idxOf = new Map(padded.map((p, i) => [p.id, i]));
+    const statusText = n ? `${n} ${n === 1 ? 'page' : 'pages'} on ${sc} ${sc === 1 ? 'sheet' : 'sheets'}` : 'Open a folder of page images to begin.';
+
+    const tile = (p, interactive) => {
+      const i = idxOf.get(p.id);
+      const isBlank = p.kind === 'blank', isOther = p.kind === 'other';
+      const lastBlank = isBlank && i === padded.length - 1 && !hasBackCover;
+      const warn = isOther || lastBlank;
+      const editable = interactive && (p.kind === 'page' || isOther);
+      const over = interactive && s.dragId && s.overId === p.id && s.dragId !== p.id;
+      let note = '', noteColor = 'var(--color-neutral-500)';
+      if (isOther) { note = "Name not recognised, so it went to the end."; noteColor = W; }
+      else if (lastBlank) { note = 'No “Back cover” file, so the back stays blank.'; noteColor = W; }
+      else if (isBlank) note = 'Filler: a sheet holds 4 pages.';
+      const droppable = p.kind !== 'cover';
+      return {
+        id: p.id, isReal: true, label: p.label, src: p.src, hasImg: !isBlank, isBlank, pinned: p.kind === 'cover' || p.kind === 'back',
+        hasWarnBadge: warn && !isBlank, note, hasNote: interactive && !!note, noteColor, title: note || p.label,
+        bg: isBlank ? 'transparent' : 'var(--color-neutral-100)',
+        border: isBlank ? `1px dashed ${warn ? W : 'var(--color-neutral-700)'}` : '0',
+        blankColor: warn ? W : 'var(--color-neutral-600)',
+        labelColor: warn ? W : isBlank ? 'var(--color-neutral-500)' : 'var(--color-neutral-300)',
+        ring: over ? '0 0 0 2px var(--color-accent), 0 0 22px color-mix(in srgb, var(--color-accent) 55%, transparent)'
+          : warn && !isBlank ? `0 0 0 2px ${W}` : isBlank ? 'none' : 'var(--shadow-md)',
+        opacity: s.dragId === p.id ? 0.35 : 1, cursor: editable ? 'grab' : 'default', draggable: editable, canRemove: editable,
+        onRemove: e => { e.stopPropagation(); this.setState({ pages: this.state.pages.filter(x => x.id !== p.id) }); },
+        onDragStart: e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', p.id); this.setState({ dragId: p.id }); },
+        onDragOver: e => { if (this.state.dragId && droppable) { e.preventDefault(); if (this.state.overId !== p.id) this.setState({ overId: p.id }); } },
+        onDragLeave: () => { if (this.state.overId === p.id) this.setState({ overId: null }); },
+        onDrop: e => { e.preventDefault(); this.move(this.state.dragId, p.id); },
+        onDragEnd: () => this.setState({ dragId: null, overId: null }),
+      };
+    };
+    const empty = { isReal: false };
+    const spreads = [];
+    if (padded.length) {
+      spreads.push({ label: 'Front cover', slots: [empty, tile(padded[0], true)] });
+      for (let i = 1; i < padded.length - 1; i += 2) spreads.push({ label: `Spread ${(i + 1) / 2}`, slots: [tile(padded[i], true), tile(padded[i + 1], true)] });
+      spreads.push({ label: 'Back cover', slots: [tile(padded[padded.length - 1], true), empty] });
+    }
+    const sheetCards = sheets.map(sh => ({
+      title: `Sheet ${sh.num}`, isFirst: sh.num === 1,
+      faces: [{ name: 'Front', tiles: sh.front.map(p => tile(p, false)) }, { name: 'Back', tiles: sh.back.map(p => tile(p, false)) }],
+    }));
+
+    const notes = [];
+    if (tooThick) notes.push({ text: `${sc} sheets is too thick to fold flat. ${6 * 4} pages is about the limit.`, color: W, bg: `color-mix(in oklch, ${W} 14%, transparent)` });
+    if (others.length) notes.push({ text: `${others.length} ${others.length === 1 ? 'file has a name' : 'files have names'} I don't recognise`, color: W, bg: `color-mix(in oklch, ${W} 14%, transparent)` });
+    if (n && !hasBackCover) notes.push({ text: 'No Back cover file', color: W, bg: `color-mix(in oklch, ${W} 14%, transparent)` });
+
+    const cur = Math.min(s.step, 2), finished = s.step === 3;
+    const folderName = s.folder ? s.folder.split('\\').pop() : '';
+    const prShort = s.printer.split(' ').slice(0, 2).join(' ');
+    const subs = [s.loaded ? folderName : 'A folder of images', s.loaded ? `${sc} sheets${notes.length ? ` · ${notes.length} to check` : ''}` : 'Drag to fix', finished ? 'Sent' : `${prShort} · ${s.paper}`];
+    const titles = ['Open pages', 'Check the order', 'Print'];
+    const steps = titles.map((title, i) => {
+      const st = finished || i < cur ? 'done' : i === cur ? 'current' : 'todo';
+      const reach = !s.busy && (i === 0 || s.loaded);
+      return {
+        num: i + 1, title, sub: subs[i], isDone: st === 'done', notDone: st !== 'done', flex: i < 2 ? '1' : '0 0 auto', hasConnector: i < 2,
+        connector: st === 'done' ? 'linear-gradient(90deg, var(--color-accent-700), var(--color-divider))' : 'var(--color-divider)',
+        numBg: st === 'done' ? 'var(--color-accent-800)' : 'transparent',
+        numColor: st === 'done' ? 'var(--color-accent-200)' : st === 'current' ? 'var(--color-accent)' : 'var(--color-neutral-500)',
+        numRing: st === 'current' ? '0 0 0 1px var(--color-accent), 0 0 14px color-mix(in srgb, var(--color-accent) 45%, transparent)' : st === 'todo' ? '0 0 0 1px var(--color-divider)' : 'none',
+        titleColor: st === 'todo' ? 'var(--color-neutral-500)' : 'var(--color-text)',
+        railBg: st === 'current' ? 'color-mix(in srgb, var(--color-text) 6%, transparent)' : 'transparent',
+        railMark: st === 'current' ? 'var(--color-accent)' : 'transparent',
+        cursor: reach ? 'pointer' : 'default',
+        onClick: () => { if (reach && !(i > 0 && !this.state.loaded)) this.setState({ step: i }); },
+      };
+    });
+
+    const heads = [
+      [s.loaded ? 'Got your pages' : 'Point me at your pages', s.loaded ? 'Happy with this folder? Next you check the order.' : "Name them Cover, 1, 2, 3 … Back cover and I'll work out which page goes where on each sheet."],
+      ['Check the order', s.view === 'book' ? 'This is how the book reads. Drag a page to move it; the covers stay at the ends.' : 'This is what comes out of the printer. Each sheet prints both sides; fold the stack and it reads in order.'],
+      ['Send it to the printer', `One job, double-sided. ${sc} ${sc === 1 ? 'sheet' : 'sheets'} of ${s.paper}.`],
+      ['Sent. Now fold the damn thing.', "Three steps and it's a book."],
+    ];
+    const nexts = [
+      { label: 'Next: check the order', icon: 'ph-arrow-right', dis: !s.loaded, fn: () => this.setState({ step: 1 }) },
+      { label: 'Next: printing', icon: 'ph-arrow-right', dis: !n, fn: () => this.setState({ step: 2 }) },
+      { label: 'Print the damn book', icon: 'ph-printer', dis: s.busy || !n, fn: () => this.print() },
+    ];
+    const nx = nexts[s.step] || nexts[2];
+    const isPrintish = s.step >= 2 && s.printStatus;
+    const failed = /not printed/.test(s.printStatus);
+
+    const front = sheets[0] ? sheets[0].front : [];
+    const sw = s.sepCover;
+    return {
+      rootH: this.props.height ?? '100vh', winRadius: this.props.framed ? '8px' : '0', winShadow: this.props.framed ? 'var(--shadow-lg)' : 'none',
+      isStepper: v === 'stepper', isRail: v === 'rail', isFocus: v === 'focus',
+      mainRadius: v === 'rail' ? 'var(--radius-lg)' : '0', mainShadow: v === 'rail' ? 'var(--shadow-sm)' : 'none', topRuleOpacity: v === 'rail' || v === 'focus' ? 0 : 1,
+      contentPad: v === 'focus' ? '36px 48px 28px' : '24px 28px',
+      headingSize: v === 'focus' ? '30px' : '22px', kicker: finished ? 'All done' : `Step ${cur + 1} of 3`,
+      progressPct: finished ? '100%' : `${((cur + (cur === 0 && s.loaded ? 0.5 : 0)) / 3) * 100 + 100 / 6}%`,
+      steps, heading: heads[s.step][0], subheading: heads[s.step][1],
+      isOpen: s.step === 0, isCheck: s.step === 1, isPrint: s.step === 2, isDone: finished,
+      loaded: s.loaded, notLoaded: !s.loaded, loading: s.loading, notLoading: !s.loading,
+      dropTitle: s.loading ? 'Reading images…' : 'Drop a folder here, or pick one',
+      hasFolder: !!s.folder, folder: s.folder, folderName, coverSrc: pages[0] ? pages[0].src : '', statusText,
+      openFolder: () => {
+        if (this.state.loading) return;
+        this.setState({ loading: true, loaded: false });
+        this.later(() => this.setState({ loading: false, loaded: true, pages: this.sample(this.state.scen), folder: Component.FOLDERS[this.state.scen], step: 1 }), 900);
+      },
+      viewName: 'view-' + this.uid, isBookView: s.view === 'book', isSheetView: s.view === 'sheets',
+      setBookView: () => this.setState({ view: 'book' }), setSheetView: () => this.setState({ view: 'sheets' }),
+      addPages: () => this.addPages(), notes, hasNotes: notes.length > 0, spreads, sheetCards,
+      printers: Component.PRINTERS, printer: s.printer, onPrinter: e => this.setState({ printer: e.target.value, printStatus: '', testSent: false }),
+      paperName: 'paper-' + this.uid, isA4: s.paper === 'A4', isLetter: s.paper === 'Letter',
+      setA4: () => this.setState({ paper: 'A4', printStatus: '' }), setLetter: () => this.setState({ paper: 'Letter', printStatus: '' }),
+      sepCover: sw, toggleSep: () => this.setState({ sepCover: !this.state.sepCover }),
+      switchBg: sw ? 'color-mix(in srgb, var(--color-accent) 22%, transparent)' : 'transparent', switchBorder: sw ? 'var(--color-accent)' : 'var(--color-neutral-600)',
+      knobLeft: sw ? '19px' : '3px', knobColor: sw ? 'var(--color-accent)' : 'var(--color-neutral-400)',
+      testText: s.testSent ? 'Test sheet sent. Flip it over: page 1 should sit behind the cover, the right way up. Upside down? Switch the flip edge in your printer settings.' : 'Prints only Sheet 1, so you can check the printer flips the paper the right way before you spend the rest.',
+      printTest: () => this.send('the test sheet', () => this.setState({ testSent: true })), busy: s.busy,
+      stackLayers: Array.from({ length: Math.max(0, Math.min(sc, 5) - 1) }, (_, i) => ({ x: `${(Math.min(sc, 5) - 1 - i) * 7}px`, y: `${(Math.min(sc, 5) - 1 - i) * 6}px` })),
+      frontLeft: front[0] && front[0].src ? front[0].src : '', frontRight: front[1] && front[1].src ? front[1].src : '',
+      stackTitle: `${sc} ${sc === 1 ? 'sheet' : 'sheets'} · ${n} pages · ${s.paper}`,
+      foldSteps: [
+        { n: '1', title: 'Grab the stack', body: `Take all ${sc} sheets off the tray. Keep them in the order they came out.` },
+        { n: '2', title: 'Fold it in half', body: 'Fold the whole stack at once, cover on the outside. Run a thumbnail along the crease.' },
+        { n: '3', title: 'Staple the spine', body: "Two staples on the fold. That's a book. Go read it to someone." },
+      ],
+      printAgain: () => this.setState({ step: 2, printStatus: '' }),
+      startOver: () => { this.timers.forEach(clearTimeout); this.setState({ ...this.initial({ ...this.props, startStep: 0 }), scen: this.state.scen }); },
+      footerText: isPrintish ? s.printStatus : statusText + (n ? '.' : ''),
+      footerColor: failed ? W : isPrintish ? 'var(--color-accent-300)' : 'var(--color-neutral-400)',
+      hasBack: s.step === 1 || s.step === 2, goBack: () => this.setState({ step: Math.max(0, this.state.step - 1) }),
+      hasNext: s.step < 3, nextLabel: nx.label, nextIconLead: nx.icon === 'ph-printer', nextIconTrail: nx.icon !== 'ph-printer', nextDisabled: nx.dis, goNext: nx.fn,
+      nextGlow: s.step === 2 && !nx.dis ? '0 0 18px color-mix(in srgb, var(--color-accent) 35%, transparent)' : 'none',
+      dialog: s.dialog,
+      dialogOk: () => { this.setState({ dialog: false }); this.send('the rest of the booklet', () => this.setState({ step: 3 })); },
+      dialogCancel: () => this.setState({ dialog: false, printStatus: 'The cover sheet was sent, but the rest of the booklet was not printed. You chose not to continue.' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

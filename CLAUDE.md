@@ -29,6 +29,7 @@ dotnet run --project src/PrintTheDamnBook.App
 
 ## Rules
 
+- **Design:** read every visual value (colors, sizes, spacing, copy) from `docs/design/` (see its README); never guess them and never call `DesignSync` for them.
 - **All imposition and layout maths lives in Core and is unit-tested.** The App never decides
   which page goes on which face or where it sits; it renders `Sheet[]` from Core.
   (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
