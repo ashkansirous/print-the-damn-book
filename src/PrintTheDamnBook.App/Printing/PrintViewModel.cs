@@ -22,7 +22,6 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     private const string ProbeFailedSuffix = ", so manual two-sided printing is selected.";
 
     private const string SettingsNotSaved = "Couldn't save your settings.";
-    private const double PreviewBoxWidth = 150;
     private static readonly TimeSpan SaveDelay = TimeSpan.FromMilliseconds(500);
 
     private const string FallbackJobName = "Booklet";
@@ -35,6 +34,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     private readonly IPrintPrompts _prompts;
     private readonly ManualDuplexRunner _manual;
     private IReadOnlyList<Sheet> _sheets = [];
+    private IReadOnlyDictionary<BookPage, int> _pageNumbers = new Dictionary<BookPage, int>();
     private string _bookName = FallbackJobName;
     private readonly SettingsStore _store;
     private volatile PrintSettings _settings;
@@ -71,29 +71,21 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     public IReadOnlyList<LayoutChoice<FlipEdge>> FlipChoices => LayoutChoices.Flip;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ImageStretch))]
     public partial ScalingMode Scaling { get; set; } = ScalingMode.Fit;
 
-    /// <summary>How the sheet preview draws a page: Fill shows the crop.</summary>
-    public Stretch ImageStretch => Scaling == ScalingMode.Fill ? Stretch.UniformToFill : Stretch.Uniform;
+    [ObservableProperty]
+    public partial PageNumberPosition PageNumbers { get; set; } = PageNumberPosition.Off;
 
     /// <summary>Applies to Automatic only; in Manual, <see cref="RotateBacks"/> already covers it.</summary>
     [ObservableProperty]
     public partial FlipEdge Flip { get; set; } = FlipEdge.ShortEdge;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Preview))]
-    [NotifyPropertyChangedFor(nameof(PreviewInset))]
     public partial double MarginMm { get; set; } = HalfSheetLayout.DefaultMarginMm;
 
     /// <summary>What the margin box shows; typed text is parsed on commit and replaced by the clamped value.</summary>
     [ObservableProperty]
     public partial string MarginText { get; set; } = HalfSheetLayout.FormatMargin(HalfSheetLayout.DefaultMarginMm, CultureInfo.CurrentCulture);
-
-    /// <summary>The preview box of one page: the real half-sheet aspect with the margin inset.</summary>
-    public PreviewBox Preview => HalfSheetLayout.Preview(Paper.LandscapeSheetMm(SelectedPaper), MarginMm, PreviewBoxWidth);
-
-    public Thickness PreviewInset => new(Preview.Inset);
 
     [ObservableProperty]
     public partial IReadOnlyList<PrinterChoice> Printers { get; set; } = [];
@@ -104,8 +96,6 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     public partial PrinterChoice? SelectedPrinter { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Preview))]
-    [NotifyPropertyChangedFor(nameof(PreviewInset))]
     public partial PaperKind SelectedPaper { get; set; } = PaperKind.A4;
 
     [ObservableProperty]
@@ -205,10 +195,11 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
         }
     }
 
-    /// <summary>Sets the sheets to print; <paramref name="bookName"/> (the folder name) names the print jobs.</summary>
-    public void SetSheets(IReadOnlyList<Sheet> sheets, string bookName = "")
+    /// <summary>Sets the sheets to print; <paramref name="bookName"/> (the folder name) names the print jobs and <paramref name="pageNumbers"/> says which pages print a number.</summary>
+    public void SetSheets(IReadOnlyList<Sheet> sheets, string bookName, IReadOnlyDictionary<BookPage, int> pageNumbers)
     {
         _sheets = sheets;
+        _pageNumbers = pageNumbers;
         _bookName = string.IsNullOrWhiteSpace(bookName) ? FallbackJobName : bookName;
         TestSheetSent = false;
         ClearStatusUnlessBusy();
@@ -250,6 +241,11 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
         LayoutChanged();
     }
 
+    partial void OnPageNumbersChanged(PageNumberPosition value)
+    {
+        LayoutChanged();
+    }
+
     partial void OnMarginMmChanged(double value)
     {
         var margin = HalfSheetLayout.NormalizeMargin(value);
@@ -273,9 +269,10 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
         MarginText = HalfSheetLayout.FormatMargin(MarginMm, CultureInfo.CurrentCulture);
     }
 
-    /// <summary>Scaling and margin change what the fronts look like, so a remembered first pass no longer matches.</summary>
+    /// <summary>Scaling, margin and page numbers change what the fronts look like, so a sent test sheet and a remembered first pass no longer match.</summary>
     private void LayoutChanged()
     {
+        TestSheetSent = false;
         Persist();
         ClearStatusUnlessBusy();
         ForgetLastRun();
@@ -306,6 +303,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
             Scaling = settings.Scaling;
             Flip = settings.Flip;
             MarginMm = settings.MarginMm;
+            PageNumbers = settings.PageNumbers;
             SelectedPaper = settings.Paper;
             SeparateCoverJob = settings.SeparateCoverJob;
         }
@@ -347,7 +345,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
             return;
         }
 
-        _settings = _settings with { Scaling = Scaling, Flip = Flip, MarginMm = MarginMm, Paper = SelectedPaper, SeparateCoverJob = SeparateCoverJob };
+        _settings = _settings with { Scaling = Scaling, Flip = Flip, MarginMm = MarginMm, PageNumbers = PageNumbers, Paper = SelectedPaper, SeparateCoverJob = SeparateCoverJob };
         if (SelectedPrinter is not null)
         {
             _settings = _settings.WithPrinter(SelectedPrinter.Name, new PrinterSettings(_chosenDuplex, ReverseBacks, RotateBacks));
@@ -610,7 +608,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     private PrintTarget CurrentTarget()
     {
-        return new PrintTarget(SelectedPrinter!.Name, SelectedPaper, new JobLayout(Scaling, MarginMm, Flip), _bookName);
+        return new PrintTarget(SelectedPrinter!.Name, SelectedPaper, new JobLayout(Scaling, MarginMm, Flip, PageNumbers == PageNumberPosition.Off ? null : new PageNumberSetup(PageNumbers, _pageNumbers)), _bookName);
     }
 
     private async Task PrintBookletAsync(IReadOnlyList<Sheet> sheets, PrintTarget target)

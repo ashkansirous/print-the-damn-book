@@ -1,6 +1,6 @@
 ### Slice 09 — Optional page numbers, below or above
 
-*Planned.* Comes after Slice 07, because its control lives in the new Print step.
+*Built 2026-10-22, awaiting merge; not yet verified on a real printed page.* Comes after Slice 07, because its control lives in the new Print step.
 
 **Touches:** `src/PrintTheDamnBook.Core/Layout/**`, `tests/PrintTheDamnBook.Core.Tests/Layout*`,
 `tests/PrintTheDamnBook.Core.Tests/PageNumber*`, `src/PrintTheDamnBook.App/Printing/**`,
@@ -22,10 +22,10 @@
 
 **Work.**
 
-- [ ] Core: `PageNumbering` (which pages get which number) and the number's rectangle in
+- [x] Core: `PageNumbering` (which pages get which number) and the number's rectangle in
       `HalfSheetLayout`, with tests for reorder, blanks, covers, Fit and Fill, A4 and Letter.
-- [ ] Printing: `FaceRenderer` draws the number, and the settings model gains the option.
-- [ ] UI: the Off / Below / Above segmented control; the preview shows the numbers.
+- [x] Printing: `FaceRenderer` draws the number, and the settings model gains the option.
+- [x] UI: the Off / Below / Above segmented control; the preview shows the numbers.
 
 **Verification.**
 
@@ -44,3 +44,21 @@ None of the 12 mock frames (1a-1d, 0a, 2a-2f) shows a page number, a page-number
 New strings for both locales: "Page numbers", "Off", "Below", "Above".
 
 **Open point: No design for the number.** Plan: small, centred, in the margin. Mock: nothing. Default: build as the Decisions say, using Core constants, and have the user check one print.
+
+*Built:* Core `Layout/PageNumbering` (`PageNumberPosition` Off/Below/Above; numbers by position in the padded book; covers, duplicate covers and blanks are unnumbered but blanks still count; `MinEdgeDistanceMm` 5; strip size scales with sheet height, about 6 mm on A4), `HalfSheetLayout.Split/Resolve` with a number strip, `PageNumberSetup` in `JobLayout`, `PrintSettings.PageNumbers` (missing or invalid reads as Off). `FaceRenderer` draws dark-grey (#444) numbers as outline geometry centred by ink bounds, rotated with backs, on the automatic, manual and test-sheet paths. Off/Below/Above `.seg` in More options; As printed tiles show a small number badge when numbers are on. 165 tests.
+
+*Changed while building:* every page (covers and blanks included) reserves the strip, so all pages print at the same size. Removed dead preview code (`Preview`, `PreviewInset`, `ImageStretch`) left over from Slice 7.
+
+*From review:* 2 passes, 15 findings applied or answered. Renders of `Book sample` at margins 5 and 0, Below and Above, checked by eye.
+
+#### For CLAUDE.md
+
+- Page numbers are computed only in Core `PageNumbering` from the padded page list; the renderer never derives numbers itself. (Slice 9: docs/plan/slices/09-page-numbers.md)
+
+#### For README.md
+
+- Optional page numbers (Off / Below / Above) under More options.
+
+#### Not yet verified
+
+- A real printed page with numbers (print to PDF or paper).
