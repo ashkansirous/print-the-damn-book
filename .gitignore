@@ -1,0 +1,16 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.swp
+TestResults/
+artifacts/
+publish/
+
+# Local sample pages (large generated JPGs)
+Book sample/
+
+# Reviews written by agents
+reviews/
