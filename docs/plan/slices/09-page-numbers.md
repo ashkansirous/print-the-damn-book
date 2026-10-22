@@ -51,11 +51,11 @@ New strings for both locales: "Page numbers", "Off", "Below", "Above".
 
 *From review:* 2 passes, 15 findings applied or answered. Renders of `Book sample` at margins 5 and 0, Below and Above, checked by eye.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - Page numbers are computed only in Core `PageNumbering` from the padded page list; the renderer never derives numbers itself. (Slice 9: docs/plan/slices/09-page-numbers.md)
 
-#### For README.md
+#### For README.md (lifted 2026-10-22)
 
 - Optional page numbers (Off / Below / Above) under More options.
 
