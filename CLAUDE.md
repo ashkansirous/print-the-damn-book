@@ -22,8 +22,8 @@ dotnet run --project src/PrintTheDamnBook.App
   the page order).
 - `src/PrintTheDamnBook.App/` — net10.0-windows WPF, MVVM (CommunityToolkit.Mvvm):
   `MainWindow.xaml` and `App.xaml` at the project root, `ViewModels/` (`MainViewModel`,
-  `PageViewModel`), `Views/`, `Services/` (`FolderImages`, `ThumbnailLoader`, `ImageDecoder`),
-  `Printing/` (System.Printing, on `StaThread`). Planned: `Settings/` (Slice 04).
+  `PageViewModel`), `Views/` (incl. `OptionsPanel`), `Services/` (`FolderImages`, `ThumbnailLoader`, `ImageDecoder`),
+  `Printing/` (System.Printing, on `StaThread`), `Settings/` (`SettingsStore`).
 - `tests/PrintTheDamnBook.Core.Tests/` — xUnit v3, covers everything in Core.
 - `Book sample/` — the user's 12 sample pages, git-ignored; use it for hands-on checks.
 
@@ -41,6 +41,8 @@ dotnet run --project src/PrintTheDamnBook.App
   jobs (fronts, reload, backs) and refuses a validated `TwoSided*`. Never silently print simplex.
   The two-pass flow lives in `Printing/ManualDuplexRunner.cs`; order and rotation maths in
   `Core/Layout/ManualDuplexPlan.cs`. (Slice 6: docs/plan/slices/06-manual-duplex.md)
+- Settings live in `Core/Layout/PrintSettings` (JSON at `%LOCALAPPDATA%\PrintTheDamnBook\settings.json`). Only a user-chosen Two-sided mode is persisted, never a probe-forced one.
+  (Slice 4: docs/plan/slices/04-options-and-settings.md)
 - No Dockerfile, no container image: desktop app, no backend. Releases are a self-contained
   exe built by `release.yml` (Slice 05).
 - Files are LF (`.gitattributes`, `.editorconfig`); don't convert line endings.
