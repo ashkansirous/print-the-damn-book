@@ -1,6 +1,6 @@
 ### Slice 01 — Open a folder and preview the imposed sheets
 
-*Planned.*
+*Built 2026-10-22 (awaiting merge). Desktop-tested 2026-10-22; thumbnail look not yet checked by eye.*
 
 **Touches:** `PrintTheDamnBook.slnx`, `global.json`, `Directory.Build.props`, `.editorconfig`,
 `src/PrintTheDamnBook.Core/**`, `src/PrintTheDamnBook.App/**`,
@@ -31,21 +31,43 @@ smallest useful thing is: open the folder, see the sheets laid out exactly as th
 
 **Work.**
 
-- [ ] Scaffold solution, three projects, `global.json`, `Directory.Build.props`
+- [x] Scaffold solution, three projects, `global.json`, `Directory.Build.props`
       (TreatWarningsAsErrors, nullable), `.editorconfig`, `ci.yml` running `dotnet build` and
       `dotnet test` on push and PR (windows-latest).
-- [ ] Core: `BookPage` (path, label, kind: Cover / Numbered / Other / BackCover / Blank),
+- [x] Core: `BookPage` (path, label, kind: Cover / Numbered / Other / BackCover / Blank),
       `PageOrdering.FromFolder(IEnumerable<string> fileNames)`, `Imposition.Compute(pages)`
       returning `Sheet[]` with `Front`/`Back` faces each holding `Left`/`Right` page refs.
-- [ ] Tests: ordering of the sample names; imposition for 4, 8, 12 pages; padding for 5, 6, 7
+- [x] Tests: ordering of the sample names; imposition for 4, 8, 12 pages; padding for 5, 6, 7
       and 10 pages puts blanks before the back cover; every page used exactly once.
-- [ ] App: "Open folder" button, loads `*.jpg|*.jpeg|*.png`, shows the ordered page strip
+- [x] App: "Open folder" button, loads `*.jpg|*.jpeg|*.png`, shows the ordered page strip
       (thumbnails with labels) and a sheet preview: one card per sheet, front and back, each
       face two thumbnails side by side with the page label under each.
-- [ ] Warning banner when the book needs more than 6 sheets (too thick to fold flat).
+- [x] Warning banner when the book needs more than 6 sheets (too thick to fold flat).
 
 **Verification.**
 
 - `dotnet test` green; CI green on the PR.
 - Open `D:\print-the-damn-book\Book sample` (ignored by git, present on the user's machine):
   3 sheets previewed as back cover+cover / 1+10, 9+2 / 3+8, 7+4 / 5+6.
+
+*Changed while building:*
+
+- Scaffold: SDK 10.0.301 with `latestMajor`; the Microsoft Testing Platform runner is selected in `global.json`; tests use xUnit v3 (30 tests). CI (windows-latest) runs format verify, build and test.
+- `Cover` and `Back cover` match by exact filename stem, case-insensitive (not a `Cover*` prefix). A second match is demoted to an ordinary page and raises a `DuplicateCover` / `DuplicateBackCover` warning.
+- With no back cover, blanks are appended at the end of the book.
+- The warning banner lists every issue, including unrecognised file names and images that cannot be decoded, not only the more-than-6-sheets case.
+- LF line endings are enforced via `.editorconfig` and `.gitattributes`.
+
+*From review:* two passes, 20 findings applied, including a crash on a corrupt image, thumbnail decoding on the UI thread, `Uri` handling of paths containing `#` or `%`, and newest-load-wins when folders are opened in quick succession.
+
+*Desktop test 2026-10-22:* the 12-page sample folder gave 3 sheets in the expected order with no banner; a scratch folder produced the correct warnings.
+
+#### For CLAUDE.md
+
+- `dotnet format PrintTheDamnBook.slnx --verify-no-changes` is a check command and CI enforces it; run it before pushing. (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
+- Files are LF (`.gitattributes`, `.editorconfig`); don't convert line endings. (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
+- Thumbnail decoding happens off the UI thread in `LoadFolderAsync`; keep it there. (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
+
+#### Not yet verified
+
+- Visual check by eye of thumbnail aspect ratio and scrolling on the sample folder.
