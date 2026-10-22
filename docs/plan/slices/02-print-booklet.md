@@ -52,7 +52,7 @@ orientation already set, nothing to pick in a driver dialog.
 
 *Finding / open question:* the user's Brother HL-L3220CW (IPP class driver) reports no duplex capability, so the app refuses it; only the virtual HP Smart Printing reports short-edge duplex. Needs a user decision: install the Brother full driver, or add a manual-duplex fallback.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-22)
 
 - All printing runs on `Printing/StaThread`; create `PrintQueue`/`LocalPrintServer` on that thread only. (Slice 02: docs/plan/slices/02-print-booklet.md)
 - Decode images only through `Services/ImageDecoder` (single exception filter, EXIF orientation). (Slice 02: docs/plan/slices/02-print-booklet.md)

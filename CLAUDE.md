@@ -16,12 +16,14 @@ dotnet run --project src/PrintTheDamnBook.App
 
 ## Architecture map
 
-- `src/PrintTheDamnBook.Core/` — net10.0, no WPF, flat files: `PageOrdering.cs`, `Imposition.cs`,
-  `BookPage.cs`, `Sheet.cs`, `BookChecks.cs` (page order, imposition, warnings).
+- `src/PrintTheDamnBook.Core/` — net10.0, no WPF: `PageOrdering.cs`, `Imposition.cs`,
+  `BookPage.cs`, `Sheet.cs`, `BookChecks.cs` (page order, imposition, warnings); `Layout/`
+  (`HalfSheetLayout.cs`, `LayoutTypes.cs`: fit-in-half-sheet maths); `Ordering/` (`PageList.cs`,
+  the page order).
 - `src/PrintTheDamnBook.App/` — net10.0-windows WPF, MVVM (CommunityToolkit.Mvvm):
   `MainWindow.xaml` and `App.xaml` at the project root, `ViewModels/` (`MainViewModel`,
-  `PageViewModel`), `Services/` (`FolderImages`, `ThumbnailLoader`). Planned: `Printing/`
-  (System.Printing, Slice 02) and `Settings/` (Slice 04).
+  `PageViewModel`), `Views/`, `Services/` (`FolderImages`, `ThumbnailLoader`, `ImageDecoder`),
+  `Printing/` (System.Printing, on `StaThread`). Planned: `Settings/` (Slice 04).
 - `tests/PrintTheDamnBook.Core.Tests/` — xUnit v3, covers everything in Core.
 - `Book sample/` — the user's 12 sample pages, git-ignored; use it for hands-on checks.
 
@@ -34,11 +36,21 @@ dotnet run --project src/PrintTheDamnBook.App
   `left = p[2k+1]`, `right = p[N-2-2k]`. Blanks go before the back cover. Changing this is a
   slice, not a tweak.
 - Printing always sets orientation, duplex and paper size on the `PrintTicket` itself; never
-  rely on the driver's defaults. If the printer rejects duplex, tell the user, don't print
-  simplex. (Slice 02: docs/plan/slices/02-print-booklet.md)
+  rely on the driver's defaults. Never silently print simplex: if the printer can't short-edge
+  duplex, offer Manual two-sided (Slice 6: docs/plan/slices/06-manual-duplex.md). (Slice 02: docs/plan/slices/02-print-booklet.md)
 - No Dockerfile, no container image: desktop app, no backend. Releases are a self-contained
   exe built by `release.yml` (Slice 05).
 - Files are LF (`.gitattributes`, `.editorconfig`); don't convert line endings.
   (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
 - Thumbnail decoding happens off the UI thread in `LoadFolderAsync` (`MainViewModel.cs`); keep
   it there. (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
+- All printing runs on `Printing/StaThread`; create `PrintQueue`/`LocalPrintServer` on that
+  thread only. (Slice 02: docs/plan/slices/02-print-booklet.md)
+- Decode images only through `Services/ImageDecoder` (single exception filter, EXIF
+  orientation). (Slice 02: docs/plan/slices/02-print-booklet.md)
+- `PageList` (`src/PrintTheDamnBook.Core/Ordering/`) is the single source of page order; App
+  items carry the `BookPage` identity, never positions. (Slice 03: docs/plan/slices/03-reorder-pages.md)
+- The assembly and exe name is `PrintTheDamnBook`, not `PrintTheDamnBook.App`; use it in pack
+  URIs and settings paths. (Slice 05: docs/plan/slices/05-release-pipeline.md)
+- Releases are cut by pushing a `vX.Y.Z` tag on a `main` commit; `release.yml` does the rest.
+  (Slice 05: docs/plan/slices/05-release-pipeline.md)
