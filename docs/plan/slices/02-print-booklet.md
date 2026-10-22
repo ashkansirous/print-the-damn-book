@@ -1,9 +1,9 @@
 ### Slice 02 — Print the booklet duplex
 
-*Planned.*
+*In progress (wave 2026-10-22), draft PR.*
 
 **Touches:** `src/PrintTheDamnBook.App/Printing/**`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`,
-`src/PrintTheDamnBook.App/Views/MainWindow.xaml`, `src/PrintTheDamnBook.App/Views/MainWindow.xaml.cs`,
+`src/PrintTheDamnBook.App/MainWindow.xaml`, `src/PrintTheDamnBook.App/MainWindow.xaml.cs`,
 `src/PrintTheDamnBook.Core/Layout/**`, `tests/PrintTheDamnBook.Core.Tests/Layout*`
 
 **Why.** The point of the app: one click sends the sheets to the printer with duplex and
