@@ -1,9 +1,9 @@
 import path from 'node:path';
 import { APP_ASSETS_DIR, STORE_OUT_DIR } from './paths.mjs';
-import { MSIX_ASSETS, icoArtboard, storeArtboards } from './artboards.mjs';
+import { MSIX_ASSETS, TARGET_SIZES, icoArtboard, storeArtboards, targetPlatedArtboard, targetUnplatedArtboard } from './artboards.mjs';
 
 /** What a render job produces. */
-export const JobKind = Object.freeze({ Ico: 'ico', Msix: 'msix', Store: 'store' });
+export const JobKind = Object.freeze({ Ico: 'ico', Msix: 'msix', Unplated: 'unplated', Store: 'store' });
 
 export const MSIX_SCALES = [100, 125, 150, 200, 400];
 export const ICO_FILE = path.join(APP_ASSETS_DIR, 'app.ico');
@@ -37,6 +37,23 @@ function msixJobs() {
   );
 }
 
+const TARGET_ASSET = 'Square44x44Logo';
+
+function targetJob(size, unplated) {
+  const suffix = unplated ? '_altform-unplated' : '';
+  const id = `${TARGET_ASSET}.targetsize-${size}${suffix}`;
+  return {
+    id, file: path.join(APP_ASSETS_DIR, `${id}.png`),
+    html: unplated ? targetUnplatedArtboard(size) : targetPlatedArtboard(size),
+    cssW: size, cssH: size, outW: size, outH: size,
+    kind: unplated ? JobKind.Unplated : JobKind.Msix,
+  };
+}
+
+function targetJobs() {
+  return TARGET_SIZES.flatMap((size) => [targetJob(size, false), targetJob(size, true)]);
+}
+
 function storeJobs() {
   return storeArtboards().map((art) => ({
     id: art.file.replace(/\.png$/, ''),
@@ -47,6 +64,7 @@ function storeJobs() {
     outW: art.w * art.scale,
     outH: art.h * art.scale,
     kind: JobKind.Store,
+    captures: art.captures ?? [],
   }));
 }
 
@@ -64,5 +82,5 @@ function icoJobs() {
 }
 
 export function allJobs() {
-  return [...icoJobs(), ...msixJobs(), ...storeJobs()];
+  return [...icoJobs(), ...msixJobs(), ...targetJobs(), ...storeJobs()];
 }

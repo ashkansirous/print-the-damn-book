@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const TOOL_DIR = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 export const REPO_ROOT = path.resolve(TOOL_DIR, '..', '..');
 export const DESIGN_DIR = path.join(REPO_ROOT, 'docs', 'design');
+export const CAPTURES_DIR = path.join(TOOL_DIR, 'captures');
 export const WORK_DIR = path.join(TOOL_DIR, '.work');
 export const STORE_OUT_DIR = path.join(REPO_ROOT, 'assets', 'store');
 export const APP_ASSETS_DIR = path.join(REPO_ROOT, 'src', 'PrintTheDamnBook.App', 'Assets');

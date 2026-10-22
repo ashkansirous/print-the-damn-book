@@ -1,5 +1,3 @@
-import { renderWizard } from './wizard.mjs';
-
 /**
  * Artboard markup, copied from docs/design/Store Kit.dc.html (sections 2b to 2f). Each function
  * returns the artboard element only, never the .dv-card wrapper, so the corners stay square.
@@ -116,17 +114,17 @@ const SHOTS = [
   {
     name: 'screenshot-1-check', kicker: 'Step 1', title: 'Drop a folder. Get a book.',
     body: 'Name your pages Cover, 1, 2 … Back cover. It works out what goes where on every sheet.',
-    wizard: { scenario: 'clean', startStep: 1, defaultView: 'book' },
+    capture: 'app-check-reading-order.png',
   },
   {
     name: 'screenshot-2-as-printed', kicker: 'Step 2', title: 'See every sheet before you print.',
     body: 'Front and back, exactly as they come out. Fold the stack and it reads in order.',
-    wizard: { scenario: 'clean', startStep: 1, defaultView: 'sheets' },
+    capture: 'app-check-as-printed.png',
   },
   {
     name: 'screenshot-3-print', kicker: 'Step 3', title: 'One job. Both sides. Done.',
     body: 'Print a test sheet once to check the flip edge, then send the whole book.',
-    wizard: { scenario: 'clean', startStep: 2, defaultView: 'book' },
+    capture: 'app-print.png',
   },
 ];
 
@@ -139,21 +137,37 @@ function screenshotCaption(shot) {
   return `<div style="${column}">${kicker}${title}${body}</div>`;
 }
 
-function screenshotWizard(shot) {
-  const frame = 'position:absolute;left:318px;top:60px;width:1100px;height:760px;transform:scale(0.56);transform-origin:0 0';
-  return `<div style="${frame}">${renderWizard({ ...shot.wizard, height: '760px' })}</div>`;
+/** The real app window (captures/, 1540x1065 px from capture-app.ps1) in the design's 2f frame: 616x426 at left 318, top 60. */
+function screenshotWindow(shot) {
+  const frame =
+    'position:absolute;left:318px;top:60px;width:616px;height:426px;display:block;' +
+    'border-radius:8px;box-shadow:var(--shadow-lg)';
+  return `<img src="captures/${shot.capture}" alt="" style="${frame}">`;
 }
 
 function screenshot(shot) {
   const box =
     'position:relative;width:960px;height:540px;overflow:hidden;' +
     'background:radial-gradient(80% 90% at 85% 30%, var(--color-accent-900), var(--color-bg) 70%)';
-  return `<div id="art" style="${box}">${screenshotCaption(shot)}${screenshotWizard(shot)}</div>`;
+  return `<div id="art" style="${box}">${screenshotCaption(shot)}${screenshotWindow(shot)}</div>`;
+}
+
+/** Square44x44Logo target-size variants (taskbar, Start list, Alt-Tab): plated on the brand colour, and unplated (transparent). */
+export const TARGET_SIZES = [16, 24, 32, 48, 256];
+const PLATED_ICON_RATIO = 36 / 44;
+
+export function targetPlatedArtboard(size) {
+  const iconSize = Math.round(size * PLATED_ICON_RATIO);
+  return msixTile(size, size, centered(size <= 32 ? ICON_SM : ICON, iconSize), 'var(--color-bg)');
+}
+
+export function targetUnplatedArtboard(size) {
+  return icoArtboard(size, size <= 32 ? ICON_SM : ICON);
 }
 
 /** Store images: file name, artboard markup, CSS size and export scale. */
 export function storeArtboards() {
-  const shots = SHOTS.map((s) => ({ file: `${s.name}-1920x1080.png`, html: screenshot(s), w: 960, h: 540, scale: 2 }));
+  const shots = SHOTS.map((s) => ({ file: `${s.name}-1920x1080.png`, html: screenshot(s), w: 960, h: 540, scale: 2, captures: [s.capture] }));
   const heroHtml = hero();
   return [
     { file: 'app-tile-300.png', html: appTile(), w: 300, h: 300, scale: 1 },

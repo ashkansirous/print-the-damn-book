@@ -39,7 +39,7 @@ async function screenshotArtboard(context, job, pagePath) {
     await page.setViewportSize({ width: Math.ceil(job.cssW), height: Math.ceil(job.cssH) });
     await page.goto(pathToFileURL(pagePath).href, { waitUntil: 'load' });
     await waitUntilReady(page);
-    return await page.locator(ART_SELECTOR).screenshot({ omitBackground: job.kind === JobKind.Ico, animations: 'disabled' });
+    return await page.locator(ART_SELECTOR).screenshot({ omitBackground: job.kind === JobKind.Ico || job.kind === JobKind.Unplated, animations: 'disabled' });
   } finally {
     await page.close();
   }
