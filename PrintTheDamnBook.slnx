@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj" />
+    <Project Path="src/PrintTheDamnBook.Core/PrintTheDamnBook.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PrintTheDamnBook.Core.Tests/PrintTheDamnBook.Core.Tests.csproj" />
+  </Folder>
+</Solution>
