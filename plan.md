@@ -18,6 +18,8 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
+Next wave (2026-10-22): 7, 8 and 10 in parallel; then 9 (needs 7's Print step) and 11 (needs 8's assets and 10's privacy page). 12 and 13 are parked.
+
 | Slice | Title | Status | PR | Issue | File |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Open a folder and preview the imposed sheets | built | #2 | | [01](docs/plan/slices/01-folder-to-sheet-preview.md) |
@@ -26,6 +28,13 @@ builds the exe on release, no Dockerfile.
 | 4 | Options: fill or fit, flip edge, remembered printer | built | #10 | | [04](docs/plan/slices/04-options-and-settings.md) |
 | 5 | Release build on GitHub | built | #5 | | [05](docs/plan/slices/05-release-pipeline.md) |
 | 6 | Manual two-sided printing (before Slice 4) | built | #8 | | [06](docs/plan/slices/06-manual-duplex.md) |
+| 7 | Redesign: Open → Check → Print wizard (Nocturne) | planned | | | [07](docs/plan/slices/07-wizard-redesign.md) |
+| 8 | App icon and Store Kit assets | planned | | | [08](docs/plan/slices/08-icon-and-store-assets.md) |
+| 9 | Optional page numbers, below or above (after 7) | planned | | | [09](docs/plan/slices/09-page-numbers.md) |
+| 10 | Landing site at print-the-damn-book.sirous.uk | planned | | | [10](docs/plan/slices/10-landing-site.md) |
+| 11 | Microsoft Store: MSIX, listing, submission (after 8, 10) | planned | | | [11](docs/plan/slices/11-microsoft-store.md) |
+| 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
+| 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
 
 Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 
@@ -46,5 +55,6 @@ Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 - Saving a book project file: reopen the folder instead.
 - Trim marks, bleed, crop marks: pages are fit inside the half-sheet, nothing is cut.
 - Printing through another app's dialog, or a Dockerfile / GHCR image (desktop app, no backend).
-- macOS or Linux builds.
+- macOS or Linux builds. (Android and iOS are parked slices 12–13, not out of scope.)
+- A light theme for the redesign (Nocturne is dark only for now).
 - Right-to-left books (the imposition would mirror left and right; not needed for the sample).
