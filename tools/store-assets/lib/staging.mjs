@@ -1,6 +1,6 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { DESIGN_DIR, NODE_MODULES, SAMPLE_FILES, WORK_DIR, findSampleDir } from './paths.mjs';
+import { CAPTURES_DIR, DESIGN_DIR, NODE_MODULES, SAMPLE_FILES, WORK_DIR, findSampleDir } from './paths.mjs';
 
 const INTER_WEIGHTS = [400, 500, 600, 700];
 const GOOGLE_FONTS_IMPORT = /@import url\([^)]*fonts\.googleapis\.com[^)]*\);?/;
@@ -58,6 +58,17 @@ function stageBook(sampleDir, names, files) {
   names.forEach((name, i) => cpSync(path.join(sampleDir, files[i]), path.join(WORK_DIR, 'book', `${name}.jpg`)));
 }
 
+/** Copies the app-window captures the jobs use; they come from capture-app.ps1 and are committed. */
+function stageCaptures(jobs) {
+  const names = new Set(jobs.flatMap((job) => job.captures ?? []));
+  mkdirSync(path.join(WORK_DIR, 'captures'), { recursive: true });
+  for (const name of names) {
+    const source = path.join(CAPTURES_DIR, name);
+    if (!existsSync(source)) throw new Error(`Missing capture ${source}; run capture-app.ps1 (see README).`);
+    cpSync(source, path.join(WORK_DIR, 'captures', name));
+  }
+}
+
 /** Copies fonts, stylesheet, icons and the sample pages the jobs use next to the generated pages. Returns the work dir. */
 export function stageWorkDir(jobs) {
   const sampleDir = findSampleDir();
@@ -69,5 +80,6 @@ export function stageWorkDir(jobs) {
   stageStyles();
   cpSync(path.join(DESIGN_DIR, 'icons'), path.join(WORK_DIR, 'icons'), { recursive: true });
   stageBook(sampleDir, names, files);
+  stageCaptures(jobs);
   return WORK_DIR;
 }

@@ -8,7 +8,19 @@ const CHANNELS = 4;
 const CORNER_ALPHA_OFFSET = 3;
 const MIN_SMALL_ICON_DIFFERENCE = 1;
 
+function verifyUnplated(job) {
+  const header = readPngHeader(readFileSync(job.file));
+  const problems = [];
+  if (header.width !== job.outW || header.height !== job.outH) {
+    problems.push(`${job.file}: is ${header.width}x${header.height}, expected ${job.outW}x${job.outH}`);
+  }
+  if (header.colorType !== COLOR_TYPE_RGBA) problems.push(`${job.file}: colour type ${header.colorType}, expected RGBA (6)`);
+  else if (PNG.sync.read(readFileSync(job.file)).data[CORNER_ALPHA_OFFSET] !== 0) problems.push(`${job.file}: top-left corner is not transparent`);
+  return problems;
+}
+
 function verifyPng(job) {
+  if (job.kind === JobKind.Unplated) return verifyUnplated(job);
   const problems = [];
   const header = readPngHeader(readFileSync(job.file));
   if (header.width !== job.outW || header.height !== job.outH) {

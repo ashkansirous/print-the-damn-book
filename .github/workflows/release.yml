@@ -46,26 +46,94 @@ jobs:
           path: publish/PrintTheDamnBook.exe
           if-no-files-found: error
 
-  release:
+  # Store packaging lives in its own job: a MSIX failure must never block the exe release (the website's
+  # "Download for Windows" link). Stable tags only: a prerelease tag would map to the same X.Y.Z.0 as its final.
+  # Version rule: tags only ever increase, and the first Store version must be >= the minimum reserved in
+  # Partner Center (Product identity / package version). X.Y.Z.0 keeps the 4th part at 0, which the Store requires.
+  msix:
     needs: build
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: windows-latest
+    outputs:
+      enabled: ${{ steps.identity.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Store identity variables
+        id: identity
+        shell: bash
+        env:
+          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+        run: |
+          if [[ -z "$MSIX_IDENTITY_NAME" || -z "$MSIX_PUBLISHER" || -z "$MSIX_PUBLISHER_DISPLAY_NAME" ]]; then
+            echo "::notice::Skipping the MSIX: set all of MSIX_IDENTITY_NAME, MSIX_PUBLISHER and MSIX_PUBLISHER_DISPLAY_NAME repository variables (Partner Center > Product identity)."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            core="${GITHUB_REF_NAME#v}"
+            echo "msix_version=${core}.0" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/download-artifact@v4
+        if: steps.identity.outputs.enabled == 'true'
+        with:
+          name: PrintTheDamnBook-exe
+          path: publish
+      # Unsigned on purpose: Partner Center signs the package when it is submitted.
+      - name: Build unsigned MSIX
+        if: steps.identity.outputs.enabled == 'true'
+        shell: pwsh
+        env:
+          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+        run: >
+          ./packaging/msix/build-msix.ps1
+          -ExePath publish/PrintTheDamnBook.exe
+          -Version ${{ steps.identity.outputs.msix_version }}
+          -OutFile msix/PrintTheDamnBook.msix
+      - uses: actions/upload-artifact@v4
+        if: steps.identity.outputs.enabled == 'true'
+        with:
+          name: PrintTheDamnBook-msix
+          path: msix/PrintTheDamnBook.msix
+          if-no-files-found: error
+
+  release:
+    needs: [build, msix]
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: PrintTheDamnBook-exe
+          pattern: PrintTheDamnBook-*
           path: publish
+          merge-multiple: true
       - name: Create or update release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          MSIX_RESULT: ${{ needs.msix.result }}
+          MSIX_ENABLED: ${{ needs.msix.outputs.enabled }}
         run: |
+          files=(publish/PrintTheDamnBook.exe)
+          have_msix=false
+          if [[ -f publish/PrintTheDamnBook.msix ]]; then files+=(publish/PrintTheDamnBook.msix); have_msix=true; fi
+          if [[ "$have_msix" == false ]]; then
+            if [[ "$MSIX_RESULT" == "skipped" ]]; then echo "::notice::MSIX skipped: prerelease tag."
+            elif [[ "$MSIX_ENABLED" != "true" ]]; then echo "::notice::MSIX skipped: Store identity variables are not set."
+            else echo "::warning::MSIX failed (job result: $MSIX_RESULT); releasing the exe only."; fi
+          fi
           flags=()
           if [[ "$GITHUB_REF_NAME" == *-* ]]; then flags=(--prerelease); fi
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" publish/PrintTheDamnBook.exe --clobber
+            if [[ "$have_msix" == false ]]; then
+              gh release delete-asset "$GITHUB_REF_NAME" PrintTheDamnBook.msix --yes 2>/dev/null && echo "Removed a stale PrintTheDamnBook.msix from the release." || true
+            fi
+            gh release upload "$GITHUB_REF_NAME" "${files[@]}" --clobber
             if [[ ${#flags[@]} -gt 0 ]]; then gh release edit "$GITHUB_REF_NAME" "${flags[@]}"; fi
           else
-            gh release create "$GITHUB_REF_NAME" publish/PrintTheDamnBook.exe --verify-tag --generate-notes --title "$GITHUB_REF_NAME" "${flags[@]}"
+            gh release create "$GITHUB_REF_NAME" "${files[@]}" --verify-tag --generate-notes --title "$GITHUB_REF_NAME" "${flags[@]}"
           fi

@@ -12,6 +12,10 @@ import { verifyOutputs } from './lib/verify.mjs';
 async function renderJob(capturer, job) {
   const png = await capturer.capture(job);
   if (job.kind === JobKind.Ico) return { size: job.outW, png };
+  if (job.kind === JobKind.Unplated) {
+    writeFileSync(job.file, png);
+    return null;
+  }
   writeFileSync(job.file, await optimiseRgbPng(toOpaqueRgb(png, job.id), job.id));
   return null;
 }
