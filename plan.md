@@ -27,14 +27,14 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
 | 15 | Open a Dino Reader book (`.dino`) (after 14) | planned | | | [15](docs/plan/slices/15-open-dino-books.md) |
-| 16 | Top and middle bands, empty-space suggestion (after 14) | planned | | | [16](docs/plan/slices/16-text-band-suggestion.md) |
 
 Notes:
 
-- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14).
+- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14, 16).
 
 ## Outstanding work
 
+- Slice 16: pre-print status and Cancel on a large folder (wait over 500 ms); Letter paper; suggestion quality on real noisy photos, thresholds tuned only on synthetic images ([slice 16](docs/plan/slices/16-text-band-suggestion.md)).
 - Slice 14: printing on Letter paper; a real paper print and fold; performance with many story pages (re-layout on the UI thread on each typing pause) ([slice 14](docs/plan/slices/14-typed-text-pages.md)).
 - Slice 9: a real printed page with numbers (print to PDF or paper) ([slice 09](docs/plan/slices/09-page-numbers.md)).
 - Slice 7 code follow-ups from Slice 11 review: `SnapLayoutHook` hover state not cleared without non-client mouse tracking; `NocturneDialog` CoverOwner sizing / null owner; `ClearStatusUnlessBusy` doesn't reset `PrintStatusKind`; `TestSheetSent` mid-send check only covers RotateBacks ([slice 11](docs/plan/slices/11-microsoft-store.md)).

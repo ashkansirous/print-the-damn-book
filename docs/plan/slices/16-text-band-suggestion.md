@@ -62,7 +62,7 @@ mock agrees with the Decisions above.
 
 *From review:* high pass 9 findings, applied 1, 2, 3, 4, 6; skipped 5 (design), 7, 8 (style), 9 (no tuning data). Medium pass 11 findings, applied 1, 2, 3, 9, 11; skipped 4, 5 (small buffers), 6, 7, 8, 10 (style). 264 tests pass. Desktop acceptance: 8 of 9 pass; item 7 (pre-print wait status/Cancel) partly verified: print right after typing printed the right band, status and Cancel not observed.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-26)
 
 - Band rectangles, `BandSuggestion` scoring and panel opacity live in Core (`Text/`, `Layout/`); the App only decodes via `Services/ImageDecoder` and hands over pixels off the UI thread. A user's band pick is never re-suggested over. (Slice 16: docs/plan/slices/16-text-band-suggestion.md)
 
