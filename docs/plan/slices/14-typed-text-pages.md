@@ -1,12 +1,12 @@
 ### Slice 14 — Story text: typed in the app, on the picture or on its own page
 
-*Planned.* The design pass is done (`docs/design/Story Text.dc.html`, frames 1a-1c; see Design below).
+*In progress (wave 2026-10-26), draft PR.* The design pass is done (`docs/design/Story Text.dc.html`, frames 1a-1c; see Design below).
 
 **Touches:** `src/PrintTheDamnBook.Core/BookPage.cs`, `src/PrintTheDamnBook.Core/Ordering/**`,
 `src/PrintTheDamnBook.Core/Layout/**`, `src/PrintTheDamnBook.Core/Text/**` (new),
 `src/PrintTheDamnBook.Core/Imposition.cs`, `tests/PrintTheDamnBook.Core.Tests/**`,
-`src/PrintTheDamnBook.App/Printing/FaceRenderer.cs`, `src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/Views/OptionsPanel*`,
-`src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.App/Services/FontLicences.cs`,
+`src/PrintTheDamnBook.App/Printing/**`, `src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/Views/PrintStepView.xaml*`,
+`src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.App/Services/**`,
 `src/PrintTheDamnBook.App/Services/BookTextStore.cs` (new), `src/PrintTheDamnBook.App/Fonts/**`,
 `src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj`, `docs/design/**`
 
