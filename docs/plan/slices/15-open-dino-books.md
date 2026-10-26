@@ -1,10 +1,11 @@
 ### Slice 15 — Open a Dino Reader book (`.dino`)
 
-*Planned.* Comes after Slice 14 (it fills Slice 14's text model).
+*In progress (wave 2026-10-26), draft PR.* Slices 14 (PR #26) and 16 (PR #27) merged, so the cover title can use the top band.
 
-**Touches:** `src/PrintTheDamnBook.Core/Dino/**` (new), `tests/PrintTheDamnBook.Core.Tests/Dino*`,
-`tests/PrintTheDamnBook.Core.Tests/TestData/**`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`,
-`src/PrintTheDamnBook.App/Views/OpenStepView.xaml*`, `src/PrintTheDamnBook.App/Services/**`
+**Touches:** `src/PrintTheDamnBook.Core/Dino/**` (new), `src/PrintTheDamnBook.Core/Text/**`,
+`src/PrintTheDamnBook.Core/Ordering/**`, `tests/PrintTheDamnBook.Core.Tests/**`,
+`src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.App/Views/OpenStepView.xaml*`,
+`src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/Services/**`
 
 **Why.** The user has written 10+ books in Dino Reader (`D:\ReadTheStupidText`) and wants to print them, and other
 people's, without retyping the text.
@@ -62,5 +63,5 @@ the Decisions above.
 **Verification.**
 
 - `dotnet test` is green.
-- Open `ReadTheStupidText/src/DinoReader.App/Resources/Raw/starters/three-little-pigs` (`.dino`, 16 pages): all pages
+- Open `ReadTheStupidText/src/DinoReader.App/Resources/Raw/starters/three-little-pigs.dino` (16 pages): all pages
   show with their text, the cover shows the title; switch to another translation; print to PDF and check by eye.
