@@ -7,8 +7,8 @@ using PrintTheDamnBook.Core.Text;
 
 namespace PrintTheDamnBook.App.Printing;
 
-/// <summary>The panel and the words over a picture, in sheet DIPs. <see cref="Words"/> is the outline, clipped to <see cref="WordsClip"/>.</summary>
-internal sealed record BandPainting(Rect Panel, double CornerRadius, Geometry Words, Rect WordsClip, TextFitResult Fit);
+/// <summary>The panel and the words over a picture, in sheet DIPs. <see cref="Words"/> is the outline, clipped to <see cref="WordsClip"/>; <see cref="Fill"/> is the panel's paint (its opacity follows how plain the band is).</summary>
+internal sealed record BandPainting(Rect Panel, double CornerRadius, Brush Fill, Geometry Words, Rect WordsClip, TextFitResult Fit);
 
 /// <summary>The words of a text page, in sheet DIPs, clipped to <see cref="WordsClip"/>.</summary>
 internal sealed record TextPagePainting(Geometry Words, Rect WordsClip, TextFitResult Fit);
@@ -24,11 +24,15 @@ internal static class StoryPainter
     private const double FitSlackMm = 0.01;
     private static readonly Typeface AndikaTypeface = new(new FontFamily(FontFamilyUri), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
     private static readonly Brush InkBrush = FrozenBrush(Color.FromRgb(StoryTextLayout.Ink.R, StoryTextLayout.Ink.G, StoryTextLayout.Ink.B));
-    private static readonly Brush PanelBrush = FrozenBrush(Color.FromArgb((byte)Math.Round(StoryTextLayout.PanelOpacity * 255), StoryTextLayout.PanelFill.R, StoryTextLayout.PanelFill.G, StoryTextLayout.PanelFill.B));
 
     public static Brush Ink => InkBrush;
 
-    public static Brush Panel => PanelBrush;
+    /// <summary>The panel paint at a given opacity (0 to 1).</summary>
+    public static Brush PanelFor(double opacity)
+    {
+        var alpha = (byte)Math.Round(Math.Clamp(opacity, 0, 1) * byte.MaxValue);
+        return FrozenBrush(Color.FromArgb(alpha, StoryTextLayout.PanelFill.R, StoryTextLayout.PanelFill.G, StoryTextLayout.PanelFill.B));
+    }
 
     /// <summary>The size the words get over a picture whose visible part is <paramref name="visibleMm"/>.</summary>
     public static TextFitResult FitBand(string text, PaperKind paper, RectD visibleMm)
@@ -43,16 +47,18 @@ internal static class StoryPainter
         return StoryTextLayout.Choose(StoryTextLayout.PageStepsPt(paper), pt => HeightMm(Format(text, pt, box.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left)) <= box.Height + FitSlackMm);
     }
 
-    public static BandPainting PaintBand(string text, PaperKind paper, RectD visibleMm)
+    public static BandPainting PaintBand(StoryText story, PaperKind paper, RectD visibleMm)
     {
-        var area = StoryTextLayout.Band(visibleMm);
+        var text = story.Text;
+        var area = StoryTextLayout.Band(visibleMm, story.EffectiveBand);
         var fit = FitBand(text, paper, visibleMm);
         var formatted = Format(text, fit.Pt, area.Text.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center);
         var textHeight = HeightMm(formatted);
         var panel = StoryTextLayout.Panel(area, textHeight);
         var origin = new Point(ToDip(area.Text.X), ToDip(panel.Y + area.PaddingY));
         var clip = new Rect(ToDip(area.Text.X), ToDip(panel.Y + area.PaddingY), ToDip(area.Text.Width), ToDip(Math.Min(textHeight, area.Text.Height)));
-        return new BandPainting(ToRect(panel), ToDip(area.CornerRadius), Outline(formatted, origin), clip, fit);
+        var fill = PanelFor(StoryTextLayout.OpacityFor(story.EffectivePlainness));
+        return new BandPainting(ToRect(panel), ToDip(area.CornerRadius), fill, Outline(formatted, origin), clip, fit);
     }
 
     public static TextPagePainting PaintTextPage(string text, PaperKind paper, TextPageArea area)
@@ -69,7 +75,7 @@ internal static class StoryPainter
     /// <summary>Draws a picture page's band over its already drawn picture: the soft panel, then the words.</summary>
     public static void DrawBand(DrawingContext context, BandPainting band)
     {
-        context.DrawRoundedRectangle(PanelBrush, null, band.Panel, band.CornerRadius, band.CornerRadius);
+        context.DrawRoundedRectangle(band.Fill, null, band.Panel, band.CornerRadius, band.CornerRadius);
         context.PushClip(new RectangleGeometry(band.WordsClip));
         context.DrawGeometry(InkBrush, null, band.Words);
         context.Pop();

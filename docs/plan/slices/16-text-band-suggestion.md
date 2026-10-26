@@ -1,10 +1,10 @@
 ### Slice 16 — Top and middle bands, and an empty-space suggestion
 
-*In progress (wave 2026-10-26), draft PR.* Slice 14 merged (PR #26).
+*Built 2026-10-26 (PR #27), not yet verified on large folders, Letter paper or real noisy photos.* Slice 14 merged (PR #26).
 
 **Touches:** `src/PrintTheDamnBook.Core/Text/**`, `src/PrintTheDamnBook.Core/Layout/**`,
 `tests/PrintTheDamnBook.Core.Tests/**`, `src/PrintTheDamnBook.App/Services/**`,
-`src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.App/Printing/**`
+`src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.App/Printing/**`, `src/PrintTheDamnBook.App/Views/PrintStepView.xaml*`
 
 **Why.** Some pictures have their empty space at the top or in the middle. The user picks the band, but the app should
 suggest the emptiest one so most pages need no thought.
@@ -24,10 +24,10 @@ suggest the emptiest one so most pages need no thought.
 
 **Work.**
 
-- [ ] Core: top and middle band rectangles; tests.
-- [ ] Core: `BandSuggestion` scoring on a pixel buffer; tests with synthetic busy/plain bands.
-- [ ] Core: panel opacity from the band's plainness score, clamped; tests with synthetic images.
-- [ ] App: band picker in the text editor, the suggested mark, decoding off the UI thread.
+- [x] Core: top and middle band rectangles; tests.
+- [x] Core: `BandSuggestion` scoring on a pixel buffer; tests with synthetic busy/plain bands.
+- [x] Core: panel opacity from the band's plainness score, clamped; tests with synthetic images.
+- [x] App: band picker in the text editor, the suggested mark, decoding off the UI thread.
 
 #### Design (Story Text mock, section 1d and 1f, added 2026-10-26)
 
@@ -49,3 +49,25 @@ mock agrees with the Decisions above.
 - On `docs/design/reference/blackberry-path.png` the Bottom band is suggested.
 - On a Dino book with a picture whose sky is empty at the top, the top band is suggested; overriding it sticks after
   reopening.
+
+*Changed while building:*
+
+- Sparkle sits before the label, in `SegOption`'s leading icon slot (`Themes/Controls.xaml`, outside Touches).
+- Scoring runs on the 360 px thumbnail via `Services/BandAnalyzer`, off the UI thread, and judges the visible (Fill-cropped) window (Core `PictureWindow`).
+- Bottom is kept unless another band is plainer by more than 0.05.
+- Plainness lives on `StoryText` (`BookPage.cs`, outside Touches) and is not saved.
+- Clicking the already-suggested band does not pin it (as in the mock).
+- The band pick of an emptied page is kept in memory only until reopen.
+- Touches widened to `Printing/**` and `PrintStepView.xaml*`: a "Cancel reading pictures" button for a pre-print wait over 500 ms.
+
+*From review:* high pass 9 findings, applied 1, 2, 3, 4, 6; skipped 5 (design), 7, 8 (style), 9 (no tuning data). Medium pass 11 findings, applied 1, 2, 3, 9, 11; skipped 4, 5 (small buffers), 6, 7, 8, 10 (style). 264 tests pass. Desktop acceptance: 8 of 9 pass; item 7 (pre-print wait status/Cancel) partly verified: print right after typing printed the right band, status and Cancel not observed.
+
+#### For CLAUDE.md
+
+- Band rectangles, `BandSuggestion` scoring and panel opacity live in Core (`Text/`, `Layout/`); the App only decodes via `Services/ImageDecoder` and hands over pixels off the UI thread. A user's band pick is never re-suggested over. (Slice 16: docs/plan/slices/16-text-band-suggestion.md)
+
+#### Not yet verified
+
+- Pre-print status and Cancel on a large folder (wait over 500 ms).
+- Letter paper.
+- Suggestion quality on real noisy photos (thresholds tuned only on synthetic images).

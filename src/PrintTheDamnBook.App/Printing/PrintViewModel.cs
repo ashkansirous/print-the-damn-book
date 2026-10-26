@@ -189,6 +189,10 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     [NotifyPropertyChangedFor(nameof(IsIdle))]
     public partial bool IsBusy { get; set; }
 
+    /// <summary>True while a print waits more than half a second for the pictures to be read; the Cancel button shows then.</summary>
+    [ObservableProperty]
+    public partial bool IsSettling { get; set; }
+
     /// <summary>The opposite of <see cref="IsBusy"/>; the printer and option controls are enabled only then.</summary>
     public bool IsIdle => !IsBusy;
 
@@ -602,7 +606,55 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     [RelayCommand(CanExecute = nameof(CanPrint))]
     private Task PrintAsync()
     {
-        return RunBusyAsync(() => PrintBookletAsync(_sheets, CurrentTarget()));
+        return RunBusyAsync(async () =>
+        {
+            if (await SettleBeforePrintAsync(refreshPreview: true))
+            {
+                await PrintBookletAsync(_sheets, CurrentTarget());
+            }
+        });
+    }
+
+    /// <summary>
+    /// Runs before a job is built, inside the busy state: lets the book finish any measuring its output depends on (the story bands).
+    /// The flag asks for the preview to be rebuilt when the measuring changed the output (not wanted when a stored run is reprinted).
+    /// </summary>
+    public Func<bool, CancellationToken, Task>? BeforePrint { get; set; }
+
+    private CancellationTokenSource? _settleCancel;
+
+    /// <summary>Stops the wait before a print (reading the pictures for the text bands); nothing is sent.</summary>
+    [RelayCommand]
+    private void CancelSettle()
+    {
+        _settleCancel?.Cancel();
+    }
+
+    /// <summary>False when the user cancelled the wait, in which case nothing may be sent.</summary>
+    private async Task<bool> SettleBeforePrintAsync(bool refreshPreview)
+    {
+        if (BeforePrint is not { } before)
+        {
+            return true;
+        }
+
+        using var cancel = new CancellationTokenSource();
+        _settleCancel = cancel;
+        try
+        {
+            await before(refreshPreview, cancel.Token);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            ClearStatus();
+            return false;
+        }
+        finally
+        {
+            _settleCancel = null;
+            IsSettling = false;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanPrint))]
@@ -613,6 +665,11 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     private async Task SendTestSheetAsync()
     {
+        if (!await SettleBeforePrintAsync(refreshPreview: true))
+        {
+            return;
+        }
+
         var sheet = ManualDuplexPlan.PickTestSheet(_sheets)!;
         var rotateBefore = RotateBacks;
         var outcome = await SendAsync(CurrentTarget(), [sheet], PrintPart.TestSheet);
@@ -628,7 +685,13 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     [RelayCommand(CanExecute = nameof(CanPrintBacksAgain))]
     private Task PrintBacksAgainAsync()
     {
-        return RunBusyAsync(_manual.PrintBacksAgainAsync);
+        return RunBusyAsync(async () =>
+        {
+            if (await SettleBeforePrintAsync(refreshPreview: false))
+            {
+                await _manual.PrintBacksAgainAsync();
+            }
+        });
     }
 
     private PrintTarget CurrentTarget()

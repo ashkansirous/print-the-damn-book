@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace PrintTheDamnBook.Core.Text;
 
 /// <summary>The words of one picture as saved in <c>book.json</c>.</summary>
-public sealed record PageTextEntry(string Text = "", TextPlacement Placement = TextPlacement.OnPicture);
+public sealed record PageTextEntry(string Text = "", TextPlacement Placement = TextPlacement.OnPicture, TextBand? Band = null);
 
 /// <summary>What <c>book.json</c> holds: the story text of each picture (keyed by image file name) and the book's text-page paper.</summary>
 public sealed record BookText
@@ -28,6 +28,7 @@ public static class BookTextJson
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters = { new JsonStringEnumConverter() },
@@ -131,7 +132,11 @@ public static class BookTextJson
         {
             if (entry is { Text: { } text } && !string.IsNullOrWhiteSpace(text))
             {
-                pages[name] = entry with { Placement = Enum.IsDefined(entry.Placement) ? entry.Placement : TextPlacement.OnPicture };
+                pages[name] = entry with
+                {
+                    Placement = Enum.IsDefined(entry.Placement) ? entry.Placement : TextPlacement.OnPicture,
+                    Band = entry.Band is { } band && Enum.IsDefined(band) ? band : null,
+                };
             }
         }
 

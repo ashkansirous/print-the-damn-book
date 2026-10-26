@@ -182,6 +182,7 @@ public sealed partial class MainViewModel : ObservableObject
         var cache = new Dictionary<BookPage, PageViewModel>(ReferenceEqualityComparer.Instance);
         RefreshCoverTint(pages);
         _storyContext = CurrentStoryContext();
+        ApplyPlainnessToAll(_storyContext);
 
         _printedNumbers = PageNumbering.Compute(padded);
         _positions = PositionsOf(pages);

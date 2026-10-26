@@ -18,7 +18,33 @@
     <sys:String x:Key="IconCaretLeft">&#xE138;</sys:String>
     <sys:String x:Key="IconCaretRight2">&#xE13A;</sys:String>
     <sys:String x:Key="IconCheckSmall">&#xE182;</sys:String>
+    <sys:String x:Key="IconSparkle">&#xE6A2;</sys:String>
     <FontFamily x:Key="AndikaFont">pack://application:,,,/Fonts/#Andika</FontFamily>
+
+    <!-- The Band option the app suggests wears a sparkle. -->
+    <Style x:Key="BandOptionTop" TargetType="RadioButton" BasedOn="{StaticResource SegOption}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding SuggestedBand}" Value="Top">
+          <Setter Property="views:Ui.Icon" Value="{StaticResource IconSparkle}" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The Band option the app suggests wears a sparkle. -->
+    <Style x:Key="BandOptionMiddle" TargetType="RadioButton" BasedOn="{StaticResource SegOption}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding SuggestedBand}" Value="Middle">
+          <Setter Property="views:Ui.Icon" Value="{StaticResource IconSparkle}" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <!-- The Band option the app suggests wears a sparkle. -->
+    <Style x:Key="BandOptionBottom" TargetType="RadioButton" BasedOn="{StaticResource SegOption}">
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding SuggestedBand}" Value="Bottom">
+          <Setter Property="views:Ui.Icon" Value="{StaticResource IconSparkle}" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
 
     <!-- The small field label of the editor (as on the Print step). -->
     <Style x:Key="EditorLabel" TargetType="TextBlock">
@@ -406,6 +432,29 @@
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
               <TextBlock Style="{StaticResource Ph}" FontSize="14" Text="{StaticResource IconInfo}" Foreground="{StaticResource Accent300Brush}" VerticalAlignment="Top" Margin="0,1,6,0" />
               <TextBlock Style="{StaticResource EditorNote}" Text="{Binding PlacementNote}" MaxWidth="260" />
+            </StackPanel>
+          </StackPanel>
+
+          <StackPanel Visibility="{Binding ShowBandPicker, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Style="{StaticResource EditorLabel}" Text="Band" Margin="0,16,0,5" />
+            <Border Style="{StaticResource SegBorder}">
+              <StackPanel Orientation="Horizontal">
+                <RadioButton Style="{StaticResource BandOptionTop}" Content="Top" GroupName="Band" AutomationProperties.Name="Words at the top"
+                             IsChecked="{Binding SelectedBand, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:TextBand.Top}}" />
+                <Rectangle Style="{StaticResource SegDivider}" />
+                <RadioButton Style="{StaticResource BandOptionMiddle}" Content="Middle" GroupName="Band" AutomationProperties.Name="Words in the middle"
+                             IsChecked="{Binding SelectedBand, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:TextBand.Middle}}" />
+                <Rectangle Style="{StaticResource SegDivider}" />
+                <RadioButton Style="{StaticResource BandOptionBottom}" Content="Bottom" GroupName="Band" AutomationProperties.Name="Words at the bottom"
+                             IsChecked="{Binding SelectedBand, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:TextBand.Bottom}}" />
+              </StackPanel>
+            </Border>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding HasBandHint, Converter={StaticResource BoolToVisibility}}">
+              <TextBlock Style="{StaticResource Ph}" FontSize="14" Text="{StaticResource IconPushPin}" Foreground="{StaticResource Accent300Brush}" VerticalAlignment="Top" Margin="0,1,6,0"
+                         Visibility="{Binding BandIsPicked, Converter={StaticResource BoolToVisibility}}" />
+              <TextBlock Style="{StaticResource Ph}" FontSize="14" Text="{StaticResource IconSparkle}" Foreground="{StaticResource Accent300Brush}" VerticalAlignment="Top" Margin="0,1,6,0"
+                         Visibility="{Binding BandIsPicked, Converter={StaticResource InverseBoolToVisibility}}" />
+              <TextBlock Style="{StaticResource EditorNote}" Text="{Binding BandHint}" MaxWidth="260" />
             </StackPanel>
           </StackPanel>
 

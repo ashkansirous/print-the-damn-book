@@ -48,7 +48,7 @@ internal static class StoryTiles
         }
 
         var placement = PlacementOf(new SizeD(picture.PixelWidth, picture.PixelHeight), context);
-        var band = StoryPainter.PaintBand(page.Story!.Text, context.Kind, placement.Visible);
+        var band = StoryPainter.PaintBand(page.Story!, context.Kind, placement.Visible);
         var image = placement.Image;
         var visual = new DrawingVisual();
         using (var dc = visual.RenderOpen())
@@ -94,6 +94,13 @@ internal static class StoryTiles
         var pixels = new byte[stride * converted.PixelHeight];
         converted.CopyPixels(pixels, stride, 0);
         return TextPageTint.FromBgra(pixels, converted.PixelWidth, converted.PixelHeight, stride);
+    }
+
+    /// <summary>The part of a picture that shows on the page (Fill scaling crops the rest), as fractions of the picture: the part the bands sit over.</summary>
+    public static PictureWindow VisibleWindow(SizeD imagePixels, StoryContext context)
+    {
+        var placement = PlacementOf(imagePixels, context);
+        return PictureWindow.Of(placement.LocalClip, placement.Image);
     }
 
     private static PagePlacement PlacementOf(SizeD imagePixels, StoryContext context)

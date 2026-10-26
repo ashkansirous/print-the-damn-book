@@ -138,4 +138,29 @@ public class BookTextJsonTests
 
         Assert.False(BookTextJson.TrySave(path, Sample()));
     }
+
+    [Fact]
+    public void Band_RoundTripsWhenPickedAndIsOmittedWhenNot()
+    {
+        var book = new BookText { Pages = { ["a.jpg"] = new PageTextEntry("Hi", TextPlacement.OnPicture, TextBand.Top), ["b.jpg"] = new PageTextEntry("Yo") } };
+
+        var json = BookTextJson.Serialize(book);
+        var load = BookTextJson.Parse(json);
+
+        Assert.Equal(TextBand.Top, load.Book.Pages["a.jpg"].Band);
+        Assert.Null(load.Book.Pages["b.jpg"].Band);
+        Assert.Single(json.Split("\"band\"", StringSplitOptions.None).Skip(1));
+    }
+
+    [Fact]
+    public void FileWithoutBandsOrWithABadBand_ReadsAsUnpicked()
+    {
+        const string json = "{\"schemaVersion\":1,\"pages\":{\"a.jpg\":{\"text\":\"Hi\"},\"b.jpg\":{\"text\":\"Yo\",\"band\":99}}}";
+
+        var load = BookTextJson.Parse(json);
+
+        Assert.True(load.CanSave);
+        Assert.Null(load.Book.Pages["a.jpg"].Band);
+        Assert.Null(load.Book.Pages["b.jpg"].Band);
+    }
 }

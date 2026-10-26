@@ -172,13 +172,13 @@ internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
             return;
         }
 
-        var painting = StoryPainter.PaintBand(bookPage.Story!.Text, paper, placement.Visible);
+        var painting = StoryPainter.PaintBand(bookPage.Story!, paper, placement.Visible);
         var panel = rotate180 ? RotateDip(painting.Panel) : painting.Panel;
         var box = new Border
         {
             Width = panel.Width,
             Height = panel.Height,
-            Background = StoryPainter.Panel,
+            Background = painting.Fill,
             CornerRadius = new CornerRadius(painting.CornerRadius),
         };
         FixedPage.SetLeft(box, panel.X);

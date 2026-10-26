@@ -1,4 +1,5 @@
 using PrintTheDamnBook.Core.Layout;
+using PrintTheDamnBook.Core.Text;
 
 namespace PrintTheDamnBook.Core.Tests;
 
@@ -176,5 +177,50 @@ public class StoryTextLayoutTests
 
         var top = (band.MaxPanel.Y - visible.Y) / visible.Height;
         Assert.True(top >= 0.70 - Tolerance);
+    }
+
+    [Theory]
+    [InlineData(TextBand.Top)]
+    [InlineData(TextBand.Middle)]
+    [InlineData(TextBand.Bottom)]
+    public void EveryBand_StaysWithinThirtyPercentOfThePicture(TextBand which)
+    {
+        var visible = Visible(PaperKind.A4, true, ScalingMode.Fit, PageNumberPosition.Below);
+
+        var band = StoryTextLayout.Band(visible, which);
+
+        Assert.True(band.MaxPanel.Height <= 0.30 * visible.Height + Tolerance);
+        Assert.True(band.MaxPanel.Y >= visible.Y);
+        Assert.True(band.MaxPanel.Y + band.MaxPanel.Height <= visible.Y + visible.Height);
+        Assert.Equal(which, band.Band);
+    }
+
+    [Fact]
+    public void TopBand_SitsInTheTopThirty_AndMiddleBandIsCentred()
+    {
+        var visible = new RectD(10, 20, 360, 480);
+
+        var top = StoryTextLayout.Band(visible, TextBand.Top);
+        var middle = StoryTextLayout.Band(visible, TextBand.Middle);
+
+        Assert.Equal(visible.Y + 8, top.MaxPanel.Y, 9);
+        Assert.True(top.MaxPanel.Y + top.MaxPanel.Height <= visible.Y + 0.30 * visible.Height + Tolerance);
+        Assert.Equal(visible.Y + visible.Height / 2, middle.MaxPanel.Y + middle.MaxPanel.Height / 2, 9);
+        Assert.Equal(StoryTextLayout.Band(visible).MaxPanel.Height, top.MaxPanel.Height, 9);
+    }
+
+    [Fact]
+    public void ShortText_PanelHugsTheTopAndBottomEdgesAndCentresInTheMiddle()
+    {
+        var visible = new RectD(0, 0, 360, 480);
+        var top = StoryTextLayout.Band(visible, TextBand.Top);
+        var middle = StoryTextLayout.Band(visible, TextBand.Middle);
+        var bottom = StoryTextLayout.Band(visible);
+
+        Assert.Equal(top.MaxPanel.Y, StoryTextLayout.Panel(top, 20).Y, 9);
+        var centred = StoryTextLayout.Panel(middle, 20);
+        Assert.Equal(visible.Height / 2, centred.Y + centred.Height / 2, 9);
+        var low = StoryTextLayout.Panel(bottom, 20);
+        Assert.Equal(bottom.MaxPanel.Y + bottom.MaxPanel.Height, low.Y + low.Height, 9);
     }
 }

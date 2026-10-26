@@ -87,6 +87,9 @@
               Command="{Binding PrintBacksAgainCommand}" HorizontalAlignment="Left" Margin="0,12,0,0" AutomationProperties.Name="Print backs again"
               Visibility="{Binding IsManual, Converter={StaticResource BoolToVisibility}}" />
 
+      <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Command="{Binding CancelSettleCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"
+              AutomationProperties.Name="Cancel reading pictures" Visibility="{Binding IsSettling, Converter={StaticResource BoolToVisibility}}" />
+
       <ToggleButton x:Name="MoreOptions" Style="{StaticResource OptionsToggle}" Margin="0,22,0,0" HorizontalAlignment="Left"
                     IsChecked="{Binding DataContext.IsMoreOptionsOpen, RelativeSource={RelativeSource AncestorType=views:PrintStepView}, Mode=TwoWay}"
                     AutomationProperties.Name="More options" />

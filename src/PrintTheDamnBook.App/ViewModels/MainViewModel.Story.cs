@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Media;
@@ -31,6 +32,9 @@ public sealed partial class MainViewModel
     private const string PlacementOwnPage = "Text on the left, picture on the right, facing each other when the book is open.";
     private const string PlacementOwnPageSpacer = "Text on the left, picture on the right. I put a spacer page in front so they face each other.";
     private const string PlacementCover = "Covers keep their words on the picture.";
+    private const string BandPickedHint = "Your pick. I'll never suggest over it.";
+    private const string BandSuggestedHintPrefix = "Suggested: the ";
+    private const string BandSuggestedHintSuffix = " is the plainest part of this picture. Pick another and it sticks.";
     private const string SavedText = "Saved to book.json in the folder";
     private const string SavingText = "Saving…";
     private const string FailedText = "Couldn't save book.json in this folder.";
@@ -40,7 +44,10 @@ public sealed partial class MainViewModel
     private const double PreviewSingleWidth = 212;
     private const double PreviewPairWidth = 128;
     private const double PreviewHeightRatio = 210.0 / 148.0;
+    private const string ReadingPicturesText = "Reading pictures for the text bands…";
+    private static readonly TimeSpan SlowWait = TimeSpan.FromMilliseconds(500);
     private static readonly TimeSpan TypingDelay = TimeSpan.FromMilliseconds(250);
+    private static readonly TimeSpan SampleRefreshDelay = TimeSpan.FromMilliseconds(300);
 
     private static readonly HashSet<string> StoryLayoutProperties =
     [
@@ -53,12 +60,30 @@ public sealed partial class MainViewModel
     ];
 
     private readonly DispatcherTimer _typingTimer = new() { Interval = TypingDelay };
+
+    /// <summary>Coalesces the finished picture reads into one refresh, so 40 reads rebuild the book once, not 40 times.</summary>
+    private readonly DispatcherTimer _sampleTimer = new() { Interval = SampleRefreshDelay };
     private BookTextStore? _bookText;
     private Dictionary<string, PageTextEntry> _textEntries = new(StringComparer.OrdinalIgnoreCase);
     private string _bookTextFolder = string.Empty;
     private BookPage? _filledPage;
     private bool _syncingEditor;
     private bool _loadingBookText;
+
+    /// <summary>The pixels of each picture that was looked at (by <c>book.json</c> key), read off the UI thread; null when the picture could not be read, so it is not tried again. Never saved.</summary>
+    private readonly Dictionary<string, PictureSample?> _samples = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>How plain each band of the part of a picture that shows on the page is; the part depends on the paper, margin and scaling.</summary>
+    private readonly Dictionary<(string Key, PictureWindow Window), BandPlainness?> _plainness = [];
+
+    /// <summary>The band the user picked for each picture (by key), kept when its words are cleared so retyping gets the pick back.</summary>
+    private readonly Dictionary<string, TextBand> _bandPicks = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Pictures being read right now (by key), so one is never read twice at once and a print can wait for them.</summary>
+    private readonly Dictionary<string, Task> _measuring = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Bumped when a folder closes, so a measurement that finishes late is dropped.</summary>
+    private int _measureVersion;
     private Rgb? _coverTint;
     private string? _coverTintPath;
 
@@ -87,6 +112,28 @@ public sealed partial class MainViewModel
 
     [ObservableProperty]
     public partial bool HasStoryText { get; set; }
+
+    /// <summary>The band the panel sits in (the pick, else the suggestion, else the bottom).</summary>
+    [ObservableProperty]
+    public partial TextBand SelectedBand { get; set; } = TextBand.Bottom;
+
+    /// <summary>True for words over a picture: the Band control is shown only then.</summary>
+    [ObservableProperty]
+    public partial bool ShowBandPicker { get; set; }
+
+    /// <summary>The plainest band once the picture has been looked at; null until then.</summary>
+    [ObservableProperty]
+    public partial TextBand? SuggestedBand { get; set; }
+
+    /// <summary>True when the user has picked a band: the hint then says it sticks.</summary>
+    [ObservableProperty]
+    public partial bool BandIsPicked { get; set; }
+
+    [ObservableProperty]
+    public partial string BandHint { get; set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial bool HasBandHint { get; set; }
 
     /// <summary>False for a cover, which keeps its words on the picture.</summary>
     [ObservableProperty]
@@ -136,6 +183,8 @@ public sealed partial class MainViewModel
         }
 
         Print.PropertyChanged += (_, e) => OnPrintChangedForStory(e.PropertyName);
+        Print.BeforePrint = SettleBandsAsync;
+        _sampleTimer.Tick += (_, _) => OnSamplesRead();
     }
 
     partial void OnStoryInputChanged(string value)
@@ -151,6 +200,14 @@ public sealed partial class MainViewModel
         if (!_syncingEditor)
         {
             ApplyPlacement(value);
+        }
+    }
+
+    partial void OnSelectedBandChanged(TextBand value)
+    {
+        if (!_syncingEditor)
+        {
+            ApplyBand(value);
         }
     }
 
@@ -171,6 +228,11 @@ public sealed partial class MainViewModel
         }
 
         SelectedPage = page;
+        if (page is not null)
+        {
+            EnsureSample(page);
+        }
+
         OnPropertyChanged(nameof(SelectedPage));
         OnPropertyChanged(nameof(HasSelection));
         OnPropertyChanged(nameof(HasNoSelection));
@@ -213,7 +275,8 @@ public sealed partial class MainViewModel
             return;
         }
 
-        SetStory(page, string.IsNullOrWhiteSpace(text) ? null : new StoryText(text, SelectedPlacement));
+        var story = page.Story is { } current ? current with { Text = text, Placement = SelectedPlacement } : new StoryText(text, SelectedPlacement, PickedBandOf(page));
+        SetStory(page, string.IsNullOrWhiteSpace(text) ? null : story);
         HasStoryText = page.Story is not null;
         _typingTimer.Stop();
         _typingTimer.Start();
@@ -236,16 +299,33 @@ public sealed partial class MainViewModel
         Refresh();
     }
 
+    private void ApplyBand(TextBand band)
+    {
+        if (SelectedPage is not { Story: { } story } page || story.Band == band)
+        {
+            return;
+        }
+
+        SetStory(page, story with { Band = band });
+        Refresh();
+    }
+
     /// <summary>Gives a page its words (or takes them away), remembers them for <c>book.json</c> and schedules the save.</summary>
     private void SetStory(BookPage page, StoryText? story)
     {
+        var gainedWords = page.Story is null;
         page.Story = StoryText.OrNull(story);
-        if (page.Path is { } path)
+        if (KeyOf(page) is { } key)
         {
-            var key = BookTextJson.KeyFor(_bookTextFolder, path);
             if (page.Story is { } kept)
             {
-                _textEntries[key] = new PageTextEntry(kept.Text, kept.Placement);
+                _textEntries[key] = new PageTextEntry(kept.Text, kept.Placement, kept.Band);
+                RememberPick(key, kept);
+                if (gainedWords)
+                {
+                    EnsureSample(page);
+                    ApplyPlainness(page, CurrentStoryContext());
+                }
             }
             else
             {
@@ -298,7 +378,8 @@ public sealed partial class MainViewModel
             {
                 if (page.Path is { } path && _textEntries.TryGetValue(BookTextJson.KeyFor(folder, path), out var entry))
                 {
-                    page.Story = new StoryText(entry.Text, entry.Placement);
+                    page.Story = new StoryText(entry.Text, entry.Placement, entry.Band);
+                    RememberPick(BookTextJson.KeyFor(folder, path), page.Story);
                 }
             }
 
@@ -312,14 +393,177 @@ public sealed partial class MainViewModel
         _bookText = new BookTextStore(folder, load.CanSave);
         _bookText.StateChanged += (_, _) => OnBookTextStateChanged();
         UpdateSaveStatus();
+        MeasureStoryPictures();
+    }
+
+    private void MeasureStoryPictures()
+    {
+        foreach (var page in _pageList.Pages)
+        {
+            if (page.Story is not null)
+            {
+                EnsureSample(page);
+            }
+        }
+    }
+
+    private string? KeyOf(BookPage page) => page.Path is { } path ? BookTextJson.KeyFor(_bookTextFolder, path) : null;
+
+    private TextBand? PickedBandOf(BookPage page) => KeyOf(page) is { } key && _bandPicks.TryGetValue(key, out var band) ? band : null;
+
+    private void RememberPick(string key, StoryText story)
+    {
+        if (story.Band is { } band)
+        {
+            _bandPicks[key] = band;
+        }
+    }
+
+    /// <summary>Starts reading the page's picture off the UI thread, unless that was done or is under way.</summary>
+    private void EnsureSample(BookPage page)
+    {
+        if (page.Path is not { } path || KeyOf(page) is not { } key || _samples.ContainsKey(key) || _measuring.ContainsKey(key))
+        {
+            return;
+        }
+
+        _measuring[key] = ReadSampleAsync(key, path, _measureVersion);
+    }
+
+    private async Task ReadSampleAsync(string key, string path, int version)
+    {
+        var thumbnails = _thumbnails;
+        PictureSample? sample = null;
+        try
+        {
+            sample = await Task.Run(() => BandAnalyzer.Sample(thumbnails.Load(path)));
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // An odd bitmap gives no suggestion: the page keeps the bottom band and the picture is not read again.
+            Trace.TraceWarning($"Could not read {path} for the text band suggestion: {ex}");
+        }
+
+        if (version != _measureVersion)
+        {
+            return;
+        }
+
+        _measuring.Remove(key);
+        _samples[key] = sample;
+        if (!_sampleTimer.IsEnabled)
+        {
+            _sampleTimer.Start();
+        }
+    }
+
+    /// <summary>Shows the plainness of the pictures read since the last time; waits while a print runs, and leaves it to the typing pause while the user types.</summary>
+    private void OnSamplesRead()
+    {
+        if (Print.IsBusy)
+        {
+            return;
+        }
+
+        _sampleTimer.Stop();
+        if (!_typingTimer.IsEnabled)
+        {
+            Refresh();
+        }
+    }
+
+    /// <summary>Gives the page the plainness of the part of its picture that shows on the page, once the picture has been read.</summary>
+    private bool ApplyPlainness(BookPage page, StoryContext context)
+    {
+        if (page.Story is not { } story || KeyOf(page) is not { } key || !_samples.TryGetValue(key, out var sample) || sample is null)
+        {
+            return false;
+        }
+
+        var plainness = PlainnessOf(key, sample, context);
+        if (plainness == story.Plainness)
+        {
+            return false;
+        }
+
+        page.Story = story with { Plainness = plainness };
+        return true;
+    }
+
+    private BandPlainness? PlainnessOf(string key, PictureSample sample, StoryContext context)
+    {
+        var window = StoryTiles.VisibleWindow(new SizeD(sample.Width, sample.Height), context);
+        if (!_plainness.TryGetValue((key, window), out var plainness))
+        {
+            plainness = BandAnalyzer.Analyse(sample, window);
+            _plainness[(key, window)] = plainness;
+        }
+
+        return plainness;
+    }
+
+    private bool ApplyPlainnessToAll(StoryContext context)
+    {
+        var changed = false;
+        foreach (var page in _pageList.Pages)
+        {
+            changed |= ApplyPlainness(page, context);
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// Before a print: waits for every picture with words to be read, so the bands and panels printed are the settled suggestion.
+    /// Shows what it waits for in the status line; <paramref name="cancel"/> stops the wait. Rebuilds the preview when asked and the plainness changed.
+    /// </summary>
+    private async Task SettleBandsAsync(bool refreshPreview, CancellationToken cancel)
+    {
+        foreach (var page in _pageList.Pages.Where(p => p.HasBandText))
+        {
+            EnsureSample(page);
+        }
+
+        if (_measuring.Count > 0)
+        {
+            await WaitForReadsAsync(cancel);
+        }
+
+        var changed = ApplyPlainnessToAll(CurrentStoryContext());
+        if (changed && refreshPreview)
+        {
+            Refresh();
+        }
+    }
+
+    /// <summary>Waits for the running reads; past <see cref="SlowWait"/> it says what it waits for and offers Cancel.</summary>
+    private async Task WaitForReadsAsync(CancellationToken cancel)
+    {
+        var reads = Task.WhenAll(_measuring.Values.ToArray());
+        try
+        {
+            await reads.WaitAsync(SlowWait, cancel);
+        }
+        catch (TimeoutException)
+        {
+            Print.SetStatus(ReadingPicturesText, Printing.PrintStatusKind.Info);
+            Print.IsSettling = true;
+            await reads.WaitAsync(cancel);
+        }
     }
 
     private void CloseBookText()
     {
         _typingTimer.Stop();
+        _sampleTimer.Stop();
         _bookText?.Dispose();
         _bookText = null;
         _textEntries = new Dictionary<string, PageTextEntry>(StringComparer.OrdinalIgnoreCase);
+        _samples.Clear();
+        _plainness.Clear();
+        _bandPicks.Clear();
+        _measuring.Clear();
+        _measureVersion++;
         _coverTintRead = false;
         _coverTint = null;
         _coverTintPath = null;
@@ -430,6 +674,7 @@ public sealed partial class MainViewModel
             _filledPage = null;
             StoryInput = string.Empty;
             HasStoryText = false;
+            ShowBandPicker = false;
             PreviewTiles = [];
             HasFitNote = false;
             return;
@@ -444,11 +689,35 @@ public sealed partial class MainViewModel
         HasStoryText = page.Story is not null;
         SelectedPlacement = page.Story is null ? TextPlacement.OnPicture : page.EffectivePlacement ?? TextPlacement.OnPicture;
         CanChooseOwnPage = page.CanHaveOwnPage;
+        FillBand(page);
         AtFirstPage = index <= 0;
         AtLastPage = index >= pages.Count - 1;
         FillFit(page, context);
         FillPreview(page, context);
         PlacementNote = PlacementNoteOf(page);
+    }
+
+    private void FillBand(BookPage page)
+    {
+        var story = page.Story;
+        ShowBandPicker = page.HasBandText;
+        SelectedBand = story?.EffectiveBand ?? TextBand.Bottom;
+        SuggestedBand = story?.SuggestedBand;
+        BandIsPicked = story?.Band is not null;
+        BandHint = BandHintOf(story);
+        HasBandHint = BandHint.Length > 0;
+    }
+
+    private static string BandHintOf(StoryText? story)
+    {
+        if (story?.Band is not null)
+        {
+            return BandPickedHint;
+        }
+
+        return story?.SuggestedBand is { } suggested
+            ? BandSuggestedHintPrefix + suggested.ToString().ToLowerInvariant() + BandSuggestedHintSuffix
+            : string.Empty;
     }
 
     /// <summary>Shows the page's words; whitespace the user just typed on this same page stays in the box even though the model drops it.</summary>
