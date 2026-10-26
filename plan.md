@@ -37,7 +37,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 11 | Microsoft Store: MSIX, listing, submission (after 8, 10) (submission dropped by the user, tooling kept) | built | #19 | | [11](docs/plan/slices/11-microsoft-store.md) |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
-| 14 | Story text: typed, on the picture or on its own page (design pass first) | planned | | | [14](docs/plan/slices/14-typed-text-pages.md) |
+| 14 | Story text: typed, on the picture or on its own page (design done) | planned | | | [14](docs/plan/slices/14-typed-text-pages.md) |
 | 15 | Open a Dino Reader book (`.dino`) (after 14) | planned | | | [15](docs/plan/slices/15-open-dino-books.md) |
 | 16 | Top and middle bands, empty-space suggestion (after 14) | planned | | | [16](docs/plan/slices/16-text-band-suggestion.md) |
 

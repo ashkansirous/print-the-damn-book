@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/styles.css">
+<script src="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
+<style>html,body{margin:0;background:var(--color-neutral-900)}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}</style>
+</helmet>
+<section style="display:flex;flex-direction:column;gap:28px;padding:56px;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
+    <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent)">Slices 14–16 · design pass</span>
+    <h1 style="margin:0;font-weight:500;font-size:30px;letter-spacing:-0.01em">Story text in the Check step</h1>
+    <p style="margin:0;color:var(--color-neutral-400);font-size:15px;line-height:1.5;text-wrap:pretty">Click any page and an editor panel on the right takes its words. The band and text pages render at true scale (Andika, Core's shrink steps), so the thumbnails are the print. Every frame is live: type, switch placement, flip views.</p>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:56px 48px;align-items:flex-start">
+    <div id="1a" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">1a</span><span style="font-weight:500">On the picture, bottom band</span><span style="color:var(--color-neutral-500)">Slice 14. Page 3 selected; page 1 shows shrink-to-fit.</span></div>
+      <dc-import name="StoryCheck" selected="p3" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="1b" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">1b</span><span style="font-weight:500">Own page, facing its picture</span><span style="color:var(--color-neutral-500)">Page 2 needed a spacer to land its text on the left.</span></div>
+      <dc-import name="StoryCheck" selected="p2" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="1c" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">1c</span><span style="font-weight:500">As printed, words and all</span><span style="color:var(--color-neutral-500)">Text pages impose like any page.</span></div>
+      <dc-import name="StoryCheck" selected="p5" view="sheets" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="1d" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">1d</span><span style="font-weight:500">Band picker with a suggestion</span><span style="color:var(--color-neutral-500)">Slice 16. The sparkle marks the plainest band.</span></div>
+      <dc-import name="StoryCheck" selected="p6" bands="{{ true }}" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="1e" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">1e</span><span style="font-weight:500">Open: folder or Dino book</span><span style="color:var(--color-neutral-500)">Slice 15. Try “Open a Dino book…”.</span></div>
+      <dc-import name="StoryCheck" mode="open" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="1f" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">1f</span><span style="font-weight:500">A Dino book, title on the cover</span><span style="color:var(--color-neutral-500)">Slice 15 + 16. Language picker; Farsi listed but disabled.</span></div>
+      <dc-import name="StoryCheck" source="dino" selected="cover" bands="{{ true }}" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+  </div>
+</section>
+</x-dc>
+</body>
+</html>

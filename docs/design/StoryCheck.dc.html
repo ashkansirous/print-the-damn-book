@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/styles.css">
+<script src="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/_ds_bundle.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Andika:wght@400;700&amp;display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>html,body{margin:0;height:100%;background:var(--color-bg)}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}@keyframes ptdb-spin{to{transform:rotate(360deg)}}</style>
+</helmet>
+<div style="position:relative;display:flex;flex-direction:column;width:100%;height:{{ rootH }};overflow:hidden;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:13px;line-height:1.4;border-radius:{{ winRadius }};box-shadow:{{ winShadow }}">
+
+  <div style="height:32px;flex:none;display:flex;align-items:center;user-select:none">
+    <div style="display:flex;align-items:center;gap:8px;padding-left:12px;flex:1;min-width:0">
+      <img src="icons/app-icon-sm.svg" alt="" style="width:16px;height:16px;display:block">
+      <span style="font-size:12px;color:var(--color-neutral-300)">Print the damn book</span>
+      <sc-if value="{{ hasBook }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:var(--color-neutral-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">· {{ bookName }}</span></sc-if>
+    </div>
+    <div style="display:flex;height:100%">
+      <div style="width:46px;display:grid;place-items:center;color:var(--color-neutral-300);font-size:14px" style-hover="background:color-mix(in srgb, var(--color-text) 8%, transparent)"><i class="ph ph-minus"></i></div>
+      <div style="width:46px;display:grid;place-items:center;color:var(--color-neutral-300);font-size:12px" style-hover="background:color-mix(in srgb, var(--color-text) 8%, transparent)"><i class="ph ph-square"></i></div>
+      <div style="width:46px;display:grid;place-items:center;color:var(--color-neutral-300);font-size:14px" style-hover="background:#c42b1c;color:var(--color-neutral-100)"><i class="ph ph-x"></i></div>
+    </div>
+  </div>
+
+  <div style="flex:1;min-height:0;display:flex">
+    <div style="width:236px;flex:none;display:flex;flex-direction:column;gap:4px;padding:14px 10px">
+      <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+        <button onClick="{{ st.onClick }}" style="position:relative;display:flex;align-items:center;gap:12px;padding:10px 12px;border:0;border-radius:var(--radius-md);text-align:left;color:inherit;font:inherit;background:{{ st.railBg }};cursor:pointer" style-hover="background:color-mix(in srgb, var(--color-text) 6%, transparent)">
+          <span style="position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:2px;background:{{ st.railMark }}"></span>
+          <span style="width:26px;height:26px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:500;background:{{ st.numBg }};color:{{ st.numColor }};box-shadow:{{ st.numRing }}">
+            <sc-if value="{{ st.isDone }}"><i class="ph ph-check" style="font-size:13px"></i></sc-if>
+            <sc-if value="{{ st.notDone }}">{{ st.num }}</sc-if>
+          </span>
+          <span style="display:flex;flex-direction:column;min-width:0">
+            <span style="font-size:13px;font-weight:500;color:{{ st.titleColor }}">{{ st.title }}</span>
+            <span style="font-size:11px;color:var(--color-neutral-500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ st.sub }}</span>
+          </span>
+        </button>
+      </sc-for>
+      <div style="flex:1"></div>
+      <sc-if value="{{ hasBook }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:12px;align-items:center;padding:12px">
+          <div style="width:42px;height:56px;flex:none;overflow:hidden;box-shadow:var(--shadow-md);border-radius:2px"><img src="book/cover.jpg" alt="" style="width:100%;display:block"></div>
+          <div style="display:flex;flex-direction:column;min-width:0">
+            <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ bookName }}</span>
+            <span style="font-size:11px;color:var(--color-neutral-500)">{{ statusShort }}</span>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;position:relative;background:linear-gradient(180deg, color-mix(in srgb, var(--color-surface) 55%, var(--color-bg)) 0%, var(--color-bg) 70%);border-top-left-radius:var(--radius-lg);box-shadow:var(--shadow-sm)">
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;padding:24px 28px 0">
+
+        <div style="flex:none;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div style="flex:1;min-width:260px;display:flex;flex-direction:column;gap:6px">
+            <h1 style="margin:0;font-family:var(--font-heading);font-weight:500;font-size:22px;line-height:1.15;letter-spacing:-0.01em;text-wrap:pretty">{{ heading }}</h1>
+            <p style="margin:0;color:var(--color-neutral-400);max-width:62ch;text-wrap:pretty">{{ subheading }}</p>
+          </div>
+          <sc-if value="{{ isCheck }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <sc-if value="{{ isDino }}" hint-placeholder-val="{{ false }}">
+                <label style="display:flex;align-items:center;gap:8px;color:var(--color-neutral-400);font-size:12px"><i class="ph ph-translate" style="font-size:16px"></i>
+                  <select class="input" value="{{ lang }}" onChange="{{ onLang }}" style="width:auto">
+                    <sc-for list="{{ langs }}" as="lg" hint-placeholder-count="3"><option value="{{ lg.v }}" disabled="{{ lg.dis }}">{{ lg.label }}</option></sc-for>
+                  </select>
+                </label>
+              </sc-if>
+              <div class="seg">
+                <label class="seg-opt"><input type="radio" name="{{ viewName }}" checked="{{ isBookView }}" onChange="{{ setBookView }}"><i class="ph ph-book-open"></i>Reading order</label>
+                <label class="seg-opt"><input type="radio" name="{{ viewName }}" checked="{{ isSheetView }}" onChange="{{ setSheetView }}"><i class="ph ph-files"></i>As printed</label>
+              </div>
+              <button class="btn btn-secondary"><i class="ph ph-plus"></i>Add pages…</button>
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:16px;max-width:620px;padding:36px 32px;border:1px dashed var(--color-neutral-700);border-radius:var(--radius-lg);background:radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--color-accent-900) 80%, transparent), transparent 60%)">
+            <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}"><i class="ph ph-folder-open" style="font-size:40px;color:var(--color-accent)"></i></sc-if>
+            <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><i class="ph ph-circle-notch" style="font-size:40px;color:var(--color-accent);animation:ptdb-spin 0.9s linear infinite"></i></sc-if>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <span style="font-size:17px;font-weight:500">{{ dropTitle }}</span>
+              <span style="color:var(--color-neutral-400);text-wrap:pretty">A folder of page images (JPG or PNG), or a .dino book from Dino Reader. I don't touch the files.</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <span class="tag tag-accent">Cover</span>
+              <span class="tag tag-neutral">1</span>
+              <span class="tag tag-neutral">2</span>
+              <span class="tag tag-neutral">3</span>
+              <span style="color:var(--color-neutral-500)">…</span>
+              <span class="tag tag-accent">Back cover</span>
+              <span style="color:var(--color-neutral-600);padding:0 6px">or</span>
+              <span class="tag tag-outline"><i class="ph ph-file-zip"></i>Good Enough.dino</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" onClick="{{ openFolder }}" disabled="{{ loading }}"><i class="ph ph-folder-open"></i>Open folder…</button>
+              <button class="btn btn-secondary" onClick="{{ openDino }}" disabled="{{ loading }}"><i class="ph ph-book-bookmark"></i>Open a Dino book…</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isCheck }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;min-height:0;display:flex;gap:24px">
+            <div style="flex:1;min-width:0;overflow:auto;padding:2px 2px 24px">
+
+              <sc-if value="{{ isBookView }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-wrap:wrap;gap:24px 22px;align-items:flex-start">
+                  <sc-for list="{{ spreads }}" as="sp" hint-placeholder-count="6">
+                    <div style="display:flex;flex-direction:column;gap:8px">
+                      <div style="display:flex;gap:2px;align-items:flex-start">
+                        <sc-for list="{{ sp.slots }}" as="t" hint-placeholder-count="2">
+                          <div style="width:96px">
+                            <sc-if value="{{ t.isReal }}">
+                              <div onClick="{{ t.onClick }}" title="{{ t.title }}" style="display:flex;flex-direction:column;gap:6px;cursor:{{ t.cursor }}">
+                                <div style="position:relative;width:{{ t.w }};height:{{ t.h }};box-sizing:border-box;display:flex;align-items:center;justify-content:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:{{ t.ring }};border-radius:2px;transition:box-shadow .15s">
+                                  <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.25;text-align:center;text-wrap:balance;overflow:hidden">{{ t.text }}</div></sc-if></div></sc-if>
+                                  <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.35;text-wrap:pretty;overflow:hidden">{{ t.text }}</div></sc-if>
+                                  <sc-if value="{{ t.isBlank }}"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">{{ t.blankLabel }}</span></sc-if>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:{{ t.labelColor }};min-width:0">
+                                  <sc-if value="{{ t.isTextPage }}"><i class="ph ph-text-aa" style="font-size:12px"></i></sc-if>
+                                  <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+                                </div>
+                                <sc-if value="{{ t.hasNote }}"><div style="font-size:11px;line-height:1.35;color:var(--color-neutral-500);text-wrap:pretty">{{ t.note }}</div></sc-if>
+                              </div>
+                            </sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+                      <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-600)">{{ sp.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isSheetView }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start">
+                  <sc-for list="{{ sheetCards }}" as="sh" hint-placeholder-count="4">
+                    <div style="display:flex;flex-direction:column;gap:10px;padding:12px 14px 14px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+                      <span style="font-size:13px;font-weight:500">{{ sh.title }}</span>
+                      <div style="display:flex;gap:16px">
+                        <sc-for list="{{ sh.faces }}" as="f" hint-placeholder-count="2">
+                          <div style="display:flex;flex-direction:column;gap:6px">
+                            <span style="font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-500)">{{ f.name }}</span>
+                            <div style="display:flex;gap:1px">
+                              <sc-for list="{{ f.tiles }}" as="t" hint-placeholder-count="2">
+                                <div onClick="{{ t.onClick }}" title="{{ t.title }}" style="display:flex;flex-direction:column;gap:4px;width:{{ t.w }};cursor:{{ t.cursor }}">
+                                  <div style="position:relative;width:{{ t.w }};height:{{ t.h }};box-sizing:border-box;display:flex;align-items:center;justify-content:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:{{ t.ring }}">
+                                    <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.25;text-align:center;overflow:hidden">{{ t.text }}</div></sc-if></div></sc-if>
+                                    <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.35;overflow:hidden">{{ t.text }}</div></sc-if>
+                                    <sc-if value="{{ t.isBlank }}"><span style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">{{ t.blankLabel }}</span></sc-if>
+                                  </div>
+                                  <span style="font-size:11px;color:{{ t.labelColor }};text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
+                                </div>
+                              </sc-for>
+                            </div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+
+            <div style="width:316px;flex:none;overflow:auto;margin-bottom:16px;padding:16px;box-sizing:border-box;border-radius:var(--radius-lg);background:var(--color-surface);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;gap:16px">
+              <sc-if value="{{ noSel }}" hint-placeholder-val="{{ false }}">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:8px">
+                  <i class="ph ph-text-aa" style="font-size:32px;color:var(--color-accent)"></i>
+                  <span style="font-size:15px;font-weight:500">Click a page to give it words</span>
+                  <span style="color:var(--color-neutral-400);text-wrap:pretty">The text sits on the picture, or on a page of its own facing it.</span>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+                    <span style="font-size:15px;font-weight:500">{{ selTitle }}</span>
+                    <span style="font-size:11px;color:var(--color-neutral-500);font-family:ui-monospace,Consolas,monospace">{{ selFile }}</span>
+                  </div>
+                  <button class="btn btn-ghost btn-icon" onClick="{{ prev }}" disabled="{{ atFirst }}" title="Previous page"><i class="ph ph-caret-left"></i></button>
+                  <button class="btn btn-ghost btn-icon" onClick="{{ next }}" disabled="{{ atLast }}" title="Next page"><i class="ph ph-caret-right"></i></button>
+                </div>
+
+                <div style="display:flex;justify-content:center;gap:2px;padding:14px 0;border-radius:var(--radius-md);background:color-mix(in srgb, var(--color-bg) 55%, transparent)">
+                  <sc-for list="{{ preview }}" as="t" hint-placeholder-count="1">
+                    <div style="position:relative;width:{{ t.w }};height:{{ t.h }};box-sizing:border-box;display:flex;align-items:center;justify-content:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:var(--shadow-md);border-radius:2px">
+                      <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.25;text-align:center;text-wrap:balance;overflow:hidden;transition:top .2s, bottom .2s">{{ t.text }}</div></sc-if></div></sc-if>
+                      <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.35;text-wrap:pretty;overflow:hidden">{{ t.text }}</div></sc-if>
+                      <sc-if value="{{ t.isBlank }}"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">{{ t.blankLabel }}</span></sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div class="field">
+                  <label>Story text</label>
+                  <textarea class="input" value="{{ selText }}" onChange="{{ onText }}" placeholder="{{ textPlaceholder }}" rows="4" style="width:100%;box-sizing:border-box;resize:vertical;min-height:92px;font-family:Andika,var(--font-body);font-size:15px;line-height:1.4"></textarea>
+                  <sc-if value="{{ hasFitNote }}"><span style="display:flex;gap:6px;font-size:12px;color:{{ fitColor }};text-wrap:pretty"><i class="{{ fitIcon }}" style="font-size:14px;flex:none;margin-top:1px"></i>{{ fitNote }}</span></sc-if>
+                </div>
+
+                <sc-if value="{{ hasText }}" hint-placeholder-val="{{ true }}">
+                  <div class="field">
+                    <label>Where the words go</label>
+                    <div class="seg">
+                      <label class="seg-opt"><input type="radio" name="{{ placeName }}" checked="{{ isPic }}" onChange="{{ setPic }}"><i class="ph ph-image-square"></i>On the picture</label>
+                      <label class="seg-opt" title="{{ ownTitle }}"><input type="radio" name="{{ placeName }}" checked="{{ isOwn }}" onChange="{{ setOwn }}" disabled="{{ ownDisabled }}"><i class="ph ph-book-open-text"></i>Own page</label>
+                    </div>
+                    <sc-if value="{{ hasPlaceNote }}"><span style="display:flex;gap:6px;font-size:12px;color:var(--color-neutral-400);text-wrap:pretty"><i class="ph ph-info" style="font-size:14px;flex:none;margin-top:1px;color:var(--color-accent-300)"></i>{{ placeNote }}</span></sc-if>
+                  </div>
+
+                  <sc-if value="{{ showBands }}" hint-placeholder-val="{{ false }}">
+                    <div class="field">
+                      <label>Band</label>
+                      <div class="seg">
+                        <sc-for list="{{ bandOpts }}" as="b" hint-placeholder-count="3">
+                          <label class="seg-opt"><input type="radio" name="{{ bandName }}" checked="{{ b.checked }}" onChange="{{ b.onChange }}">{{ b.label }}<sc-if value="{{ b.suggested }}"><i class="ph-fill ph-sparkle" title="Suggested" style="font-size:11px;color:var(--color-accent-300)"></i></sc-if></label>
+                        </sc-for>
+                      </div>
+                      <span style="display:flex;gap:6px;font-size:12px;color:var(--color-neutral-400);text-wrap:pretty"><i class="{{ bandHintIcon }}" style="font-size:13px;flex:none;margin-top:2px;color:var(--color-accent-300)"></i>{{ bandHint }}</span>
+                    </div>
+                  </sc-if>
+                </sc-if>
+
+                <div style="flex:1"></div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="flex:1;display:flex;align-items:center;gap:6px;font-size:11px;color:var(--color-neutral-500)">
+                    <sc-if value="{{ saving }}"><i class="ph ph-circle-notch" style="animation:ptdb-spin 0.9s linear infinite"></i></sc-if>
+                    <sc-if value="{{ saved }}"><i class="ph ph-check-circle"></i></sc-if>
+                    {{ saveText }}
+                  </span>
+                  <sc-if value="{{ hasText }}"><button class="btn btn-ghost" onClick="{{ removeText }}"><i class="ph ph-eraser"></i>Remove text</button></sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="position:relative;flex:none;min-height:56px;display:flex;align-items:center;gap:12px;padding:10px 28px">
+        <div style="position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg, transparent, var(--color-divider) 48px, var(--color-divider) calc(100% - 48px), transparent)"></div>
+        <span style="flex:1;min-width:0;color:var(--color-neutral-400);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ footerText }}</span>
+        <sc-if value="{{ isCheck }}" hint-placeholder-val="{{ true }}">
+          <button class="btn btn-secondary" onClick="{{ goBack }}"><i class="ph ph-arrow-left"></i>Back</button>
+          <button class="btn btn-primary">Next: printing<i class="ph ph-arrow-right"></i></button>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;check&quot;,&quot;open&quot;],&quot;default&quot;:&quot;check&quot;,&quot;tsType&quot;:&quot;'check'|'open'&quot;},&quot;source&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;folder&quot;,&quot;dino&quot;],&quot;default&quot;:&quot;folder&quot;,&quot;tsType&quot;:&quot;'folder'|'dino'&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;book&quot;,&quot;sheets&quot;],&quot;default&quot;:&quot;book&quot;,&quot;tsType&quot;:&quot;'book'|'sheets'&quot;},&quot;selected&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;p3&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;bands&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;framed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;height&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  static MM = 0.3528;
+  static INK = 'oklch(0.33 0.04 55)';
+  static EN = {
+    cover: 'Good Enough',
+    p1: 'Saturday morning. Carrot and Hazelnut put on their scarves, one blue and one orange, and walk all the way to Bright Stadium without stopping once for snacks. Well, once.',
+    p2: 'Inside, the stadium is enormous. There are more seats than Carrot can count, and Carrot can count to a hundred. Flags snap in the wind. Somebody is selling hot chestnuts. Far below, the players are warming up, tiny as ants.',
+    p3: 'Carrot wishes they could see better. Hazelnut suggests moving down.',
+    p4: 'They squeeze past knees and bags and one very sleepy badger.',
+    p5: 'Then the whistle blows.',
+    p6: "The ball flies high over everyone's heads.",
+    p7: "Everybody jumps up. Carrot can't see a thing.",
+    p8: 'Hazelnut climbs onto the wall and shouts what happens.',
+    p9: "It isn't the best seat in the stadium. It's good enough.",
+    p10: "On the way home they agree: next time, they'll bring a ladder.",
+  };
+  static DE = {
+    cover: 'Gut genug',
+    p1: 'Samstagmorgen. Carrot und Hazelnut ziehen ihre Schals an, einen blauen und einen orangen, und laufen bis zum Bright Stadium, ohne ein einziges Mal für Snacks anzuhalten. Na gut, einmal.',
+    p2: 'Drinnen ist das Stadion riesig. Es gibt mehr Sitze, als Carrot zählen kann, und Carrot kann bis hundert zählen. Fahnen flattern im Wind. Weit unten wärmen sich die Spieler auf, winzig wie Ameisen.',
+    p3: 'Carrot wünscht sich, besser sehen zu können. Hazelnut schlägt vor, weiter nach unten zu gehen.',
+    p4: 'Sie zwängen sich an Knien, Taschen und einem sehr müden Dachs vorbei.',
+    p5: 'Dann pfeift der Schiedsrichter.',
+    p6: 'Der Ball fliegt hoch über alle Köpfe.',
+    p7: 'Alle springen auf. Carrot sieht gar nichts.',
+    p8: 'Hazelnut klettert auf die Mauer und ruft, was passiert.',
+    p9: 'Es ist nicht der beste Platz im Stadion. Aber er ist gut genug.',
+    p10: 'Auf dem Heimweg sind sie sich einig: Nächstes Mal bringen sie eine Leiter mit.',
+  };
+  static SUG = { cover: 'top', p2: 'top', p6: 'top', p8: 'middle' };
+  static BAND = [22, 20, 18, 16, 14];
+  static PAGE = [28, 24, 20, 18, 16];
+
+  constructor(props) {
+    super(props);
+    this.uid = Math.random().toString(36).slice(2, 8);
+    this.timers = [];
+    this.state = this.initial(props);
+  }
+  componentWillUnmount() { this.timers.forEach(clearTimeout); }
+  componentDidUpdate(prev) {
+    const p = this.props;
+    if (['mode', 'view', 'selected', 'source', 'bands'].some(k => prev[k] !== p[k])) this.setState(this.initial(p));
+  }
+  initial(p) {
+    const source = p.source ?? 'folder';
+    return { mode: p.mode ?? 'check', source, texts: this.seed(source), selected: p.selected === 'none' ? null : (p.selected ?? 'p3'), view: p.view ?? 'book', lang: 'en', save: 'saved', loading: false };
+  }
+  seed(src) {
+    const ids = src === 'dino' ? Object.keys(Component.EN) : ['p1', 'p2', 'p3', 'p5', 'p6'];
+    const own = src === 'dino' ? [] : ['p2', 'p5'];
+    const t = {};
+    ids.forEach(id => { t[id] = { en: Component.EN[id], de: Component.DE[id], place: own.includes(id) ? 'own' : 'pic', band: null }; });
+    return t;
+  }
+  later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  pages() {
+    const out = [{ id: 'cover', kind: 'cover', label: 'Cover', src: 'book/cover.jpg' }];
+    for (let i = 1; i <= 10; i++) out.push({ id: 'p' + i, kind: 'page', label: String(i), src: `book/${i}.jpg` });
+    out.push(this.state.source === 'dino' ? { id: 'backblank', kind: 'backblank', label: 'Back cover' } : { id: 'back', kind: 'back', label: 'Back cover', src: 'book/back.jpg' });
+    return out;
+  }
+  entry(id) { const e = this.state.texts[id]; return e && (e[this.state.lang] || '').trim() ? e : null; }
+  txt(e) { return e ? e[this.state.lang] : ''; }
+  isOwn(p) { const e = this.entry(p.id); return !!e && e.place === 'own' && p.kind === 'page'; }
+  sug(id) { return Component.SUG[id] || 'bottom'; }
+  bandOf(id) { const e = this.state.texts[id]; if (!this.props.bands) return 'bottom'; return (e && e.band) || this.sug(id); }
+  fit(text, wMm, hMm, steps, lh) {
+    let last;
+    for (const pt of steps) {
+      const cpl = Math.max(1, Math.floor(wMm / (pt * Component.MM * 0.5)));
+      let lines = 1, cur = 0;
+      for (const w of text.split(/\s+/).filter(Boolean)) { if (cur && cur + 1 + w.length > cpl) { lines++; cur = w.length; } else cur += (cur ? 1 : 0) + w.length; }
+      last = { pt, ok: lines * pt * Component.MM * lh <= hMm };
+      if (last.ok) return last;
+    }
+    return last;
+  }
+  bandFit(t) { return this.fit(t, 148 * 0.9 - 8, (148 * 4 / 3) * 0.3 - 6, Component.BAND, 1.25); }
+  pageFit(t) { return this.fit(t, 148 * 0.76, 210 * 0.72, Component.PAGE, 1.35); }
+  layout() {
+    const ps = this.pages(), back = ps[ps.length - 1], out = [];
+    ps.slice(0, -1).forEach(p => {
+      if (this.isOwn(p)) {
+        if (out.length % 2 === 0) out.push({ id: 'sp-' + p.id, kind: 'spacer' });
+        out.push({ id: 'tx-' + p.id, kind: 'text', of: p.id, label: p.label });
+      }
+      out.push(p);
+    });
+    const miss = (4 - (out.length + 1) % 4) % 4;
+    for (let i = 0; i < miss; i++) out.push({ id: 'blank' + i, kind: 'blank' });
+    out.push(back);
+    return out;
+  }
+  tile(it, wpx, preview) {
+    const s = this.state, sc = wpx / 148, h = Math.round(wpx * 210 / 148), MM = Component.MM;
+    const t = { id: it.id, isReal: true, w: wpx + 'px', h: h + 'px', hasImg: false, hasBand: false, isTextPage: false, isBlank: false, bandTop: 'auto', bandBottom: 'auto', bandShift: 'none', text: '', fs: '10px', note: '', hasNote: false, blankLabel: '' };
+    const sel = !preview && s.selected && (it.id === s.selected || it.of === s.selected);
+    const isImg = it.kind === 'page' || it.kind === 'cover' || it.kind === 'back';
+    if (isImg) {
+      t.hasImg = true; t.src = it.src;
+      const e = this.entry(it.id);
+      if (e && !this.isOwn(it)) {
+        const b = this.bandOf(it.id), f = this.bandFit(this.txt(e));
+        Object.assign(t, { hasBand: true, text: this.txt(e), fs: (f.pt * MM * sc).toFixed(2) + 'px', bandPad: `${(2.6 * sc).toFixed(1)}px ${(4 * sc).toFixed(1)}px`, bandRadius: Math.max(2, 4 * sc).toFixed(1) + 'px' });
+        if (b === 'top') t.bandTop = '3%'; else if (b === 'middle') { t.bandTop = '50%'; t.bandShift = 'translateY(-50%)'; } else t.bandBottom = '3%';
+      }
+    } else if (it.kind === 'text') {
+      const tx = this.txt(this.entry(it.of)), f = this.pageFit(tx);
+      Object.assign(t, { isTextPage: true, text: tx, fs: (f.pt * MM * sc).toFixed(2) + 'px', tpPad: (148 * 0.12 * sc).toFixed(1) + 'px' });
+    } else {
+      t.isBlank = true;
+      t.blankLabel = it.kind === 'spacer' ? 'spacer' : it.kind === 'backblank' ? 'blank back' : 'blank';
+      t.note = it.kind === 'spacer' ? 'Keeps the text facing its picture.' : it.kind === 'backblank' ? 'Dino books have no back cover.' : 'Filler: a sheet holds 4 pages.';
+      t.hasNote = !preview;
+    }
+    const realPage = isImg || it.kind === 'text';
+    t.bg = realPage ? 'var(--color-neutral-100)' : 'transparent';
+    t.border = realPage ? '0' : '1px dashed var(--color-neutral-700)';
+    t.ring = sel ? '0 0 0 2px var(--color-accent), 0 0 18px color-mix(in srgb, var(--color-accent) 45%, transparent)' : realPage ? 'var(--shadow-md)' : 'none';
+    t.label = it.kind === 'text' ? `Text for ${it.label}` : it.kind === 'spacer' ? 'spacer' : it.kind === 'blank' ? 'blank' : it.label;
+    t.labelColor = sel ? 'var(--color-accent-200)' : realPage ? 'var(--color-neutral-300)' : 'var(--color-neutral-500)';
+    t.title = t.note || t.label;
+    const target = isImg ? it.id : it.kind === 'text' ? it.of : null;
+    t.cursor = target ? 'pointer' : 'default';
+    t.onClick = () => { if (target) this.setState({ selected: target }); };
+    return t;
+  }
+  impose(p) {
+    const n = p.length, out = [];
+    for (let k = 0; k < n / 4; k++) out.push({ num: k + 1, front: [p[n - 1 - 2 * k], p[2 * k]], back: [p[2 * k + 1], p[n - 2 - 2 * k]] });
+    return out;
+  }
+  patch(id, ch) {
+    this.setState(s => {
+      const t = { ...s.texts }, cur = t[id] || { en: '', de: '', place: 'pic', band: null };
+      t[id] = { ...cur, ...ch };
+      return { texts: t, save: 'saving' };
+    });
+    clearTimeout(this.saveT);
+    this.saveT = setTimeout(() => this.setState({ save: 'saved' }), 700);
+    this.timers.push(this.saveT);
+  }
+  renderVals() {
+    const s = this.state, dino = s.source === 'dino', list = this.layout(), sheets = this.impose(list);
+    const pages = this.pages(), selectable = pages.filter(p => p.kind !== 'backblank');
+    const withText = pages.filter(p => this.entry(p.id)).length;
+    const textPages = list.filter(x => x.kind === 'text').length, spacers = list.filter(x => x.kind === 'spacer').length;
+    const bookName = dino ? 'Good Enough.dino' : 'Good Enough';
+    const empty = { isReal: false };
+    const spreads = [{ label: 'Front cover', slots: [empty, this.tile(list[0], 96)] }];
+    for (let i = 1; i < list.length - 1; i += 2) spreads.push({ label: `Spread ${(i + 1) / 2}`, slots: [this.tile(list[i], 96), this.tile(list[i + 1], 96)] });
+    spreads.push({ label: 'Back cover', slots: [this.tile(list[list.length - 1], 96), empty] });
+    const sheetCards = sheets.map(sh => ({ title: `Sheet ${sh.num}`, faces: [{ name: 'Front', tiles: sh.front.map(p => this.tile(p, 62)) }, { name: 'Back', tiles: sh.back.map(p => this.tile(p, 62)) }] }));
+
+    const sp = selectable.find(p => p.id === s.selected) || null;
+    const si = sp ? selectable.indexOf(sp) : -1;
+    const e = sp ? s.texts[sp.id] : null, text = e ? (e[s.lang] || '') : '', has = !!text.trim();
+    const own = sp ? this.isOwn(sp) : false;
+    const preview = !sp ? [] : own ? [this.tile({ id: 'tx-' + sp.id, kind: 'text', of: sp.id, label: sp.label }, 128, true), this.tile(sp, 128, true)] : [this.tile(sp, 212, true)];
+    const ti = list.findIndex(x => x.id === 'tx-' + (sp && sp.id));
+    const spacerBefore = ti > 0 && list[ti - 1].kind === 'spacer';
+    let fitNote = '', fitColor = 'var(--color-neutral-400)', fitIcon = 'ph ph-check';
+    if (sp && has) {
+      const f = own ? this.pageFit(text) : this.bandFit(text), base = (own ? Component.PAGE : Component.BAND)[0], where = own ? 'its page' : 'the band';
+      if (!f.ok) { fitNote = `Too long for ${where}, even at ${f.pt} pt. Cut it down${own ? '' : ', or give it its own page'}.`; fitColor = 'oklch(0.82 0.12 78)'; fitIcon = 'ph-fill ph-warning'; }
+      else if (f.pt < base) { fitNote = `Shrunk to ${f.pt} pt so it fits ${where}.`; fitIcon = 'ph ph-arrows-in'; }
+      else fitNote = `${f.pt} pt, fits ${where}.`;
+    }
+    const isCover = sp && sp.kind !== 'page';
+    const placeNote = own
+      ? (spacerBefore ? 'Text on the left, picture on the right. I put a spacer page in front so they face each other.' : 'Text on the left, picture on the right, facing each other when the book is open.')
+      : isCover ? 'Covers keep their words on the picture.' : 'A soft panel over the picture, never more than 30% of it.';
+    const band = sp ? this.bandOf(sp.id) : 'bottom', sugB = sp ? this.sug(sp.id) : 'bottom', picked = !!(e && e.band);
+    const steps = [
+      { title: 'Open pages', sub: bookName, st: s.mode === 'open' ? 'current' : 'done', go: () => this.setState({ mode: 'open' }) },
+      { title: 'Check the order', sub: `${sheets.length} sheets · ${withText} with words`, st: s.mode === 'check' ? 'current' : 'todo', go: () => this.setState({ mode: 'check' }) },
+      { title: 'Print', sub: 'HP OfficeJet · A4', st: 'todo', go: () => {} },
+    ].map((x, i) => ({
+      num: i + 1, title: x.title, sub: i === 0 && s.mode === 'open' ? 'A folder or a Dino book' : x.sub, isDone: x.st === 'done', notDone: x.st !== 'done', onClick: x.go,
+      numBg: x.st === 'done' ? 'var(--color-accent-800)' : 'transparent',
+      numColor: x.st === 'done' ? 'var(--color-accent-200)' : x.st === 'current' ? 'var(--color-accent)' : 'var(--color-neutral-500)',
+      numRing: x.st === 'current' ? '0 0 0 1px var(--color-accent), 0 0 14px color-mix(in srgb, var(--color-accent) 45%, transparent)' : x.st === 'todo' ? '0 0 0 1px var(--color-divider)' : 'none',
+      titleColor: x.st === 'todo' ? 'var(--color-neutral-500)' : 'var(--color-text)',
+      railBg: x.st === 'current' ? 'color-mix(in srgb, var(--color-text) 6%, transparent)' : 'transparent',
+      railMark: x.st === 'current' ? 'var(--color-accent)' : 'transparent',
+    }));
+    const isOpen = s.mode === 'open', isCheck = s.mode === 'check';
+    const extra = [textPages && `${textPages} text ${textPages === 1 ? 'page' : 'pages'}`, spacers && `${spacers} spacer`].filter(Boolean).join(', ');
+    const go = src => { if (this.state.loading) return; this.setState({ loading: true }); this.later(() => this.setState({ loading: false, mode: 'check', source: src, texts: this.seed(src), selected: src === 'dino' ? 'cover' : null, lang: 'en' }), 900); };
+    return {
+      rootH: this.props.height ?? '100vh', winRadius: this.props.framed ? '8px' : '0', winShadow: this.props.framed ? 'var(--shadow-lg)' : 'none',
+      hasBook: isCheck, bookName, statusShort: `${list.length} pages on ${sheets.length} sheets`, steps,
+      isOpen, isCheck, loading: s.loading, notLoading: !s.loading, dropTitle: s.loading ? 'Reading the book…' : 'Drop a folder or a Dino book here',
+      openFolder: () => go('folder'), openDino: () => go('dino'),
+      heading: isOpen ? 'Point me at your pages' : dino ? 'Check the order and the words' : 'Check the order',
+      subheading: isOpen ? "Name them Cover, 1, 2, 3 … Back cover, or open a book you made in Dino Reader. Its words come along." : s.view === 'book'
+        ? (dino ? 'Every page came with its words. Click one to change them or move them to a page of their own.' : 'Click a page to give it words. Drag to move it; a text page travels with its picture.')
+        : 'What comes out of the printer, words and all.',
+      isDino: dino, lang: s.lang, onLang: ev => { if (ev.target.value !== 'fa') this.setState({ lang: ev.target.value }); },
+      langs: [{ v: 'en', label: "English (the book's own)", dis: false }, { v: 'de', label: 'Deutsch', dis: false }, { v: 'fa', label: 'فارسی · right-to-left books are not supported yet', dis: true }],
+      viewName: 'v-' + this.uid, isBookView: s.view === 'book', isSheetView: s.view === 'sheets',
+      setBookView: () => this.setState({ view: 'book' }), setSheetView: () => this.setState({ view: 'sheets' }),
+      spreads, sheetCards,
+      noSel: !sp, hasSel: !!sp, selTitle: !sp ? '' : sp.kind === 'cover' ? 'Front cover' : sp.kind === 'back' ? 'Back cover' : `Page ${sp.label}`,
+      selFile: !sp ? '' : dino ? (sp.kind === 'cover' ? 'cover-1.jpg' : `page-${sp.label}.jpg`) : `${sp.label}.jpg`,
+      atFirst: si <= 0, atLast: si >= selectable.length - 1,
+      prev: () => si > 0 && this.setState({ selected: selectable[si - 1].id }), next: () => si < selectable.length - 1 && this.setState({ selected: selectable[si + 1].id }),
+      preview, selText: text, textPlaceholder: isCover ? 'A title, if you want one on the cover' : 'What happens on this page?',
+      onText: ev => sp && this.patch(sp.id, { [this.state.lang]: ev.target.value }),
+      hasFitNote: !!fitNote, fitNote, fitColor, fitIcon, hasText: has,
+      placeName: 'pl-' + this.uid, isPic: !own, isOwn: own, ownDisabled: !!isCover, ownTitle: isCover ? 'Covers keep their words on the picture' : 'Put the words on the page facing the picture',
+      setPic: () => this.patch(sp.id, { place: 'pic' }), setOwn: () => this.patch(sp.id, { place: 'own' }),
+      hasPlaceNote: true, placeNote,
+      showBands: !!this.props.bands && has && !own, bandName: 'bd-' + this.uid,
+      bandOpts: ['top', 'middle', 'bottom'].map(b => ({ label: b[0].toUpperCase() + b.slice(1), checked: band === b, suggested: sugB === b, onChange: () => this.patch(sp.id, { band: b }) })),
+      bandHint: picked ? "Your pick. I'll never suggest over it." : `Suggested: the ${sugB} is the plainest part of this picture. Pick another and it sticks.`,
+      bandHintIcon: picked ? 'ph ph-push-pin' : 'ph-fill ph-sparkle',
+      removeText: () => this.patch(sp.id, { [this.state.lang]: '' }),
+      saving: s.save === 'saving', saved: s.save === 'saved', saveText: s.save === 'saving' ? 'Saving…' : dino ? 'Saved with this Dino book' : 'Saved to book.json in the folder',
+      footerText: isOpen ? 'Open a folder or a Dino book to begin.' : `${list.length} pages on ${sheets.length} sheets${extra ? ` (incl. ${extra})` : ''}. ${withText} with words.`,
+      goBack: () => this.setState({ mode: 'open' }),
+    };
+  }
+}
+</script>
+</body>
+</html>

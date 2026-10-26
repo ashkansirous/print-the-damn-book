@@ -40,6 +40,25 @@ reader and writer in `ReadTheStupidText/src/DinoReader.Core/StoryPackageReader.c
 - [ ] App: open and drop `.dino`; extract to the cache folder; load into the existing wizard; loading state over 500 ms.
 - [ ] Title on the front cover.
 
+#### Design (Story Text mock, section 1e and 1f, added 2026-10-26)
+
+Two frames (1e Open step, 1f Check step for a Dino book), live renders of `StoryCheck.dc.html`. The mock agrees with
+the Decisions above.
+
+- **Open step.** Drop zone "Drop a folder or a Dino book here" (while reading: "Reading the book..."). Buttons "Open
+  folder..." (primary) and "Open a Dino book..." (secondary). Sub-line: "Name them Cover, 1, 2, 3 ... Back cover, or
+  open a book you made in Dino Reader. Its words come along." The example row gains a `.dino` tag. Rail sub-text for
+  step 1: "A folder or a Dino book".
+- **Check step for a Dino book.** Heading "Check the order and the words"; sub-line "Every page came with its words.
+  Click one to change them or move them to a page of their own." The cover is selected first. Save status "Saved with
+  this Dino book".
+- **Language select** (Phosphor `translate`) left of the Reading order / As printed switch. The book's own language
+  first ("English (the book's own)"), translations after ("Deutsch"). Right-to-left ones are listed but disabled:
+  "right-to-left books are not supported yet" (Farsi in the mock).
+- **Simplified in the mock:** the book is seeded placeholder data; the 900 ms load is a timer.
+
+**New strings:** the quoted copy above.
+
 **Verification.**
 
 - `dotnet test` is green.
