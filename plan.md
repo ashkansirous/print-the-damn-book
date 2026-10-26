@@ -24,27 +24,18 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 
 | Slice | Title | Status | PR | Issue | File |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Open a folder and preview the imposed sheets | built | #2 | | [01](docs/plan/slices/01-folder-to-sheet-preview.md) |
-| 2 | Print the booklet duplex | built | #3 | | [02](docs/plan/slices/02-print-booklet.md) |
-| 3 | Reorder, add and remove pages | built | #4 | | [03](docs/plan/slices/03-reorder-pages.md) |
-| 4 | Options: fill or fit, flip edge, remembered printer | built | #10 | | [04](docs/plan/slices/04-options-and-settings.md) |
-| 5 | Release build on GitHub | built | #5 | | [05](docs/plan/slices/05-release-pipeline.md) |
-| 6 | Manual two-sided printing (before Slice 4) | built | #8 | | [06](docs/plan/slices/06-manual-duplex.md) |
-| 7 | Redesign: Open → Check → Print wizard (Nocturne) | built | #15 | | [07](docs/plan/slices/07-wizard-redesign.md) |
-| 8 | App icon and Store Kit assets | built | #16 | | [08](docs/plan/slices/08-icon-and-store-assets.md) |
-| 9 | Optional page numbers, below or above (after 7) | built | #18 | | [09](docs/plan/slices/09-page-numbers.md) |
-| 10 | Landing site at print-the-damn-book.sirous.uk | built | #17 | | [10](docs/plan/slices/10-landing-site.md) |
-| 11 | Microsoft Store: MSIX, listing, submission (after 8, 10) (submission dropped by the user, tooling kept) | built | #19 | | [11](docs/plan/slices/11-microsoft-store.md) |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
-| 14 | Story text: typed, on the picture or on its own page (design done) | planned | | | [14](docs/plan/slices/14-typed-text-pages.md) |
 | 15 | Open a Dino Reader book (`.dino`) (after 14) | planned | | | [15](docs/plan/slices/15-open-dino-books.md) |
 | 16 | Top and middle bands, empty-space suggestion (after 14) | planned | | | [16](docs/plan/slices/16-text-band-suggestion.md) |
 
-Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
+Notes:
+
+- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14).
 
 ## Outstanding work
 
+- Slice 14: printing on Letter paper; a real paper print and fold; performance with many story pages (re-layout on the UI thread on each typing pause) ([slice 14](docs/plan/slices/14-typed-text-pages.md)).
 - Slice 9: a real printed page with numbers (print to PDF or paper) ([slice 09](docs/plan/slices/09-page-numbers.md)).
 - Slice 7 code follow-ups from Slice 11 review: `SnapLayoutHook` hover state not cleared without non-client mouse tracking; `NocturneDialog` CoverOwner sizing / null owner; `ClearStatusUnlessBusy` doesn't reset `PrintStatusKind`; `TestSheetSent` mid-send check only covers RotateBacks ([slice 11](docs/plan/slices/11-microsoft-store.md)).
 - Site CI deploy: the user creates a Cloudflare API token (Workers edit) in the dashboard and sets it as the `CLOUDFLARE_API_TOKEN` repo secret ([slice 10](docs/plan/slices/10-landing-site.md)).

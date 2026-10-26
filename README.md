@@ -20,6 +20,8 @@ The app is a three-step wizard (Open, Check, Print) ending with a fold guide. We
 
 Options (scaling, flip edge, margin, paper, printer, two-sided) are remembered between runs. Page numbers (Off / Below / Above) are under More options.
 
+Story text: type words for each page, on the picture or on its own page; saved in `book.json` in the folder.
+
 Printers without two-sided printing: choose Manual; print the test sheet once to check the backs' rotation.
 
 ## Download
