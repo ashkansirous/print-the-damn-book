@@ -131,13 +131,13 @@ Core constant (Slice 16 then varies it).
 
 *Desktop acceptance (2026-10-26):* all 10 items pass (Print to PDF, blackberry-path band on plain ground, tint, save on exit, Fill tiles match the PDF).
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-26)
 
 - Story text layout (band rectangle, shrink steps, text-page box, spread-alignment spacers, tint) lives in `Core/Text` and `Core/Layout`; the App only draws it. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
 - `book.json` is read and written only through `Services/BookTextStore`; never overwrite a file it could not read. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
 - Andika is the only story font; its licence is listed in `Services/FontLicences`. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
 
-#### For README.md
+#### For README.md (lifted 2026-10-26)
 
 - Story text: type words for each page, on the picture or on its own page; saved in `book.json` in the folder.
 
