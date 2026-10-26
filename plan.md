@@ -37,6 +37,9 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 11 | Microsoft Store: MSIX, listing, submission (after 8, 10) (submission dropped by the user, tooling kept) | built | #19 | | [11](docs/plan/slices/11-microsoft-store.md) |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
+| 14 | Story text: typed, on the picture or on its own page (design pass first) | planned | | | [14](docs/plan/slices/14-typed-text-pages.md) |
+| 15 | Open a Dino Reader book (`.dino`) (after 14) | planned | | | [15](docs/plan/slices/15-open-dino-books.md) |
+| 16 | Top and middle bands, empty-space suggestion (after 14) | planned | | | [16](docs/plan/slices/16-text-band-suggestion.md) |
 
 Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 
@@ -61,9 +64,9 @@ Notes: _(none yet; `docs/plan/notes/YYYY-MM-DD-<slug>.md`, one line each)_
 
 - PDF or WebP input (images only; PDF is the first thing to add if a generator produces it).
 - Multiple signatures or perfect binding: one folded stack per book.
-- Saving a book project file: reopen the folder instead.
+- Saving a book project file: reopen the folder instead. (Exception from Slice 14: story text is saved in `book.json` in the folder; page order is not.)
 - Trim marks, bleed, crop marks: pages are fit inside the half-sheet, nothing is cut.
 - Printing through another app's dialog, or a Dockerfile / GHCR image (desktop app, no backend).
 - macOS or Linux builds. (Android and iOS are parked slices 12–13, not out of scope.)
 - A light theme for the redesign (Nocturne is dark only for now).
-- Right-to-left books (the imposition would mirror left and right; not needed for the sample).
+- Right-to-left books (the imposition would mirror left and right; not needed for the sample). Farsi Dino books stay out too (Slice 15).
