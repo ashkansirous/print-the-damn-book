@@ -1,6 +1,6 @@
 # Design: print-the-damn-book
 
-Copied from Claude Design on 2026-10-22; `Redesign Directions.dc.html` and the mobile files refreshed 2026-10-23. Source project:
+Copied from Claude Design on 2026-10-22; `Redesign Directions.dc.html` and the mobile files refreshed 2026-10-23; `Story Text.dc.html` and `StoryCheck.dc.html` added 2026-10-26. Source project:
 https://claude.ai/design/p/71f50eae-822f-45b1-9a5f-287e52c02bdc (project id `71f50eae-822f-45b1-9a5f-287e52c02bdc`).
 
 Read visual values (colors, sizes, spacing, copy) from these files; never guess them, and never call
@@ -15,6 +15,9 @@ overwrite these copies.
 | `MobileWizard.dc.html` | The working phone prototype the 4a–4g frames render: Open → Check → Print → Done for iOS and Android, all copy and state logic in its script |
 | `ios-frame.jsx`, `android-frame.jsx` | Generic iOS 26 and Material 3 device frames (bezel, status bar, home indicator); mock chrome only, not app UI |
 | `BookWizard.dc.html` | The working prototype the directions render: Open → Check → Print → Done, all copy and state logic in its script |
+| `Story Text.dc.html` | Canvas for Slices 14–16: frames 1a–1f of the Check-step story-text editor, each a live `StoryCheck` |
+| `StoryCheck.dc.html` | The working prototype the 1a–1f frames render: Open (folder or Dino book) and Check with the right-hand text editor, band picker, fit line and text/spacer tiles |
+| `reference/blackberry-path.png` | A picture made with room for its words: the bottom ~30% is plain (user's reference, 2026-10-26). Bottom-band reference for Slice 14, a test picture for Slice 16 |
 | `Store Kit.dc.html` | App icon in the shell (2a), .ico ladder (2b), MSIX assets (2c), Store logos (2d), hero art (2e), screenshots (2f) |
 | `icons/app-icon.svg`, `icons/app-icon-sm.svg` | The app icon (48 px and up) and the simplified glyph (32 px and below) |
 | `nocturne/styles.css` | The Nocturne design-system tokens and component classes (dark theme, Inter, accent #9184d9) |
@@ -60,6 +63,24 @@ Not copied: `_ds_bundle.js` and `support.js` (they only render the mock in Claud
 | 2e | 16:9 Super hero art (960×540 → export 2× = 1920×1080, 4× = 3840×2160). No product title (S | 103 |
 | 2f | Screenshots (960×540 → export 2× = 1920×1080). Built from the live prototype, so they stay | 115 |
 
+### Story Text.dc.html
+
+| Id | Title | Line |
+| --- | --- | --- |
+| 1a | On the picture, bottom band (Slice 14; page 3 selected, page 1 shrinks to fit) | 24 |
+| 1b | Own page, facing its picture (page 2 needs a spacer) | 28 |
+| 1c | As printed, words and all | 32 |
+| 1d | Band picker with a suggestion (Slice 16) | 36 |
+| 1e | Open: folder or Dino book (Slice 15) | 40 |
+| 1f | A Dino book, title on the cover (Slices 15 + 16) | 44 |
+
+### StoryCheck.dc.html
+
+One component with props `mode` (check | open), `source` (folder | dino), `view` (book | sheets),
+`selected` (a page id like `p3`, `cover`, or `none`) and `bands` (Slice 16 band picker on/off).
+Shrink steps (`BAND`, `PAGE`), the panel colours, the spacer/blank logic (`layout()`) and every
+string live in its script; `renderVals()` holds the copy.
+
 ### BookWizard.dc.html
 
 The prototype is one component with props `variant` (stepper | rail | focus, default rail),
@@ -97,3 +118,9 @@ layout, with `isIOS` / `isAndroid` branches for the native chrome.
 > files the selection imports: the Nocturne `_ds_bundle.js` and `styles.css`, `android-frame.jsx`,
 > `book/1.jpg`, `book/10.jpg`, `book/2.jpg` … `book/5.jpg`, `book/cover.jpg`, `ios-frame.jsx`,
 > `support.js`. Implement: `Redesign Directions.dc.html`
+
+> Design pass for Slices 14–16 is done. Import it and fold the decisions into the plan.
+> 1. Import the design with import-claude-design into docs/design/:
+>    - StoryCheck.dc.html (the Check step with the story-text editor; props: mode, source, view, selected, bands)
+>    - Story Text.dc.html (canvas of frames 1a–1f that imports StoryCheck)
+>    Keep the existing BookWizard/MobileWizard/Store Kit files as they are.

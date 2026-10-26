@@ -1,11 +1,11 @@
 ### Slice 14 — Story text: typed in the app, on the picture or on its own page
 
-*Planned.* Needs a design pass for the Check-step text editor before it is built (see Design below).
+*Planned.* The design pass is done (`docs/design/Story Text.dc.html`, frames 1a-1c; see Design below).
 
 **Touches:** `src/PrintTheDamnBook.Core/BookPage.cs`, `src/PrintTheDamnBook.Core/Ordering/**`,
 `src/PrintTheDamnBook.Core/Layout/**`, `src/PrintTheDamnBook.Core/Text/**` (new),
 `src/PrintTheDamnBook.Core/Imposition.cs`, `tests/PrintTheDamnBook.Core.Tests/**`,
-`src/PrintTheDamnBook.App/Printing/FaceRenderer.cs`, `src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`,
+`src/PrintTheDamnBook.App/Printing/FaceRenderer.cs`, `src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/Views/OptionsPanel*`,
 `src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.App/Services/FontLicences.cs`,
 `src/PrintTheDamnBook.App/Services/BookTextStore.cs` (new), `src/PrintTheDamnBook.App/Fonts/**`,
 `src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj`, `docs/design/**`
@@ -22,6 +22,17 @@ typed text; Slice 15 fills the same model from `.dino` files; Slice 16 adds the 
   30% of the picture's height (the Dino Reader rule, `ReadTheStupidText/src/DinoReader.App/CLAUDE.md:59`), on a soft
   rounded panel in the Dino Reader colours (`ReadTheStupidText/docs/design/dino-reader/`) so it reads on any picture.
   Top and middle bands come in Slice 16.
+- **The panel is one fixed style**, never colour-picked per page. Dino Reader's own values (looked up 2026-10-26):
+  `TextCard` white at 92% opacity, ink `#2b2540`, corner radius 16, padding 14 x 10, margin 8, line height 1.5
+  (`ReadTheStupidText/src/DinoReader.App/PictureTextPages.cs:17-24`, `ReadingTheme.cs:50`, `App.xaml:10`). Opacity,
+  radius, padding and ink are Core constants. The mock's warm cream is a stand-in (see the Open point below).
+- **Text pages are plain paper white** by default. An optional per-book setting under Print, More options, "Text
+  pages: White / Tinted from cover" tints them with the cover's average colour lifted to OKLCH L >= 0.96. The tint is
+  computed in Core on a pixel buffer and tested. There is no per-page background choice anywhere.
+- The per-book setting is stored in `book.json`. `schemaVersion` stays 1 while `book.json` has not shipped; bump it if
+  it has.
+- **Reference picture** `docs/design/reference/blackberry-path.png` (1493x2000, 3:4): drawn with room for its words,
+  the bottom ~30% plain (row brightness spread about 6 in 70-85% of the height, against 30-40 in the busy middle).
 - **Own page:** the text gets its own page, **facing the picture: text on the left, picture on the right**. Core
   inserts blank pages where needed so every text page lands on a left page with its picture on the right of the same
   spread. Blanks still go before the back cover as now; spread-alignment blanks go where they are needed.
@@ -37,9 +48,7 @@ typed text; Slice 15 fills the same model from `.dino` files; Slice 16 adds the 
 
 **Work.**
 
-- [ ] Design pass: a Check-step text editor (where the text box sits, the placement switch, how a text page shows in
-      the thumbnail strip and in the As printed preview). Import it with `import-claude-design` into `docs/design/`;
-      then write this slice's Design subsection with `design-to-plan`.
+- [x] Design pass: imported to `docs/design/Story Text.dc.html` and `StoryCheck.dc.html`; Design subsection below.
 - [ ] Core, smallest end to end: `BookPage` gains optional `StoryText` (text + placement); `PageList` expands *Own
       page* into a text page plus alignment blanks; `Imposition` treats a text page like any page. Tests for spread
       alignment with 0, 1 and many text pages, odd and even counts, and the blanks-before-back-cover rule kept.
@@ -48,9 +57,57 @@ typed text; Slice 15 fills the same model from `.dino` files; Slice 16 adds the 
 - [ ] App: bundle Andika (+ licence); `FaceRenderer` draws the panel and the text (outline geometry, like the page
       numbers) on automatic, manual and test-sheet paths, rotated with backs.
 - [ ] App: the text editor in the Check step per page (text box, *On the picture* / *Own page*), thumbnails and
-      As printed tiles show the text.
+      As printed tiles show the text, as in the Design subsection.
+- [ ] Core: `TextPageTint` (average cover colour lifted to OKLCH L >= 0.96) on a pixel buffer, tested with synthetic
+      images; the "Text pages: White / Tinted from cover" setting in More options and in `book.json`.
 - [ ] App: `BookTextStore` reads and writes `book.json` in the folder (debounced save; a missing or broken file reads
       as no text and never blocks opening the folder). The JSON schema has a `schemaVersion`.
+
+#### Design (Story Text mock, section 1a-1c, added 2026-10-26)
+
+Three frames for this slice (1a on the picture, 1b own page, 1c As printed), live renders of `StoryCheck.dc.html`
+(`docs/design/Story Text.dc.html`). Each shows the whole Check step. The mock agrees with the Decisions above except
+where an Open point says so.
+
+- **Layout.** The spreads area keeps its own scroll. A right-hand editor panel, about 316 px wide, on the surface card
+  sits beside it. Folder-book heading stays "Check the order"; sub-line "Click a page to give it words. Drag to move
+  it; a text page travels with its picture."
+- **Nothing selected.** Empty state "Click a page to give it words".
+- **Selected.** Top to bottom: title (Page N, Front cover or Back cover) with the file name under it; previous and next
+  buttons; a live preview (one page, or text page and picture side by side for *Own page*); a "Story text" box typed in
+  Andika; the fit line; the "On the picture" / "Own page" segmented switch; the save status; "Remove text".
+- **Placement note** under the switch: "A soft panel over the picture, never more than 30% of it." / "Text on the
+  left, picture on the right, facing each other when the book is open." / with a spacer: "Text on the left, picture
+  on the right. I put a spacer page in front so they face each other."
+- **Save status.** "Saved to book.json in the folder" (folder) or "Saved with this Dino book" (Slice 15); a saving
+  state shows while the debounce runs.
+- **Selecting.** Clicking a picture or its text page selects the picture. A text page travels with its picture when
+  dragged.
+- **Covers.** *Own page* is disabled; note "Covers keep their words on the picture."
+- **Thumbnails and As printed.** Band text and text pages are drawn at true print scale (same Core rectangles and
+  font sizes), so the Reading order and As printed tiles are the print. Text page tile label "Text for N" with the
+  Phosphor `text-aa` icon. A spread-alignment blank is a dashed tile labelled "spacer", note "Keeps the text facing its
+  picture."; normal filler stays "blank"; a Dino book's missing back cover is "blank back". The status line adds
+  "N text pages, N spacer" when there are any.
+- **Fit line** (Phosphor `check`; `arrows-in` when shrunk; `ph-fill ph-warning` in a warning colour when too long):
+  "22 pt, fits the band." / "Shrunk to 18 pt so it fits the band." / "Too long for the band, even at 14 pt. Cut it down,
+  or give it its own page." For *Own page* "its page" replaces "the band" and the last sentence is "Cut it down."
+- **Shrink steps** (placeholders in the mock; Core owns them and its tests confirm them): band 22, 20, 18, 16, 14 pt;
+  own page 28, 24, 20, 18, 16 pt.
+- **Simplified in the mock:** pictures are generated placeholders; pt sizes are screen-scaled stand-ins.
+
+**New strings** (English only today; every locale if one exists by then): the quoted copy above, plus "Story text",
+"On the picture", "Own page", "Remove text", "Text for N", "spacer", "blank back".
+
+**Open point: panel colours.** The Decisions say the Dino Reader colours; the mock uses a warm cream
+(`oklch(0.97 0.025 85 / .93)` on ink `oklch(0.33 0.04 55)`) as a stand-in. Dino Reader's real values are the values
+named in the Decisions (white at 0.92, ink `#2b2540`). **Default:** use the real Dino Reader values.
+
+**Open point: panel opacity.** Dino Reader uses 0.92; the mock and the user's note say about 0.93. **Default:** 0.92, a
+Core constant (Slice 16 then varies it).
+
+**Open point: the More options row.** The mock does not show the "Text pages: White / Tinted from cover" row.
+**Default:** a plain two-option select in Print, More options, styled like the other options.
 
 **Verification.**
 
@@ -59,3 +116,5 @@ typed text; Slice 15 fills the same model from `.dino` files; Slice 16 adds the 
   the own-page text faces its picture after folding, the band text never covers more than the bottom 30%, a long text
   shrinks rather than overflows.
 - Close and reopen the folder: the text is back.
+- `blackberry-path.png` with a bottom-band text: the text sits on the plain ground and does not cover the rabbits.
+- Text pages print white by default and tinted when the setting is on.
