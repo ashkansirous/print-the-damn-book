@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:PrintTheDamnBook.App.ViewModels"
              xmlns:layout="clr-namespace:PrintTheDamnBook.Core.Layout;assembly=PrintTheDamnBook.Core"
+             xmlns:text="clr-namespace:PrintTheDamnBook.Core.Text;assembly=PrintTheDamnBook.Core"
              xmlns:views="clr-namespace:PrintTheDamnBook.App.Views">
   <!-- DataContext is the MainViewModel; the printer options live on its Print view model. -->
   <UserControl.Resources>
@@ -116,6 +117,17 @@
             <Rectangle Style="{StaticResource SegDivider}" />
             <RadioButton Style="{StaticResource SegOption}" Content="Above" GroupName="PageNumbers" AutomationProperties.Name="Page numbers above"
                          IsChecked="{Binding PageNumbers, Converter={StaticResource EnumBool}, ConverterParameter={x:Static layout:PageNumberPosition.Above}}" />
+          </StackPanel>
+        </Border>
+
+        <TextBlock Style="{StaticResource FieldLabel}" Text="Text pages" Margin="0,14,0,5" />
+        <Border Style="{StaticResource SegBorder}" IsEnabled="{Binding IsIdle}">
+          <StackPanel Orientation="Horizontal">
+            <RadioButton Style="{StaticResource SegOption}" Content="White" GroupName="TextPages" AutomationProperties.Name="Text pages white"
+                         IsChecked="{Binding TextPages, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:TextPageBackground.White}}" />
+            <Rectangle Style="{StaticResource SegDivider}" />
+            <RadioButton Style="{StaticResource SegOption}" Content="Tinted from cover" GroupName="TextPages" AutomationProperties.Name="Text pages tinted from the cover"
+                         IsChecked="{Binding TextPages, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:TextPageBackground.TintedFromCover}}" />
           </StackPanel>
         </Border>
 

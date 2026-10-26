@@ -8,6 +8,7 @@ using System.Windows.Media;
 using PrintTheDamnBook.App.Services;
 using PrintTheDamnBook.Core;
 using PrintTheDamnBook.Core.Layout;
+using PrintTheDamnBook.Core.Text;
 using Polygon = System.Windows.Shapes.Polygon;
 
 namespace PrintTheDamnBook.App.Printing;
@@ -129,6 +130,12 @@ internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
 
     private void AddPage(FixedPage page, BookPage bookPage, bool rightHalf, bool rotate180, IReadOnlyDictionary<string, SizeD> sizes)
     {
+        if (bookPage.Kind == PageKind.Text)
+        {
+            AddTextPage(page, bookPage, rightHalf, rotate180);
+            return;
+        }
+
         if (bookPage.Path is null)
         {
             return;
@@ -153,7 +160,78 @@ internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
         FixedPage.SetLeft(element, ToDip(rect.X));
         FixedPage.SetTop(element, ToDip(rect.Y));
         page.Children.Add(element);
+        AddBand(page, bookPage, placement, rotate180);
         AddPageNumber(page, bookPage, rightHalf, rotate180);
+    }
+
+    /// <summary>A page with words on the picture: the soft panel over the bottom of the visible picture, then the words. Both turn with the face.</summary>
+    private void AddBand(FixedPage page, BookPage bookPage, PagePlacement placement, bool rotate180)
+    {
+        if (!bookPage.HasBandText)
+        {
+            return;
+        }
+
+        var painting = StoryPainter.PaintBand(bookPage.Story!.Text, paper, placement.Visible);
+        var panel = rotate180 ? RotateDip(painting.Panel) : painting.Panel;
+        var box = new Border
+        {
+            Width = panel.Width,
+            Height = panel.Height,
+            Background = StoryPainter.Panel,
+            CornerRadius = new CornerRadius(painting.CornerRadius),
+        };
+        FixedPage.SetLeft(box, panel.X);
+        FixedPage.SetTop(box, panel.Y);
+        page.Children.Add(box);
+        AddWords(page, painting.Words, painting.WordsClip, rotate180);
+    }
+
+    /// <summary>A story text page: the paper tint when the book asks for one (the whole half sheet), then the words centred in their box.</summary>
+    private void AddTextPage(FixedPage page, BookPage bookPage, bool rightHalf, bool rotate180)
+    {
+        var area = StoryTextLayout.TextPage(_sheetMm, rightHalf, layout.MarginMm, layout.NumberPosition);
+        if (layout.TextPageTint is { } tint)
+        {
+            AddTint(page, rotate180 ? HalfSheetLayout.Rotate180(area.Page, _sheetMm) : area.Page, tint);
+        }
+
+        if (bookPage.Story is { IsEmpty: false } story)
+        {
+            var painting = StoryPainter.PaintTextPage(story.Text, paper, area);
+            AddWords(page, painting.Words, painting.WordsClip, rotate180);
+        }
+
+        AddPageNumber(page, bookPage, rightHalf, rotate180);
+    }
+
+    private void AddTint(FixedPage page, RectD half, Rgb tint)
+    {
+        var brush = FrozenBrush(Color.FromRgb(tint.R, tint.G, tint.B));
+        var fill = new System.Windows.Shapes.Rectangle { Width = ToDip(half.Width), Height = ToDip(half.Height), Fill = brush };
+        FixedPage.SetLeft(fill, ToDip(half.X));
+        FixedPage.SetTop(fill, ToDip(half.Y));
+        page.Children.Add(fill);
+    }
+
+    /// <summary>Words as outlines already in sheet coordinates; a turned face turns them about the sheet's centre.</summary>
+    private void AddWords(FixedPage page, Geometry words, Rect clip, bool rotate180)
+    {
+        var path = new System.Windows.Shapes.Path
+        {
+            Data = words,
+            Fill = StoryPainter.Ink,
+            Clip = new RectangleGeometry(clip),
+            RenderTransform = rotate180 ? new RotateTransform(180, ToDip(_sheetMm.Width) / 2, ToDip(_sheetMm.Height) / 2) : Transform.Identity,
+        };
+        page.Children.Add(path);
+    }
+
+    private Rect RotateDip(Rect rect)
+    {
+        var width = ToDip(_sheetMm.Width);
+        var height = ToDip(_sheetMm.Height);
+        return new Rect(width - rect.X - rect.Width, height - rect.Y - rect.Height, rect.Width, rect.Height);
     }
 
     /// <summary>Draws the page's number in its strip below or above the image; it turns with the face.</summary>

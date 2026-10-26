@@ -1,10 +1,36 @@
 <UserControl x:Class="PrintTheDamnBook.App.Views.CheckStepView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
              xmlns:vm="clr-namespace:PrintTheDamnBook.App.ViewModels"
+             xmlns:text="clr-namespace:PrintTheDamnBook.Core.Text;assembly=PrintTheDamnBook.Core"
              xmlns:views="clr-namespace:PrintTheDamnBook.App.Views">
   <!-- DataContext is the MainViewModel. -->
   <UserControl.Resources>
+    <!-- Phosphor 2.1.1 code points for the story text editor (regular and fill share them). -->
+    <sys:String x:Key="IconTextAa">&#xE6EE;</sys:String>
+    <sys:String x:Key="IconArrowsIn">&#xE09A;</sys:String>
+    <sys:String x:Key="IconImageSquare">&#xE2CC;</sys:String>
+    <sys:String x:Key="IconBookOpenTextPlacement">&#xE8F2;</sys:String>
+    <sys:String x:Key="IconInfo">&#xE2CE;</sys:String>
+    <sys:String x:Key="IconEraser">&#xE21E;</sys:String>
+    <sys:String x:Key="IconCheckCircle">&#xE184;</sys:String>
+    <sys:String x:Key="IconCaretLeft">&#xE138;</sys:String>
+    <sys:String x:Key="IconCaretRight2">&#xE13A;</sys:String>
+    <sys:String x:Key="IconCheckSmall">&#xE182;</sys:String>
+    <FontFamily x:Key="AndikaFont">pack://application:,,,/Fonts/#Andika</FontFamily>
+
+    <!-- The small field label of the editor (as on the Print step). -->
+    <Style x:Key="EditorLabel" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{StaticResource Text70Brush}" />
+      <Setter Property="Margin" Value="0,0,0,5" />
+    </Style>
+    <Style x:Key="EditorNote" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{StaticResource Neutral400Brush}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
     <!-- An empty slot (the front cover has no left page, the back cover no right one) keeps its width but shows nothing. -->
     <Style x:Key="SlotStyle" TargetType="ContentControl">
       <Style.Triggers>
@@ -56,7 +82,7 @@
             </Border>
             <Rectangle x:Name="Dashes" Visibility="Collapsed" RadiusX="2" RadiusY="2" Stroke="{StaticResource Neutral700Brush}" StrokeThickness="1"
                        StrokeDashArray="4 3" />
-            <TextBlock x:Name="BlankText" Visibility="Collapsed" Text="BLANK" FontSize="11" Foreground="{StaticResource Neutral600Brush}"
+            <TextBlock x:Name="BlankText" Visibility="Collapsed" Text="{Binding BlankTileText}" FontSize="11" Foreground="{StaticResource Neutral600Brush}"
                        HorizontalAlignment="Center" VerticalAlignment="Center" />
             <Border Width="22" Height="22" CornerRadius="11" Background="{StaticResource WarningBrush}" HorizontalAlignment="Left" VerticalAlignment="Top"
                     Margin="6" Visibility="{Binding ShowsWarnBadge, Converter={StaticResource BoolToVisibility}}">
@@ -66,11 +92,13 @@
             <Button Style="{StaticResource RemoveButton}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6" ToolTip="Remove from the book"
                     Command="{Binding DataContext.RemovePageCommand, RelativeSource={RelativeSource AncestorType=views:CheckStepView}}"
                     CommandParameter="{Binding Source}" AutomationProperties.Name="{Binding Label, StringFormat=Remove {0} from the book}"
-                    Visibility="{Binding IsEditable, Converter={StaticResource BoolToVisibility}}" />
+                    Visibility="{Binding CanRemove, Converter={StaticResource BoolToVisibility}}" />
           </Grid>
           <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Height="16">
             <TextBlock Style="{StaticResource PhFill}" FontSize="11" Text="{StaticResource IconPushPin}" VerticalAlignment="Center" LineStackingStrategy="BlockLineHeight" LineHeight="12" Foreground="{StaticResource Neutral500Brush}"
                        Margin="0,0,5,0" ToolTip="Stays at the end" Visibility="{Binding IsPinned, Converter={StaticResource BoolToVisibility}}" />
+            <TextBlock Style="{StaticResource Ph}" FontSize="12" Text="{StaticResource IconTextAa}" Foreground="{StaticResource Neutral300Brush}" Margin="0,0,5,0"
+                       Visibility="{Binding IsText, Converter={StaticResource BoolToVisibility}}" />
             <TextBlock x:Name="Label" Text="{Binding Label}" FontSize="12" Foreground="{StaticResource Neutral300Brush}" TextTrimming="CharacterEllipsis"
                        MaxWidth="110" />
           </StackPanel>
@@ -104,6 +132,12 @@
           <Setter TargetName="Label" Property="Foreground" Value="{StaticResource WarningBrush}" />
           <Setter TargetName="Note" Property="Foreground" Value="{StaticResource WarningBrush}" />
         </MultiDataTrigger>
+        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+          <Setter TargetName="Ring" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+          <Setter TargetName="Ring" Property="BorderThickness" Value="2" />
+          <Setter TargetName="Ring" Property="Effect" Value="{StaticResource DropGlow}" />
+          <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Accent200Brush}" />
+        </DataTrigger>
         <Trigger SourceName="DragSurface" Property="views:Ui.IsDragSource" Value="True">
           <Setter TargetName="DragSurface" Property="Opacity" Value="0.35" />
         </Trigger>
@@ -117,13 +151,14 @@
 
     <!-- A page on a printed face (As printed view). -->
     <DataTemplate x:Key="SheetTile" DataType="{x:Type vm:PageViewModel}">
-      <StackPanel Width="84" ToolTip="{Binding ToolTip}" AutomationProperties.Name="{Binding AutomationName}">
+      <StackPanel x:Name="SheetSurface" Width="84" ToolTip="{Binding ToolTip}" AutomationProperties.Name="{Binding AutomationName}" Background="Transparent"
+                  MouseLeftButtonUp="OnSheetTileClick">
         <Grid Width="84" Height="119">
           <Border x:Name="Ring" Background="{StaticResource Neutral100Brush}" BorderBrush="{StaticResource Neutral700Brush}" BorderThickness="1">
             <Image Source="{Binding Image}" Stretch="Uniform" />
           </Border>
           <Rectangle x:Name="Dashes" Visibility="Collapsed" Stroke="{StaticResource Neutral700Brush}" StrokeThickness="1" StrokeDashArray="4 3" />
-          <TextBlock x:Name="BlankText" Visibility="Collapsed" Text="BLANK" FontSize="10" Foreground="{StaticResource Neutral600Brush}"
+          <TextBlock x:Name="BlankText" Visibility="Collapsed" Text="{Binding BlankTileText}" FontSize="10" Foreground="{StaticResource Neutral600Brush}"
                      HorizontalAlignment="Center" VerticalAlignment="Center" />
           <Border Width="18" Height="18" CornerRadius="9" Background="{StaticResource WarningBrush}" HorizontalAlignment="Left" VerticalAlignment="Top"
                   Margin="4" Visibility="{Binding ShowsWarnBadge, Converter={StaticResource BoolToVisibility}}">
@@ -149,6 +184,14 @@
           <Setter TargetName="Ring" Property="BorderBrush" Value="{StaticResource WarningBrush}" />
           <Setter TargetName="Ring" Property="BorderThickness" Value="2" />
           <Setter TargetName="Label" Property="Foreground" Value="{StaticResource WarningBrush}" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+          <Setter TargetName="Ring" Property="BorderBrush" Value="{StaticResource AccentBrush}" />
+          <Setter TargetName="Ring" Property="BorderThickness" Value="2" />
+          <Setter TargetName="Label" Property="Foreground" Value="{StaticResource Accent200Brush}" />
+        </DataTrigger>
+        <DataTrigger Binding="{Binding IsSelectable}" Value="True">
+          <Setter TargetName="SheetSurface" Property="Cursor" Value="Hand" />
         </DataTrigger>
         <DataTrigger Binding="{Binding IsBlank}" Value="True">
           <Setter TargetName="Ring" Property="Background" Value="Transparent" />
@@ -177,6 +220,11 @@
     </DataTemplate>
   </UserControl.Resources>
 
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" />
+      <ColumnDefinition Width="Auto" />
+    </Grid.ColumnDefinitions>
   <StackPanel>
     <!-- Warning chips -->
     <ItemsControl ItemsSource="{Binding Chips}" Margin="0,-4,0,18" Visibility="{Binding HasChips, Converter={StaticResource BoolToVisibility}}">
@@ -250,4 +298,133 @@
       </ItemsControl.ItemTemplate>
     </ItemsControl>
   </StackPanel>
+
+  <!-- The story text editor: follows the page while the spreads scroll (see CheckStepView.xaml.cs). -->
+  <Border x:Name="EditorPanel" Grid.Column="1" Width="316" Margin="24,2,0,24" Padding="16" VerticalAlignment="Top" CornerRadius="{StaticResource RadiusLg}"
+          Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource Neutral800Brush}" BorderThickness="1" RenderTransformOrigin="0,0"
+          AutomationProperties.Name="Story text">
+    <Border.RenderTransform>
+      <TranslateTransform x:Name="EditorShift" />
+    </Border.RenderTransform>
+    <ScrollViewer x:Name="EditorScroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <Grid>
+        <StackPanel Margin="8,28" Visibility="{Binding HasNoSelection, Converter={StaticResource BoolToVisibility}}">
+          <TextBlock Style="{StaticResource Ph}" FontSize="32" Text="{StaticResource IconTextAa}" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Left" />
+          <TextBlock Text="Click a page to give it words" FontSize="15" FontWeight="Medium" TextWrapping="Wrap" Margin="0,10,0,0" />
+          <TextBlock Style="{StaticResource EditorNote}" Margin="0,8,0,0" Text="The text sits on the picture, or on a page of its own facing it." />
+        </StackPanel>
+
+        <StackPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVisibility}}">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+              <TextBlock Text="{Binding SelectedTitle}" FontSize="15" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
+              <TextBlock Text="{Binding SelectedFile}" FontSize="11" Foreground="{StaticResource Neutral500Brush}" FontFamily="{StaticResource MonoFont}"
+                         TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <Button Grid.Column="1" Style="{StaticResource GhostButton}" Width="36" Height="36" Padding="0" Command="{Binding SelectPreviousCommand}"
+                    IsEnabled="{Binding AtFirstPage, Converter={StaticResource InverseBool}}" ToolTip="Previous page" AutomationProperties.Name="Previous page"
+                    views:Ui.Icon="{StaticResource IconCaretLeft}" />
+            <Button Grid.Column="2" Style="{StaticResource GhostButton}" Width="36" Height="36" Padding="0" Command="{Binding SelectNextCommand}"
+                    IsEnabled="{Binding AtLastPage, Converter={StaticResource InverseBool}}" ToolTip="Next page" AutomationProperties.Name="Next page"
+                    views:Ui.Icon="{StaticResource IconCaretRight2}" Margin="2,0,0,0" />
+          </Grid>
+
+          <Border Margin="0,16,0,0" Padding="0,14" CornerRadius="8" Background="{StaticResource Bg70Brush}">
+            <ItemsControl ItemsSource="{Binding PreviewTiles}" HorizontalAlignment="Center">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:PageViewModel}">
+                  <Border Width="{Binding DataContext.PreviewTileWidth, RelativeSource={RelativeSource AncestorType=views:CheckStepView}}"
+                          Height="{Binding DataContext.PreviewTileHeight, RelativeSource={RelativeSource AncestorType=views:CheckStepView}}" Margin="1,0"
+                          Background="{StaticResource Neutral100Brush}" CornerRadius="2" Effect="{StaticResource ShadowMd}"
+                          AutomationProperties.Name="{Binding Label, StringFormat=Preview of {0}}">
+                    <Image Source="{Binding Image}" Stretch="Uniform" />
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Border>
+
+          <TextBlock Style="{StaticResource EditorLabel}" Text="Story text" Margin="0,16,0,5" />
+          <TextBox x:Name="StoryBox" Text="{Binding StoryInput, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="92"
+                   VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" FontFamily="{StaticResource AndikaFont}" FontSize="15" Padding="10,8"
+                   AutomationProperties.Name="Story text" />
+          <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding HasFitNote, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock x:Name="FitIcon" FontSize="14" VerticalAlignment="Top" Margin="0,1,6,0">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource Ph}">
+                  <Setter Property="Text" Value="{StaticResource IconCheckSmall}" />
+                  <Setter Property="Foreground" Value="{StaticResource Neutral400Brush}" />
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding FitTone}" Value="Shrunk">
+                      <Setter Property="Text" Value="{StaticResource IconArrowsIn}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding FitTone}" Value="TooLong">
+                      <Setter Property="FontFamily" Value="{StaticResource PhosphorFillFont}" />
+                      <Setter Property="Text" Value="{StaticResource IconWarning}" />
+                      <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+            <TextBlock x:Name="FitText" Text="{Binding FitNote}" MaxWidth="260">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock" BasedOn="{StaticResource EditorNote}">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding FitTone}" Value="TooLong">
+                      <Setter Property="Foreground" Value="{StaticResource WarningBrush}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+            </TextBlock>
+          </StackPanel>
+
+          <StackPanel Visibility="{Binding HasStoryText, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Style="{StaticResource EditorLabel}" Text="Where the words go" Margin="0,16,0,5" />
+            <Border Style="{StaticResource SegBorder}">
+              <StackPanel Orientation="Horizontal">
+                <RadioButton Style="{StaticResource SegOption}" Content="On the picture" views:Ui.Icon="{StaticResource IconImageSquare}" GroupName="Placement"
+                             AutomationProperties.Name="Words on the picture"
+                             IsChecked="{Binding SelectedPlacement, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:TextPlacement.OnPicture}}" />
+                <Rectangle Style="{StaticResource SegDivider}" />
+                <RadioButton Style="{StaticResource SegOption}" Content="Own page" views:Ui.Icon="{StaticResource IconBookOpenTextPlacement}" GroupName="Placement"
+                             AutomationProperties.Name="Words on a page of their own" IsEnabled="{Binding CanChooseOwnPage}"
+                             IsChecked="{Binding SelectedPlacement, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:TextPlacement.OwnPage}}" />
+              </StackPanel>
+            </Border>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+              <TextBlock Style="{StaticResource Ph}" FontSize="14" Text="{StaticResource IconInfo}" Foreground="{StaticResource Accent300Brush}" VerticalAlignment="Top" Margin="0,1,6,0" />
+              <TextBlock Style="{StaticResource EditorNote}" Text="{Binding PlacementNote}" MaxWidth="260" />
+            </StackPanel>
+          </StackPanel>
+
+          <Grid Margin="0,20,0,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+              <TextBlock Style="{StaticResource Spinner}" FontSize="12" Text="{StaticResource IconCircleNotch}" Foreground="{StaticResource Neutral500Brush}" Margin="0,0,6,0"
+                         Visibility="{Binding IsSavingText, Converter={StaticResource BoolToVisibility}}" />
+              <TextBlock Text="{Binding SaveText}" FontSize="11" Foreground="{StaticResource Neutral500Brush}" TextWrapping="Wrap" MaxWidth="150" AutomationProperties.Name="Save status" />
+            </StackPanel>
+            <Button Grid.Column="1" Style="{StaticResource GhostButton}" Content="Remove text" views:Ui.Icon="{StaticResource IconEraser}" Command="{Binding RemoveStoryTextCommand}"
+                    Visibility="{Binding HasStoryText, Converter={StaticResource BoolToVisibility}}" AutomationProperties.Name="Remove text" />
+          </Grid>
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+  </Border>
+  </Grid>
 </UserControl>

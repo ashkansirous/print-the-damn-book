@@ -1,6 +1,6 @@
 ### Slice 14 — Story text: typed in the app, on the picture or on its own page
 
-*In progress (wave 2026-10-26), draft PR.* The design pass is done (`docs/design/Story Text.dc.html`, frames 1a-1c; see Design below).
+*Built 2026-10-26 (PR #26), desktop acceptance passed (10 of 10 items); not yet verified on Letter paper or a real paper print.* The design pass is done (`docs/design/Story Text.dc.html`, frames 1a-1c; see Design below).
 
 **Touches:** `src/PrintTheDamnBook.Core/BookPage.cs`, `src/PrintTheDamnBook.Core/Ordering/**`,
 `src/PrintTheDamnBook.Core/Layout/**`, `src/PrintTheDamnBook.Core/Text/**` (new),
@@ -49,18 +49,18 @@ typed text; Slice 15 fills the same model from `.dino` files; Slice 16 adds the 
 **Work.**
 
 - [x] Design pass: imported to `docs/design/Story Text.dc.html` and `StoryCheck.dc.html`; Design subsection below.
-- [ ] Core, smallest end to end: `BookPage` gains optional `StoryText` (text + placement); `PageList` expands *Own
+- [x] Core, smallest end to end: `BookPage` gains optional `StoryText` (text + placement); `PageList` expands *Own
       page* into a text page plus alignment blanks; `Imposition` treats a text page like any page. Tests for spread
       alignment with 0, 1 and many text pages, odd and even counts, and the blanks-before-back-cover rule kept.
-- [ ] Core layout: the bottom-band rectangle and panel inside `HalfSheetLayout` (Fit and Fill, with page numbers on
+- [x] Core layout: the bottom-band rectangle and panel inside `HalfSheetLayout` (Fit and Fill, with page numbers on
       and off), the text-page box, and shrink-to-fit sizing. Tests for A4 and Letter.
-- [ ] App: bundle Andika (+ licence); `FaceRenderer` draws the panel and the text (outline geometry, like the page
+- [x] App: bundle Andika (+ licence); `FaceRenderer` draws the panel and the text (outline geometry, like the page
       numbers) on automatic, manual and test-sheet paths, rotated with backs.
-- [ ] App: the text editor in the Check step per page (text box, *On the picture* / *Own page*), thumbnails and
+- [x] App: the text editor in the Check step per page (text box, *On the picture* / *Own page*), thumbnails and
       As printed tiles show the text, as in the Design subsection.
-- [ ] Core: `TextPageTint` (average cover colour lifted to OKLCH L >= 0.96) on a pixel buffer, tested with synthetic
+- [x] Core: `TextPageTint` (average cover colour lifted to OKLCH L >= 0.96) on a pixel buffer, tested with synthetic
       images; the "Text pages: White / Tinted from cover" setting in More options and in `book.json`.
-- [ ] App: `BookTextStore` reads and writes `book.json` in the folder (debounced save; a missing or broken file reads
+- [x] App: `BookTextStore` reads and writes `book.json` in the folder (debounced save; a missing or broken file reads
       as no text and never blocks opening the folder). The JSON schema has a `schemaVersion`.
 
 #### Design (Story Text mock, section 1a-1c, added 2026-10-26)
@@ -118,3 +118,31 @@ Core constant (Slice 16 then varies it).
 - Close and reopen the folder: the text is back.
 - `blackberry-path.png` with a bottom-band text: the text sits on the plain ground and does not cover the rabbits.
 - Text pages print white by default and tinted when the setting is on.
+
+*Changed while building:*
+
+- Spreads do not scroll on their own (`MainWindow.xaml` is outside Touches); the editor panel is sticky beside them.
+- Icon code points went into `CheckStepView.xaml` (`Themes/Icons.xaml` is outside Touches).
+- The band is the panel plus its bottom margin, at most 30% of the picture height. Dino panel units (radius 16, padding 14x10, margin 8) scale from Dino's 360-wide card.
+- A4 and Letter share the same pt steps. The More options row is a segmented two-option control. The preview border uses `Bg70Brush` (was 55%).
+- Extras: Check chip "N pages have more words than fit"; As printed tiles are selectable; an unreadable or newer-schema `book.json` is never overwritten (the editor says so); pages added from outside the folder are keyed by full path (`BookTextJson.KeyFor`); `BookPage` equality is by reference.
+
+*From review:* high pass 11 findings: applied 1, 2, 3, 4, 5, 7, 8; skipped 6 and 11 (performance, unmeasured) and 9 and 10 (style). Medium pass 10 findings: applied 1, 2, 5, 6, 7, 8; skipped 3 (a removed page's text returns on reopen, by design), 4 (performance), 9 and 10 (style). 236 tests pass.
+
+*Desktop acceptance (2026-10-26):* all 10 items pass (Print to PDF, blackberry-path band on plain ground, tint, save on exit, Fill tiles match the PDF).
+
+#### For CLAUDE.md
+
+- Story text layout (band rectangle, shrink steps, text-page box, spread-alignment spacers, tint) lives in `Core/Text` and `Core/Layout`; the App only draws it. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
+- `book.json` is read and written only through `Services/BookTextStore`; never overwrite a file it could not read. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
+- Andika is the only story font; its licence is listed in `Services/FontLicences`. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
+
+#### For README.md
+
+- Story text: type words for each page, on the picture or on its own page; saved in `book.json` in the folder.
+
+#### Not yet verified
+
+- Printing on Letter paper.
+- A real paper print and fold.
+- Performance with many story pages (re-layout on the UI thread on each typing pause).

@@ -1,3 +1,5 @@
+using PrintTheDamnBook.Core.Text;
+
 namespace PrintTheDamnBook.Core.Layout;
 
 /// <summary>How a page image is scaled into its half of the sheet.</summary>
@@ -27,12 +29,16 @@ public enum DuplexMode
 /// <summary>Where the page numbers go and which number each page gets (see <see cref="PageNumbering.Compute"/>). The two always travel together.</summary>
 public sealed record PageNumberSetup(PageNumberPosition Position, IReadOnlyDictionary<BookPage, int> Numbers);
 
-/// <summary>The layout choices that apply to a whole print job. A null <paramref name="PageNumbers"/> prints no numbers.</summary>
+/// <summary>
+/// The layout choices that apply to a whole print job. A null <paramref name="PageNumbers"/> prints no numbers; a null
+/// <paramref name="TextPageTint"/> leaves the text pages plain white.
+/// </summary>
 public sealed record JobLayout(
     ScalingMode Scaling,
     double MarginMm,
     FlipEdge Flip,
-    PageNumberSetup? PageNumbers = null)
+    PageNumberSetup? PageNumbers = null,
+    Rgb? TextPageTint = null)
 {
     public PageNumberPosition NumberPosition => PageNumbers?.Position ?? PageNumberPosition.Off;
 }
