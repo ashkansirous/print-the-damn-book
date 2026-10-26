@@ -22,7 +22,7 @@ dotnet run --project src/PrintTheDamnBook.App
   the page order).
 - `src/PrintTheDamnBook.App/` — net10.0-windows WPF, MVVM (CommunityToolkit.Mvvm):
   `MainWindow.xaml` and `App.xaml` at the project root, `ViewModels/` (`MainViewModel`,
-  `PageViewModel`), `Themes/` (`Nocturne.xaml` tokens, `Controls.xaml`, `Icons.xaml`), `Views/` (wizard step views `OpenStepView`, `CheckStepView`, `PrintStepView`, `DoneStepView`; `NocturneDialog`; `OptionsPanel`), `Services/` (`FolderImages`, `ThumbnailLoader`, `ImageDecoder`, `FontLicences`),
+  `PageViewModel`), `Themes/` (`Nocturne.xaml` tokens, `Controls.xaml`, `Icons.xaml`), `Views/` (wizard step views `OpenStepView`, `CheckStepView`, `PrintStepView`, `DoneStepView`; `NocturneDialog`), `Services/` (`FolderImages`, `ThumbnailLoader`, `ImageDecoder`, `FontLicences`),
   `Printing/` (System.Printing, on `StaThread`), `Settings/` (`SettingsStore`).
 - `tests/PrintTheDamnBook.Core.Tests/` — xUnit v3, covers everything in Core.
 - `tools/store-assets/` — generates the Store/MSIX images from `docs/design`.
@@ -68,3 +68,6 @@ dotnet run --project src/PrintTheDamnBook.App
 - Page numbers are computed only in Core `PageNumbering` from the padded page list; the renderer never derives numbers itself. (Slice 9: docs/plan/slices/09-page-numbers.md)
 - Store releases come from stable `vX.Y.Z` tags only (MSIX version X.Y.Z.0; tags only ever increase). MSIX identity lives in repo variables `MSIX_*`, never in `packaging/msix/AppxManifest.xml`. (Slice 11: docs/plan/slices/11-microsoft-store.md)
 - After UI changes, re-run `tools/store-assets` (render + `capture-app.ps1`) so Store screenshots match the app. (Slice 11: docs/plan/slices/11-microsoft-store.md)
+- Story text layout (band rectangle, shrink steps, text-page box, spread-alignment spacers, tint) lives in `Core/Text` and `Core/Layout`; the App only draws it. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
+- `book.json` is read and written only through `Services/BookTextStore`; never overwrite a file it could not read. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
+- Andika is the only story font; its licence is listed in `Services/FontLicences`. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
