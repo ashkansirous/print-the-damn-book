@@ -1,10 +1,10 @@
 ### Slice 16 — Top and middle bands, and an empty-space suggestion
 
-*Planned.* Comes after Slice 14.
+*In progress (wave 2026-10-26), draft PR.* Slice 14 merged (PR #26).
 
 **Touches:** `src/PrintTheDamnBook.Core/Text/**`, `src/PrintTheDamnBook.Core/Layout/**`,
 `tests/PrintTheDamnBook.Core.Tests/**`, `src/PrintTheDamnBook.App/Services/**`,
-`src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/ViewModels/**`
+`src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.App/Printing/**`
 
 **Why.** Some pictures have their empty space at the top or in the middle. The user picks the band, but the app should
 suggest the emptiest one so most pages need no thought.
