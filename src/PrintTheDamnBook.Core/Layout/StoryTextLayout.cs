@@ -3,7 +3,7 @@ using PrintTheDamnBook.Core.Text;
 namespace PrintTheDamnBook.Core.Layout;
 
 /// <summary>The panel over a picture: where it may sit (<see cref="MaxPanel"/>), the area its words may use, and its corner radius. All in the unit of the rectangle it was computed from (millimetres on the sheet).</summary>
-public readonly record struct BandArea(RectD MaxPanel, RectD Text, double CornerRadius, double PaddingY);
+public readonly record struct BandArea(RectD MaxPanel, RectD Text, double CornerRadius, double PaddingY, TextBand Band = TextBand.Bottom);
 
 /// <summary>The words of a text page: the whole page (the paper the tint fills) and the box the words are set in.</summary>
 public readonly record struct TextPageArea(RectD Page, RectD Text);
@@ -23,6 +23,12 @@ public static class StoryTextLayout
 
     /// <summary>Dino Reader's text card opacity.</summary>
     public const double PanelOpacity = 0.92;
+
+    /// <summary>A panel over a busy band is this opaque, so the words stay readable.</summary>
+    public const double BusyPanelOpacity = 0.97;
+
+    /// <summary>A panel over a plain band is this opaque; the picture shows through a little.</summary>
+    public const double PlainPanelOpacity = 0.85;
 
     public static readonly Rgb PanelFill = new(0xFF, 0xFF, 0xFF);
 
@@ -85,24 +91,54 @@ public static class StoryTextLayout
         return new TextFitResult(stepsPt[^1], false, stepsPt.Count > 1);
     }
 
-    /// <summary>The panel over the bottom of the visible part of a picture.</summary>
-    public static BandArea Band(RectD visible)
+    /// <summary>
+    /// The panel opacity for a band of the given plainness (0 busy to 1 plain): about 97% when busy, about 85% when plain, between
+    /// them in proportion. Without a measurement (null) it is Dino Reader's <see cref="PanelOpacity"/>.
+    /// </summary>
+    public static double OpacityFor(double? plainness)
+    {
+        if (plainness is not { } value)
+        {
+            return PanelOpacity;
+        }
+
+        var t = Math.Clamp(value, 0, 1);
+        return BusyPanelOpacity + (PlainPanelOpacity - BusyPanelOpacity) * t;
+    }
+
+    /// <summary>The panel over a band of the visible part of a picture (the bottom unless said otherwise).</summary>
+    public static BandArea Band(RectD visible, TextBand band = TextBand.Bottom)
     {
         var unit = visible.Width / ReferenceCardWidth;
         var margin = PanelMarginUnits * unit;
         var paddingX = PanelPaddingXUnits * unit;
         var paddingY = PanelPaddingYUnits * unit;
         var height = MaxBandFraction * visible.Height - margin;
-        var panel = new RectD(visible.X + margin, visible.Y + visible.Height - margin - height, visible.Width - 2 * margin, height);
+        var panel = new RectD(visible.X + margin, BandTop(visible, band, margin, height), visible.Width - 2 * margin, height);
         var text = new RectD(panel.X + paddingX, panel.Y + paddingY, panel.Width - 2 * paddingX, panel.Height - 2 * paddingY);
-        return new BandArea(panel, text, PanelCornerUnits * unit, paddingY);
+        return new BandArea(panel, text, PanelCornerUnits * unit, paddingY, band);
     }
 
-    /// <summary>The panel rectangle for words that are <paramref name="textHeight"/> tall: as tall as they need, bottom-aligned, never above the maximum.</summary>
+    private static double BandTop(RectD visible, TextBand band, double margin, double height) => band switch
+    {
+        TextBand.Top => visible.Y + margin,
+        TextBand.Middle => visible.Y + (visible.Height - height) / 2,
+        TextBand.Bottom => visible.Y + visible.Height - margin - height,
+        _ => throw new ArgumentOutOfRangeException(nameof(band), band, null),
+    };
+
+    /// <summary>The panel rectangle for words that are <paramref name="textHeight"/> tall: as tall as they need, never above the maximum, hugging the edge of a top or bottom band and centred in a middle one.</summary>
     public static RectD Panel(BandArea band, double textHeight)
     {
-        var height = Math.Min(band.MaxPanel.Height, textHeight + 2 * band.PaddingY);
-        return band.MaxPanel with { Y = band.MaxPanel.Y + band.MaxPanel.Height - height, Height = height };
+        var max = band.MaxPanel;
+        var height = Math.Min(max.Height, textHeight + 2 * band.PaddingY);
+        var y = band.Band switch
+        {
+            TextBand.Top => max.Y,
+            TextBand.Middle => max.Y + (max.Height - height) / 2,
+            _ => max.Y + max.Height - height,
+        };
+        return max with { Y = y, Height = height };
     }
 
     /// <summary>The text page on the left or right half of the sheet: the half itself, and the box for the words inside the margin and number strip.</summary>
