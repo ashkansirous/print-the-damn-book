@@ -16,14 +16,61 @@ public partial class CheckStepView : UserControl
     private const string DragFormat = "PrintTheDamnBook.Page";
     private const double EdgeZone = 60;
     private const double ScrollStep = 24;
+    private const double EditorBottomGap = 28;
+    private const double EditorMinHeight = 240;
 
     private Point _dragStart;
     private PageViewModel? _dragCandidate;
+    private PageViewModel? _pressedItem;
+    private ScrollViewer? _scroller;
     private BindingBase? _tooltipBinding;
 
     public CheckStepView()
     {
         InitializeComponent();
+        Loaded += (_, _) => AttachEditorToScroller();
+        Unloaded += (_, _) => DetachEditorFromScroller();
+        SizeChanged += (_, _) => PlaceEditor();
+    }
+
+    /// <summary>The editor panel stays in view while the pages scroll: it is shifted down by the scroll offset and capped to the window.</summary>
+    private void AttachEditorToScroller()
+    {
+        DetachEditorFromScroller();
+        _scroller = FindScroller();
+        if (_scroller is not null)
+        {
+            _scroller.ScrollChanged += OnScrollerChanged;
+        }
+
+        PlaceEditor();
+    }
+
+    private void DetachEditorFromScroller()
+    {
+        if (_scroller is not null)
+        {
+            _scroller.ScrollChanged -= OnScrollerChanged;
+            _scroller = null;
+        }
+    }
+
+    private void OnScrollerChanged(object sender, ScrollChangedEventArgs e)
+    {
+        PlaceEditor();
+    }
+
+    private void PlaceEditor()
+    {
+        if (_scroller?.Content is not Visual content || !IsVisible)
+        {
+            return;
+        }
+
+        var top = TransformToAncestor(content).Transform(new Point(0, 0)).Y;
+        EditorPanel.MaxHeight = Math.Max(EditorMinHeight, _scroller.ViewportHeight - EditorBottomGap);
+        var room = Math.Max(0, ActualHeight - EditorPanel.ActualHeight - EditorPanel.Margin.Bottom);
+        EditorShift.Y = Math.Clamp(_scroller.VerticalOffset - top, 0, room);
     }
 
     private MainViewModel? ViewModel => DataContext as MainViewModel;
@@ -32,6 +79,7 @@ public partial class CheckStepView : UserControl
     {
         _dragStart = e.GetPosition(null);
         var item = ItemOf(sender);
+        _pressedItem = IsOnButton(e.OriginalSource as DependencyObject) ? null : item;
         var draggable = item is { Source: not null, IsPinned: false } && !IsOnButton(e.OriginalSource as DependencyObject);
         _dragCandidate = draggable ? item : null;
         if (item is not null && !IsOnButton(e.OriginalSource as DependencyObject))
@@ -46,6 +94,13 @@ public partial class CheckStepView : UserControl
     private void OnTileKeyDown(object sender, KeyEventArgs e)
     {
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        if (key is Key.Enter or Key.Space && (Keyboard.Modifiers & ModifierKeys.Alt) == 0 && ItemOf(sender) is { IsSelectable: true } selectable)
+        {
+            e.Handled = true;
+            ViewModel?.SelectTile(selectable);
+            return;
+        }
+
         var offset = key == Key.Left ? -1 : key == Key.Right ? 1 : 0;
         var item = ItemOf(sender);
         var altHeld = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
@@ -71,7 +126,7 @@ public partial class CheckStepView : UserControl
         for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
         {
             var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is Border { Name: DragSurface, DataContext: PageViewModel { Source: { } source } } tile && ReferenceEquals(source, page))
+            if (child is Border { Name: DragSurface, DataContext: PageViewModel { Source: { } source, IsText: false } } tile && ReferenceEquals(source, page))
             {
                 return tile;
             }
@@ -88,11 +143,23 @@ public partial class CheckStepView : UserControl
     private void OnTileMouseUp(object sender, MouseButtonEventArgs e)
     {
         _dragCandidate = null;
+        if (_pressedItem is { } pressed && ReferenceEquals(pressed, ItemOf(sender)))
+        {
+            ViewModel?.SelectTile(pressed);
+        }
+
+        _pressedItem = null;
     }
 
     private void OnTileMouseLeave(object sender, MouseEventArgs e)
     {
         _dragCandidate = null;
+        _pressedItem = null;
+    }
+
+    private void OnSheetTileClick(object sender, MouseButtonEventArgs e)
+    {
+        ViewModel?.SelectTile(ItemOf(sender));
     }
 
     private static bool IsOnButton(DependencyObject? element)
@@ -118,6 +185,7 @@ public partial class CheckStepView : UserControl
         }
 
         _dragCandidate = null;
+        _pressedItem = null;
         var surface = (DependencyObject)sender;
         var tile = (FrameworkElement)sender;
         Ui.SetIsDragSource(surface, true);

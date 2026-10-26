@@ -5,6 +5,7 @@ using PrintTheDamnBook.App.Printing;
 using PrintTheDamnBook.App.Services;
 using PrintTheDamnBook.Core;
 using PrintTheDamnBook.Core.Layout;
+using PrintTheDamnBook.Core.Text;
 
 namespace PrintTheDamnBook.App.ViewModels;
 
@@ -28,12 +29,16 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>1-based position of each real page, by identity, for the current book.</summary>
     private Dictionary<BookPage, int> _positions = new(ReferenceEqualityComparer.Instance);
 
+    /// <summary>The print options the tiles were composed with (the story text depends on them).</summary>
+    private StoryContext _storyContext;
+
     public MainViewModel(Func<string?> pickFolder, PrintViewModel print)
     {
         _pickFolder = pickFolder;
         Print = print;
         Print.PropertyChanged += (_, e) => OnPrintChanged(e.PropertyName);
         Print.BookletSent += (_, _) => Step = WizardStep.Done;
+        InitStoryEditor();
         RefreshWizard();
     }
 
@@ -118,7 +123,7 @@ public sealed partial class MainViewModel : ObservableObject
         var pages = PageOrdering.FromFolder(FolderImages.List(folder));
         var thumbnails = new ThumbnailLoader();
         thumbnails.Preload(pages.Select(p => p.Path));
-        return new LoadedFolder(pages, thumbnails);
+        return new LoadedFolder(pages, thumbnails, BookTextStore.Read(folder));
     }
 
     private void ShowFailure(Exception ex)
@@ -133,6 +138,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void ClearBook()
     {
+        CloseBookText();
         _pageList = new PageList([]);
         _thumbnails = new ThumbnailLoader();
         FolderPath = string.Empty;
@@ -141,8 +147,10 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void Show(string folder, LoadedFolder loaded)
     {
+        CloseBookText();
         _pageList = new PageList(loaded.Pages);
         _thumbnails = loaded.Thumbnails;
+        OpenBookText(folder, loaded.Text);
         FolderPath = folder;
         LoadProblem = _pageList.Pages.Count == 0 ? NoImagesStatus : null;
         Refresh();
@@ -163,6 +171,7 @@ public sealed partial class MainViewModel : ObservableObject
         }
 
         RefreshWizard();
+        UpdateEditor();
     }
 
     private void RefreshBook()
@@ -171,15 +180,18 @@ public sealed partial class MainViewModel : ObservableObject
         var padded = MarkWarnedBlank(_pageList.Padded, pages);
         var sheets = Imposition.Impose(padded);
         var cache = new Dictionary<BookPage, PageViewModel>(ReferenceEqualityComparer.Instance);
+        RefreshCoverTint(pages);
+        _storyContext = CurrentStoryContext();
 
         _printedNumbers = PageNumbering.Compute(padded);
         _positions = PositionsOf(pages);
         Spreads = PrintTheDamnBook.Core.Spreads.Of(padded).Select(s => ToViewModel(s, cache)).ToList();
         Sheets = sheets.Select(s => ToViewModel(s, cache)).ToList();
         Print.SetSheets(sheets, Path.GetFileName(Path.TrimEndingDirectorySeparator(FolderPath)), _printedNumbers);
-        Status = LoadProblem ?? BuildStatus(pages.Count, sheets.Length);
+        Status = LoadProblem ?? BuildStatus(pages.Count, sheets.Length, padded);
         IsLoaded = pages.Count > 0;
-        Chips = BuildChips(BookChecks.Find(pages, sheets.Length), sheets.Length, FailedImages(pages));
+        Chips = BuildChips(BookChecks.Find(pages, sheets.Length), sheets.Length, FailedImages(pages), CountTooLong(pages, _storyContext));
+        MarkSelectedTiles();
     }
 
     private static Dictionary<BookPage, int> PositionsOf(IReadOnlyList<BookPage> pages)
@@ -202,7 +214,7 @@ public sealed partial class MainViewModel : ObservableObject
             return padded;
         }
 
-        _warnedBlank = BookPage.Blank with { };
+        _warnedBlank = new BookPage(null, BookPage.BlankLabel, PageKind.Blank);
         return [.. padded.Take(padded.Count - 1), _warnedBlank];
     }
 
@@ -232,11 +244,11 @@ public sealed partial class MainViewModel : ObservableObject
             return null;
         }
 
-        var isBlank = page.Kind == PageKind.Blank;
+        var isFiller = page.Kind is PageKind.Blank or PageKind.Spacer;
         return ToViewModel(page, cache) with
         {
-            Source = isBlank ? null : page,
-            IsPinned = !isBlank && _pageList.IsPinned(page),
+            Source = SourceOf(page),
+            IsPinned = !isFiller && _pageList.IsPinned(page),
             Position = _positions.GetValueOrDefault(page),
             Total = _positions.Count,
         };
@@ -342,13 +354,24 @@ public sealed partial class MainViewModel : ObservableObject
         Step = WizardStep.Open;
     }
 
-    private PageViewModel ToViewModel(BookPage page, Dictionary<BookPage, PageViewModel> cache)
+    private PageViewModel ToViewModel(BookPage page, Dictionary<BookPage, PageViewModel> cache) => ToViewModel(page, cache, _storyContext);
+
+    /// <summary>The caption under a tile: the file's name, "Text for N" for a text page, "spacer" for a spacer.</summary>
+    private static string LabelOf(BookPage page) => page.Kind switch
+    {
+        PageKind.Text => TextForPrefix + page.Label,
+        PageKind.Spacer => SpacerLabel,
+        _ => page.Label,
+    };
+
+    private PageViewModel ToViewModel(BookPage page, Dictionary<BookPage, PageViewModel> cache, StoryContext context)
     {
         if (!cache.TryGetValue(page, out var viewModel))
         {
-            var image = _thumbnails.Load(page.Path);
-            var (note, warned) = PageNotes.For(page, image is not null, ReferenceEquals(page, _warnedBlank));
-            viewModel = new PageViewModel(page.Label, image, page.Kind) { Note = note, IsWarned = warned, PrintedNumber = _printedNumbers.GetValueOrDefault(page) };
+            var image = TileImage(page, context);
+            var hasImage = image is not null || page.Path is null;
+            var (note, warned) = PageNotes.For(page, hasImage, ReferenceEquals(page, _warnedBlank));
+            viewModel = new PageViewModel(LabelOf(page), image, page.Kind) { Note = note, IsWarned = warned, PrintedNumber = _printedNumbers.GetValueOrDefault(page) };
             cache[page] = viewModel;
         }
 
@@ -359,15 +382,35 @@ public sealed partial class MainViewModel : ObservableObject
         new($"Sheet {sheet.Number}", sheet.Number == 1, ToViewModel(sheet.Front, cache), ToViewModel(sheet.Back, cache));
 
     private FaceViewModel ToViewModel(SheetFace face, Dictionary<BookPage, PageViewModel> cache) =>
-        new(ToViewModel(face.Left, cache), ToViewModel(face.Right, cache));
+        new(ToSheetItem(face.Left, cache), ToSheetItem(face.Right, cache));
 
-    private static string BuildStatus(int pageCount, int sheetCount)
+    /// <summary>A tile of the As printed view: clicking it selects its picture, but it cannot be dragged or removed there.</summary>
+    private PageViewModel ToSheetItem(BookPage page, Dictionary<BookPage, PageViewModel> cache) =>
+        ToViewModel(page, cache) with { Source = SourceOf(page) };
+
+    /// <summary>The picture a tile stands for: the page itself, the picture of a text page, or null for filler.</summary>
+    private BookPage? SourceOf(BookPage page) => page.Kind switch
     {
-        return pageCount == 0 ? NoImagesStatus : BuildSummary(pageCount, sheetCount) + ".";
+        PageKind.Blank or PageKind.Spacer => null,
+        PageKind.Text => _pageList.PictureOf(page),
+        _ => page,
+    };
+
+    private static string BuildStatus(int pageCount, int sheetCount, IReadOnlyList<BookPage> padded)
+    {
+        if (pageCount == 0)
+        {
+            return NoImagesStatus;
+        }
+
+        var textPages = padded.Count(p => p.Kind == PageKind.Text);
+        var spacers = padded.Count(p => p.Kind == PageKind.Spacer);
+        var extras = new[] { textPages > 0 ? Plural(textPages, "text page") : null, spacers > 0 ? $"{spacers} spacer" : null }.OfType<string>().ToList();
+        return BuildSummary(pageCount, sheetCount) + (extras.Count > 0 ? ", " + string.Join(", ", extras) : string.Empty) + ".";
     }
 
     private static string BuildSummary(int pageCount, int sheetCount) =>
         $"{pageCount} {(pageCount == 1 ? "page" : "pages")} on {sheetCount} {(sheetCount == 1 ? "sheet" : "sheets")}";
 }
 
-internal sealed record LoadedFolder(IReadOnlyList<BookPage> Pages, ThumbnailLoader Thumbnails);
+internal sealed record LoadedFolder(IReadOnlyList<BookPage> Pages, ThumbnailLoader Thumbnails, BookTextLoad Text);

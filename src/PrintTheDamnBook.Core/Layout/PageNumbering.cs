@@ -56,6 +56,6 @@ public static class PageNumbering
 
     private static bool IsUnnumbered(BookPage page)
     {
-        return page.Kind is PageKind.Cover or PageKind.BackCover or PageKind.Blank or PageKind.DuplicateCover or PageKind.DuplicateBackCover;
+        return page.Kind is PageKind.Cover or PageKind.BackCover or PageKind.Blank or PageKind.Spacer or PageKind.DuplicateCover or PageKind.DuplicateBackCover;
     }
 }

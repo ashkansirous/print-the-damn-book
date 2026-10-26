@@ -9,7 +9,7 @@ public static class FontLicences
     private const string FontsFolder = "/Fonts/";
     private const string Separator = "\n\n----------------------------------------\n\n";
 
-    private static readonly string[] Files = ["Inter-LICENSE.txt", "Phosphor-LICENSE.txt"];
+    private static readonly string[] Files = ["Inter-LICENSE.txt", "Phosphor-LICENSE.txt", "Andika-LICENSE.txt"];
 
     public static string ReadAll()
     {

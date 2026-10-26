@@ -145,7 +145,9 @@ public sealed partial class MainViewModel
 
     private int SheetCount => Sheets.Count;
 
-    private int PageCount => Spreads.Sum(s => (s.Left?.IsBlank == false ? 1 : 0) + (s.Right?.IsBlank == false ? 1 : 0));
+    private int PageCount => Spreads.Sum(s => CountsAsPage(s.Left) + CountsAsPage(s.Right));
+
+    private static int CountsAsPage(PageViewModel? tile) => tile is { IsBlank: false, IsText: false } ? 1 : 0;
 
     partial void OnStepChanged(WizardStep value)
     {
@@ -441,9 +443,14 @@ public sealed partial class MainViewModel
         return $"{count} {noun}{(count == 1 ? string.Empty : "s")}";
     }
 
-    private static IReadOnlyList<string> BuildChips(IReadOnlyList<BookFinding> findings, int sheetCount, IReadOnlyList<string> failedImages)
+    private static IReadOnlyList<string> BuildChips(IReadOnlyList<BookFinding> findings, int sheetCount, IReadOnlyList<string> failedImages, int tooLong)
     {
         var chips = findings.Select(finding => Describe(finding, sheetCount)).ToList();
+        if (tooLong > 0)
+        {
+            chips.Add(tooLong == 1 ? TooLongChipOne : tooLong + TooLongChipMany);
+        }
+
         if (failedImages.Count > 0)
         {
             chips.Add($"{failedImages.Count} {(failedImages.Count == 1 ? "file" : "files")} could not be read as {(failedImages.Count == 1 ? "an image" : "images")}");

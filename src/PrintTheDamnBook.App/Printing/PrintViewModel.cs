@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using PrintTheDamnBook.App.Settings;
 using PrintTheDamnBook.Core;
 using PrintTheDamnBook.Core.Layout;
+using PrintTheDamnBook.Core.Text;
 
 namespace PrintTheDamnBook.App.Printing;
 
@@ -75,6 +76,23 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     [ObservableProperty]
     public partial PageNumberPosition PageNumbers { get; set; } = PageNumberPosition.Off;
+
+    /// <summary>The paper of the story text pages. Saved with the book (<c>book.json</c>), not in the settings file.</summary>
+    [ObservableProperty]
+    public partial TextPageBackground TextPages { get; set; } = TextPageBackground.White;
+
+    /// <summary>The cover's lifted average colour for <see cref="TextPageBackground.TintedFromCover"/>; null when there is no readable cover.</summary>
+    public Rgb? CoverTint { get; private set; }
+
+    /// <summary>Set by the main view model when the book or its cover changes.</summary>
+    public void SetCoverTint(Rgb? tint)
+    {
+        if (CoverTint != tint)
+        {
+            CoverTint = tint;
+            OnPropertyChanged(nameof(CoverTint));
+        }
+    }
 
     /// <summary>Applies to Automatic only; in Manual, <see cref="RotateBacks"/> already covers it.</summary>
     [ObservableProperty]
@@ -244,6 +262,13 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     partial void OnPageNumbersChanged(PageNumberPosition value)
     {
         LayoutChanged();
+    }
+
+    partial void OnTextPagesChanged(TextPageBackground value)
+    {
+        TestSheetSent = false;
+        ClearStatusUnlessBusy();
+        ForgetLastRun();
     }
 
     partial void OnMarginMmChanged(double value)
@@ -608,7 +633,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     private PrintTarget CurrentTarget()
     {
-        return new PrintTarget(SelectedPrinter!.Name, SelectedPaper, new JobLayout(Scaling, MarginMm, Flip, PageNumbers == PageNumberPosition.Off ? null : new PageNumberSetup(PageNumbers, _pageNumbers)), _bookName);
+        return new PrintTarget(SelectedPrinter!.Name, SelectedPaper, new JobLayout(Scaling, MarginMm, Flip, PageNumbers == PageNumberPosition.Off ? null : new PageNumberSetup(PageNumbers, _pageNumbers), TextPages == TextPageBackground.TintedFromCover ? CoverTint : null), _bookName);
     }
 
     private async Task PrintBookletAsync(IReadOnlyList<Sheet> sheets, PrintTarget target)
