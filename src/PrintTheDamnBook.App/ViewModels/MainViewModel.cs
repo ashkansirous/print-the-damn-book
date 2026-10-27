@@ -32,9 +32,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>The print options the tiles were composed with (the story text depends on them).</summary>
     private StoryContext _storyContext;
 
-    public MainViewModel(Func<string?> pickFolder, PrintViewModel print)
+    public MainViewModel(Func<string?> pickFolder, PrintViewModel print, Func<string?>? pickDino = null)
     {
         _pickFolder = pickFolder;
+        _pickDino = pickDino ?? DinoFilePicker.Pick;
         Print = print;
         Print.PropertyChanged += (_, e) => OnPrintChanged(e.PropertyName);
         Print.BookletSent += (_, _) => Step = WizardStep.Done;
@@ -70,6 +71,14 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     public partial string? LoadProblem { get; set; }
 
+    /// <summary>Why the last open failed while a book was already open (that book stays); shown on the loaded card.</summary>
+    [ObservableProperty]
+    public partial string? OpenFailure { get; set; }
+
+    /// <summary>What to tell the user about the Dino book just opened (pages left out, a language chosen for them); shown on the loaded card, never in the status line again.</summary>
+    [ObservableProperty]
+    public partial string? BookNotice { get; set; }
+
     /// <summary>True while a folder is being read; the Open step shows a spinner.</summary>
     [ObservableProperty]
     public partial bool IsLoading { get; set; }
@@ -92,29 +101,33 @@ public sealed partial class MainViewModel : ObservableObject
     /// <summary>Loads a folder; if called again before it finishes, only the newest call updates the view.</summary>
     public async Task LoadFolderAsync(string folder)
     {
-        var version = ++_loadVersion;
-        IsLoading = true;
+        var (version, cancel, slow) = BeginLoad(ReadingImagesText);
         try
         {
-            var loaded = await Task.Run(() => ReadFolder(folder));
-            if (version == _loadVersion)
+            var loaded = await Task.Run(() => ReadFolder(folder)).WaitAsync(cancel.Token);
+            if (IsCurrentLoad(version, cancel))
             {
                 Show(folder, loaded);
             }
+            else
+            {
+                DiscardLoad(loaded, cancel);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancelled by the user (or replaced by a newer load): the view stays as it was.
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             if (version == _loadVersion)
             {
-                ShowFailure(ex);
+                ShowFailure(FolderFailurePrefix + ex.Message);
             }
         }
         finally
         {
-            if (version == _loadVersion)
-            {
-                IsLoading = false;
-            }
+            EndLoad(version, cancel, slow);
         }
     }
 
@@ -126,11 +139,18 @@ public sealed partial class MainViewModel : ObservableObject
         return new LoadedFolder(pages, thumbnails, BookTextStore.Read(folder));
     }
 
-    private void ShowFailure(Exception ex)
+    private void ShowFailure(string problem)
     {
+        if (IsLoaded)
+        {
+            // A failed open leaves the book that was open; the reason shows on the loaded card.
+            OpenFailure = problem;
+            return;
+        }
+
         ClearBook();
         Refresh();
-        LoadProblem = $"Could not read this folder: {ex.Message}";
+        LoadProblem = problem;
         Status = LoadProblem;
         Step = WizardStep.Open;
         RefreshWizard();
@@ -139,22 +159,68 @@ public sealed partial class MainViewModel : ObservableObject
     private void ClearBook()
     {
         CloseBookText();
+        var retired = _thumbnails;
         _pageList = new PageList([]);
         _thumbnails = new ThumbnailLoader();
+        CancelTranslation();
+        _dino = null;
+        IsDinoBook = false;
+        DinoLanguages = [];
         FolderPath = string.Empty;
+        SourcePath = string.Empty;
         LoadProblem = null;
+        BookNotice = null;
+        OpenFailure = null;
+        ReleaseMemory(retired);
+    }
+
+    /// <summary>
+    /// Lets go of a replaced book's decoded pictures and, once the screen no longer shows them, collects them: the bitmaps hold unmanaged
+    /// memory the collector does not feel pressure from, so without this a 400-page book's memory stays after it is gone.
+    /// </summary>
+    private static void ReleaseMemory(ThumbnailLoader? retired)
+    {
+        retired?.Clear();
+        var context = SynchronizationContext.Current;
+        if (context is null)
+        {
+            _ = Task.Run(CollectNow);
+            return;
+        }
+
+        context.Post(_ => Task.Run(CollectNow), null);
+    }
+
+    private static void CollectNow()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true, compacting: true);
     }
 
     private void Show(string folder, LoadedFolder loaded)
     {
         CloseBookText();
+        CancelTranslation();
+        var retired = _thumbnails;
+        _dino = loaded.Dino;
         _pageList = new PageList(loaded.Pages);
         _thumbnails = loaded.Thumbnails;
         OpenBookText(folder, loaded.Text);
+        OpenDinoLanguages(loaded.Text);
         FolderPath = folder;
+        SourcePath = loaded.Dino?.SourcePath ?? folder;
         LoadProblem = _pageList.Pages.Count == 0 ? NoImagesStatus : null;
+        OpenFailure = null;
+        BookNotice = DinoNotice();
         Refresh();
+        if (BookNotice is not null && LoadProblem is null)
+        {
+            Status = BookNotice;
+        }
+
         Step = IsLoaded ? WizardStep.Check : WizardStep.Open;
+        ReleaseMemory(retired);
     }
 
     /// <summary>Recomputes the reading-order and sheet views, status and warnings from the current page list.</summary>
@@ -188,7 +254,7 @@ public sealed partial class MainViewModel : ObservableObject
         _positions = PositionsOf(pages);
         Spreads = PrintTheDamnBook.Core.Spreads.Of(padded).Select(s => ToViewModel(s, cache)).ToList();
         Sheets = sheets.Select(s => ToViewModel(s, cache)).ToList();
-        Print.SetSheets(sheets, Path.GetFileName(Path.TrimEndingDirectorySeparator(FolderPath)), _printedNumbers);
+        Print.SetSheets(sheets, BookName, _printedNumbers);
         Status = LoadProblem ?? BuildStatus(pages.Count, sheets.Length, padded);
         IsLoaded = pages.Count > 0;
         Chips = BuildChips(BookChecks.Find(pages, sheets.Length), sheets.Length, FailedImages(pages), CountTooLong(pages, _storyContext));
@@ -347,7 +413,10 @@ public sealed partial class MainViewModel : ObservableObject
     private void StartOver()
     {
         _loadVersion++;
+        _loadCancel?.Cancel();
         IsLoading = false;
+        IsLoadingSlow = false;
+        LoadingText = ReadingImagesText;
         ClearBook();
         Print.ClearStatus();
         Refresh();
@@ -414,4 +483,8 @@ public sealed partial class MainViewModel : ObservableObject
         $"{pageCount} {(pageCount == 1 ? "page" : "pages")} on {sheetCount} {(sheetCount == 1 ? "sheet" : "sheets")}";
 }
 
-internal sealed record LoadedFolder(IReadOnlyList<BookPage> Pages, ThumbnailLoader Thumbnails, BookTextLoad Text);
+internal sealed record LoadedFolder(IReadOnlyList<BookPage> Pages, ThumbnailLoader Thumbnails, BookTextLoad Text)
+{
+    /// <summary>Set when the pages came from a <c>.dino</c> file; null for a folder.</summary>
+    public OpenedDino? Dino { get; init; }
+}

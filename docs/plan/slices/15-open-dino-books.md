@@ -1,10 +1,11 @@
 ### Slice 15 — Open a Dino Reader book (`.dino`)
 
-*Planned.* Comes after Slice 14 (it fills Slice 14's text model).
+*Built 2026-10-27 (PR #29); desktop acceptance 8 of 10, then the two failures (Cancel, drop) fixed or confirmed on re-check; memory follow-up in Not yet verified.* Slices 14 (PR #26) and 16 (PR #27) merged, so the cover title can use the top band.
 
-**Touches:** `src/PrintTheDamnBook.Core/Dino/**` (new), `tests/PrintTheDamnBook.Core.Tests/Dino*`,
-`tests/PrintTheDamnBook.Core.Tests/TestData/**`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`,
-`src/PrintTheDamnBook.App/Views/OpenStepView.xaml*`, `src/PrintTheDamnBook.App/Services/**`
+**Touches:** `src/PrintTheDamnBook.Core/Dino/**` (new), `src/PrintTheDamnBook.Core/Text/**`,
+`src/PrintTheDamnBook.Core/Ordering/**`, `tests/PrintTheDamnBook.Core.Tests/**`,
+`src/PrintTheDamnBook.App/ViewModels/**`, `src/PrintTheDamnBook.App/Views/OpenStepView.xaml*`,
+`src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/Services/**`
 
 **Why.** The user has written 10+ books in Dino Reader (`D:\ReadTheStupidText`) and wants to print them, and other
 people's, without retyping the text.
@@ -33,12 +34,12 @@ reader and writer in `ReadTheStupidText/src/DinoReader.Core/StoryPackageReader.c
 
 **Work.**
 
-- [ ] Core `DinoBookReader` → a book (title, language, cover, pages with text), with tests on a small `.dino` built
+- [x] Core `DinoBookReader` → a book (title, language, cover, pages with text), with tests on a small `.dino` built
       in the test from fixture bytes (no copyrighted art in git), plus tests for a schema 2 file, a missing image
       entry and a missing `story.json`.
-- [ ] Translations: list them, pick one, RTL ones flagged. Tests.
-- [ ] App: open and drop `.dino`; extract to the cache folder; load into the existing wizard; loading state over 500 ms.
-- [ ] Title on the front cover.
+- [x] Translations: list them, pick one, RTL ones flagged. Tests.
+- [x] App: open and drop `.dino`; extract to the cache folder; load into the existing wizard; loading state over 500 ms.
+- [x] Title on the front cover.
 
 #### Design (Story Text mock, section 1e and 1f, added 2026-10-26)
 
@@ -62,5 +63,35 @@ the Decisions above.
 **Verification.**
 
 - `dotnet test` is green.
-- Open `ReadTheStupidText/src/DinoReader.App/Resources/Raw/starters/three-little-pigs` (`.dino`, 16 pages): all pages
+- Open `ReadTheStupidText/src/DinoReader.App/Resources/Raw/starters/three-little-pigs.dino` (16 pages): all pages
   show with their text, the cover shows the title; switch to another translation; print to PDF and check by eye.
+
+*Changed while building:*
+
+- The language select sits above the warning chips in `CheckStepView` (the view switch is in `MainWindow.xaml`, outside Touches).
+- A `.dino` dropped outside the Open step's drop zone isn't taken (`MainWindow.xaml.cs` is outside Touches).
+- Icons are local to `OpenStepView` / `CheckStepView` (`Icons.xaml` is outside Touches).
+- The cover title stays in the book's own language (translations are keyed by sentence, no titles).
+- Pages with no picture are skipped with a notice. Dino pages get the Bottom band explicitly.
+- The chosen language is saved in an optional `Language` field in `book.json`. A saved language no longer offered stays as "(as saved with this book)".
+- RTL own language starts on the first LTR translation with a note; none available means the book is refused.
+- The blank back cover is a generated white PNG in the cache. Cover-from-page books are supported.
+- Cache folder is `<id>-<16 hex file hash>`; older hash folders of the same id are deleted on open.
+- Caps: 500 pages, 20,000 chars per page, 5,000 translation entries, 200 MB written.
+- A failed or cancelled open keeps the open book. Open and language switch show a spinner and Cancel after 500 ms.
+
+*From review:* high found 14, applied 1-10 and 14, skipped 11, 12, 13. Medium found 10, applied all (9 was already handled). 293 tests pass, including hostile-zip tests.
+
+#### For CLAUDE.md
+
+- .dino files are untrusted: parse only through `Core/Dino` (`DinoBookReader`) with its caps and name checks; extracted books live in the per-hash cache (`DinoBookCache`), never next to the .dino. (Slice 15: docs/plan/slices/15-open-dino-books.md)
+
+#### For README.md
+
+- Open a Dino Reader book (`.dino`): pictures, words and the title on the cover, and choose a language.
+
+#### Not yet verified
+
+- Memory is not returned after a very large book: about 1.6 GB stays held after a 420-page stress book is replaced (also on main for folder opens; thumbnails alone don't explain it; forced GC didn't help). Needs a profiler investigation.
+- About 3 in 18 cancelled opens leave that open's cache folder behind (the delete swallows IOException); it is cleaned when the same book is reopened.
+- The drop-zone drag was checked with a real Explorer drag only once.

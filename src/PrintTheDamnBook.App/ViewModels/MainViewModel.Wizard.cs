@@ -16,7 +16,7 @@ public sealed partial class MainViewModel
     private const double StackLayerX = 7;
     private const double StackLayerY = 6;
     private static readonly string[] RailTitles = ["Open pages", "Check the order", "Print"];
-    private const string NotLoadedFolderSummary = "A folder of images";
+    private const string NotLoadedFolderSummary = "A folder or a Dino book";
     private const string NotLoadedCheckSummary = "Drag to fix";
     private const string SentSummary = "Sent";
     private const int PrintRailIndex = 2;
@@ -25,7 +25,7 @@ public sealed partial class MainViewModel
     private const string HeadingOpenLoaded = "Got your pages";
     private const string SubheadingOpenLoaded = "Happy with this folder? Next you check the order.";
     private const string HeadingOpen = "Point me at your pages";
-    private const string SubheadingOpen = "Name them Cover, 1, 2, 3 … Back cover and I'll work out which page goes where on each sheet.";
+    private const string SubheadingOpen = "Name them Cover, 1, 2, 3 … Back cover, or open a book you made in Dino Reader. Its words come along.";
     private const string HeadingCheck = "Check the order";
     private const string HeadingPrint = "Send it to the printer";
     private const string HeadingDone = "Sent. Now fold the damn thing.";
@@ -141,7 +141,7 @@ public sealed partial class MainViewModel
     public partial IReadOnlyList<FoldStepViewModel> FoldSteps { get; set; } = [];
 
     /// <summary>True while a folder is read or a job is sent; the rail and the footer buttons wait.</summary>
-    public bool IsBusy => IsLoading || Print.IsBusy;
+    public bool IsBusy => IsLoading || IsTranslating || Print.IsBusy;
 
     private int SheetCount => Sheets.Count;
 
@@ -160,6 +160,11 @@ public sealed partial class MainViewModel
     }
 
     partial void OnIsLoadingChanged(bool value)
+    {
+        RefreshWizard();
+    }
+
+    partial void OnIsTranslatingChanged(bool value)
     {
         RefreshWizard();
     }
@@ -283,7 +288,7 @@ public sealed partial class MainViewModel
     {
         var sheets = SheetCount;
         var pages = PageCount;
-        FolderName = IsLoaded ? Path.GetFileName(Path.TrimEndingDirectorySeparator(FolderPath)) : string.Empty;
+        FolderName = IsLoaded ? BookName : string.Empty;
         TitleSuffix = FolderName.Length > 0 ? TitleSuffixPrefix + FolderName : string.Empty;
         CoverImage = IsLoaded ? Sheets.FirstOrDefault()?.Front.Right.Image : null;
         Summary = IsLoaded ? BuildSummary(pages, sheets) : string.Empty;
@@ -376,9 +381,9 @@ public sealed partial class MainViewModel
     {
         return Step switch
         {
-            WizardStep.Open when IsLoaded => (HeadingOpenLoaded, SubheadingOpenLoaded),
+            WizardStep.Open when IsLoaded => (HeadingOpenLoaded, IsDinoBook ? SubheadingOpenLoadedDino : SubheadingOpenLoaded),
             WizardStep.Open => (HeadingOpen, SubheadingOpen),
-            WizardStep.Check => (HeadingCheck, CheckSubheading()),
+            WizardStep.Check => (IsDinoBook ? HeadingCheckDino : HeadingCheck, CheckSubheading()),
             WizardStep.Print => (HeadingPrint, $"{PrintLead()} {Plural(sheets, "sheet")} of {Print.SelectedPaper}."),
             _ => (HeadingDone, SubheadingDone),
         };
@@ -386,7 +391,7 @@ public sealed partial class MainViewModel
 
     private string CheckSubheading()
     {
-        return IsReadingView ? SubheadingReading : SubheadingSheets;
+        return IsReadingView ? (IsDinoBook ? SubheadingCheckDino : SubheadingReading) : SubheadingSheets;
     }
 
     private string PrintLead()
