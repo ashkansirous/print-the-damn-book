@@ -16,3 +16,4 @@ Rows moved out of `plan.md` once built. Status `built` until the user confirms o
 | 10 | Landing site at print-the-damn-book.sirous.uk | built | #17 | | [10](../slices/10-landing-site.md) |
 | 11 | Microsoft Store: MSIX, listing, submission (after 8, 10) (submission dropped by the user, tooling kept) | built | #19 | | [11](../slices/11-microsoft-store.md) |
 | 14 | Story text: typed, on the picture or on its own page (design done) | built | #26 | | [14](../slices/14-typed-text-pages.md) |
+| 16 | Top and middle bands, empty-space suggestion (after 14) | built | #27 | | [16](../slices/16-text-band-suggestion.md) |
