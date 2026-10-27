@@ -72,3 +72,4 @@ dotnet run --project src/PrintTheDamnBook.App
 - `book.json` is read and written only through `Services/BookTextStore`; never overwrite a file it could not read. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
 - Andika is the only story font; its licence is listed in `Services/FontLicences`. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
 - Band rectangles, `BandSuggestion` scoring and panel opacity live in Core (`Text/`, `Layout/`); the App only decodes via `Services/ImageDecoder` and hands over pixels off the UI thread. A user's band pick is never re-suggested over. (Slice 16: docs/plan/slices/16-text-band-suggestion.md)
+- .dino files are untrusted: parse only through `Core/Dino` (`DinoBookReader`) with its caps and name checks; extracted books live in the per-hash cache (`DinoBookCache`), never next to the .dino. (Slice 15: docs/plan/slices/15-open-dino-books.md)
