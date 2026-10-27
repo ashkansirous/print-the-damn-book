@@ -16,6 +16,9 @@ public sealed record BookText
 
     public TextPageBackground TextPages { get; init; } = TextPageBackground.White;
 
+    /// <summary>For a Dino book, the language its words are in (null for the book's own); unused for a folder.</summary>
+    public string? Language { get; init; }
+
     public Dictionary<string, PageTextEntry> Pages { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
 

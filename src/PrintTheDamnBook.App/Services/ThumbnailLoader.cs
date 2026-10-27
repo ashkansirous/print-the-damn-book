@@ -20,6 +20,12 @@ public sealed class ThumbnailLoader
         }
     }
 
+    /// <summary>Lets go of every decoded thumbnail, for a book that is going away.</summary>
+    public void Clear()
+    {
+        _cache.Clear();
+    }
+
     public ImageSource? Load(string? path)
     {
         if (path is null)

@@ -343,7 +343,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        _bookText.Schedule(new BookText { TextPages = Print.TextPages, Pages = new Dictionary<string, PageTextEntry>(_textEntries, StringComparer.OrdinalIgnoreCase) });
+        _bookText.Schedule(new BookText { TextPages = Print.TextPages, Language = SavedLanguage, Pages = new Dictionary<string, PageTextEntry>(_textEntries, StringComparer.OrdinalIgnoreCase) });
         UpdateSaveStatus();
     }
 
@@ -361,8 +361,8 @@ public sealed partial class MainViewModel
             BookTextSaveState.Saving => SavingText,
             BookTextSaveState.Failed => FailedText,
             BookTextSaveState.Locked => LockedText,
-            BookTextSaveState.Saved => SavedText,
-            _ => _textEntries.Count > 0 ? SavedText : string.Empty,
+            BookTextSaveState.Saved => SavedTextForBook,
+            _ => _textEntries.Count > 0 ? SavedTextForBook : string.Empty,
         };
     }
 

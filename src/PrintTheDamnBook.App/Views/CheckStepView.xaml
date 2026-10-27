@@ -19,6 +19,7 @@
     <sys:String x:Key="IconCaretRight2">&#xE13A;</sys:String>
     <sys:String x:Key="IconCheckSmall">&#xE182;</sys:String>
     <sys:String x:Key="IconSparkle">&#xE6A2;</sys:String>
+    <sys:String x:Key="IconTranslate">&#xE4A2;</sys:String>
     <FontFamily x:Key="AndikaFont">pack://application:,,,/Fonts/#Andika</FontFamily>
 
     <!-- The Band option the app suggests wears a sparkle. -->
@@ -252,6 +253,34 @@
       <ColumnDefinition Width="Auto" />
     </Grid.ColumnDefinitions>
   <StackPanel>
+    <!-- Language of a Dino book. Right-to-left languages are listed but disabled. -->
+    <StackPanel Orientation="Horizontal" Margin="0,0,0,14" Visibility="{Binding IsDinoBook, Converter={StaticResource BoolToVisibility}}">
+      <TextBlock Style="{StaticResource Ph}" FontSize="16" Text="{StaticResource IconTranslate}" Foreground="{StaticResource Neutral400Brush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+      <ComboBox MinWidth="300" ItemsSource="{Binding DinoLanguages}" SelectedValuePath="Code"
+                SelectedValue="{Binding SelectedDinoLanguage, Mode=TwoWay}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                AutomationProperties.Name="Language of the book">
+        <ComboBox.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Text="{Binding Label}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+        <ComboBox.ItemContainerStyle>
+          <Style TargetType="ComboBoxItem" BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+            <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+            <Style.Triggers>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Opacity" Value="0.5" />
+              </Trigger>
+            </Style.Triggers>
+          </Style>
+        </ComboBox.ItemContainerStyle>
+      </ComboBox>
+      <TextBlock Text="Putting the words into the new language…" Foreground="{StaticResource Neutral300Brush}" VerticalAlignment="Center" Margin="12,0,0,0"
+                 Visibility="{Binding IsTranslatingSlow, Converter={StaticResource BoolToVisibility}}" />
+      <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Command="{Binding CancelTranslateCommand}" Margin="10,0,0,0"
+              AutomationProperties.Name="Cancel changing the language" Visibility="{Binding IsTranslatingSlow, Converter={StaticResource BoolToVisibility}}" />
+    </StackPanel>
+
     <!-- Warning chips -->
     <ItemsControl ItemsSource="{Binding Chips}" Margin="0,-4,0,18" Visibility="{Binding HasChips, Converter={StaticResource BoolToVisibility}}">
       <ItemsControl.ItemsPanel>

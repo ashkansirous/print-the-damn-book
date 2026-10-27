@@ -1,8 +1,15 @@
 <UserControl x:Class="PrintTheDamnBook.App.Views.OpenStepView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:views="clr-namespace:PrintTheDamnBook.App.Views">
-  <!-- DataContext is the MainViewModel. -->
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+             xmlns:views="clr-namespace:PrintTheDamnBook.App.Views"
+             AllowDrop="True" DragOver="OnDinoDragOver" Drop="OnDinoDrop">
+  <!-- DataContext is the MainViewModel. A dropped .dino file is taken here; a dropped folder is left to the window. -->
+  <UserControl.Resources>
+    <!-- Phosphor 2.1.1 code points. -->
+    <sys:String x:Key="IconBookBookmark">&#xE0E4;</sys:String>
+    <sys:String x:Key="IconFileZip">&#xE958;</sys:String>
+  </UserControl.Resources>
   <Grid HorizontalAlignment="Left" MaxWidth="620">
     <!-- Not loaded: the drop card -->
     <Grid Visibility="{Binding IsLoaded, Converter={StaticResource InverseBoolToVisibility}}">
@@ -18,23 +25,23 @@
       <StackPanel Margin="32,36">
         <Grid Height="40" Margin="0,0,0,16" HorizontalAlignment="Left">
           <TextBlock Style="{StaticResource Ph}" FontSize="40" Text="{StaticResource IconFolderOpen}" Foreground="{StaticResource AccentBrush}"
-                     Visibility="{Binding IsLoading, Converter={StaticResource InverseBoolToVisibility}}" />
+                     Visibility="{Binding IsLoadingSlow, Converter={StaticResource InverseBoolToVisibility}}" />
           <TextBlock Style="{StaticResource Spinner}" FontSize="40" Text="{StaticResource IconCircleNotch}" Foreground="{StaticResource AccentBrush}"
-                     Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibility}}" />
+                     Visibility="{Binding IsLoadingSlow, Converter={StaticResource BoolToVisibility}}" />
         </Grid>
         <TextBlock FontSize="17" FontWeight="Medium">
           <TextBlock.Style>
             <Style TargetType="TextBlock">
-              <Setter Property="Text" Value="Drop a folder here, or pick one" />
+              <Setter Property="Text" Value="Drop a folder or a Dino book here" />
               <Style.Triggers>
-                <DataTrigger Binding="{Binding IsLoading}" Value="True">
-                  <Setter Property="Text" Value="Reading images…" />
+                <DataTrigger Binding="{Binding IsLoadingSlow}" Value="True">
+                  <Setter Property="Text" Value="{Binding LoadingText}" />
                 </DataTrigger>
               </Style.Triggers>
             </Style>
           </TextBlock.Style>
         </TextBlock>
-        <TextBlock Style="{StaticResource Muted}" Text="One image per page. JPG or PNG. I don't touch the files." Margin="0,4,0,0" />
+        <TextBlock Style="{StaticResource Muted}" Text="One image per page (JPG or PNG), or a .dino book from Dino Reader. I don't touch the files." Margin="0,4,0,0" />
         <TextBlock Text="{Binding LoadProblem}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,8,0,0"
                    Visibility="{Binding LoadProblem, Converter={StaticResource PresentToVisibility}}" />
         <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
@@ -43,11 +50,22 @@
           <Border Style="{StaticResource TagNeutral}" Margin="0,0,6,0"><TextBlock FontSize="11" Text="2" Foreground="{StaticResource Neutral100Brush}" /></Border>
           <Border Style="{StaticResource TagNeutral}" Margin="0,0,6,0"><TextBlock FontSize="11" Text="3" Foreground="{StaticResource Neutral100Brush}" /></Border>
           <TextBlock Text="…" Foreground="{StaticResource Neutral500Brush}" VerticalAlignment="Center" Margin="0,0,6,0" />
-          <Border Style="{StaticResource TagAccent}"><TextBlock FontSize="11" Text="Back cover" Foreground="{StaticResource Accent100Brush}" /></Border>
+          <Border Style="{StaticResource TagAccent}" Margin="0,0,6,0"><TextBlock FontSize="11" Text="Back cover" Foreground="{StaticResource Accent100Brush}" /></Border>
+          <Border Style="{StaticResource TagNeutral}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Style="{StaticResource Ph}" FontSize="12" Text="{StaticResource IconFileZip}" Foreground="{StaticResource Neutral100Brush}" VerticalAlignment="Center" Margin="0,0,4,0" />
+              <TextBlock FontSize="11" Text=".dino" Foreground="{StaticResource Neutral100Brush}" />
+            </StackPanel>
+          </Border>
         </StackPanel>
-        <Button Style="{StaticResource PrimaryButton}" Content="Open folder…" views:Ui.Icon="{StaticResource IconFolderOpen}" Command="{Binding OpenFolderCommand}"
-                IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" HorizontalAlignment="Left" Margin="0,16,0,0"
-                AutomationProperties.Name="Open folder" />
+        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+          <Button Style="{StaticResource PrimaryButton}" Content="Open folder…" views:Ui.Icon="{StaticResource IconFolderOpen}" Command="{Binding OpenFolderCommand}"
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" AutomationProperties.Name="Open folder" />
+          <Button Style="{StaticResource SecondaryButton}" Content="Open a Dino book…" views:Ui.Icon="{StaticResource IconBookBookmark}" Command="{Binding OpenDinoCommand}"
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" Margin="10,0,0,0" AutomationProperties.Name="Open a Dino book" />
+        </StackPanel>
+        <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Command="{Binding CancelLoadCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"
+                AutomationProperties.Name="Cancel opening" Visibility="{Binding IsLoadingSlow, Converter={StaticResource BoolToVisibility}}" />
       </StackPanel>
     </Grid>
 
@@ -64,11 +82,24 @@
         </Border>
         <StackPanel Grid.Column="1" Margin="20,0,0,0" VerticalAlignment="Center">
           <TextBlock Text="{Binding FolderName}" FontSize="17" FontWeight="Medium" TextTrimming="CharacterEllipsis" />
-          <TextBlock Text="{Binding FolderPath}" FontSize="12" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource Neutral500Brush}"
+          <TextBlock Text="{Binding SourcePath}" FontSize="12" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource Neutral500Brush}"
                      TextTrimming="CharacterEllipsis" Margin="0,6,0,0" />
           <TextBlock Text="{Binding Summary}" Foreground="{StaticResource Neutral300Brush}" Margin="0,6,0,0" />
-          <Button Style="{StaticResource SecondaryButton}" Content="Pick a different folder" views:Ui.Icon="{StaticResource IconArrowsClockwise}"
-                  Command="{Binding OpenFolderCommand}" HorizontalAlignment="Left" Margin="0,10,0,0" AutomationProperties.Name="Pick a different folder" />
+          <TextBlock Text="{Binding BookNotice}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,6,0,0"
+                     Visibility="{Binding BookNotice, Converter={StaticResource PresentToVisibility}}" />
+          <TextBlock Text="{Binding OpenFailure}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,6,0,0"
+                     Visibility="{Binding OpenFailure, Converter={StaticResource PresentToVisibility}}" />
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Visibility="{Binding IsLoadingSlow, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Style="{StaticResource Spinner}" FontSize="20" Text="{StaticResource IconCircleNotch}" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding LoadingText}" VerticalAlignment="Center" Margin="10,0,0,0" />
+            <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Command="{Binding CancelLoadCommand}" Margin="12,0,0,0" AutomationProperties.Name="Cancel opening" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Style="{StaticResource SecondaryButton}" Content="Pick a different folder" views:Ui.Icon="{StaticResource IconArrowsClockwise}"
+                    Command="{Binding OpenFolderCommand}" IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" AutomationProperties.Name="Pick a different folder" />
+            <Button Style="{StaticResource SecondaryButton}" Content="Open a Dino book…" views:Ui.Icon="{StaticResource IconBookBookmark}"
+                    Command="{Binding OpenDinoCommand}" IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" Margin="10,0,0,0" AutomationProperties.Name="Open a Dino book" />
+          </StackPanel>
         </StackPanel>
       </Grid>
     </Border>
