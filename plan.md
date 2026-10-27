@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Slices 7 to 11 merged 2026-10-22. The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked.
+Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27 (wave done). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked.
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -26,16 +26,17 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | --- | --- | --- | --- | --- | --- |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
-| 15 | Open a Dino Reader book (`.dino`) (after 14) | planned | | | [15](docs/plan/slices/15-open-dino-books.md) |
 
 Notes:
 
-- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14, 16).
+- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14 to 16).
 
 ## Outstanding work
 
-- Slice 16: pre-print status and Cancel on a large folder (wait over 500 ms); Letter paper; suggestion quality on real noisy photos, thresholds tuned only on synthetic images ([slice 16](docs/plan/slices/16-text-band-suggestion.md)).
-- Slice 14: printing on Letter paper; a real paper print and fold; performance with many story pages (re-layout on the UI thread on each typing pause) ([slice 14](docs/plan/slices/14-typed-text-pages.md)).
+- Slice 15: memory not returned after a very large book (about 1.6 GB held after a 420-page stress book is replaced, also on main for folder opens; needs a profiler); about 3 in 18 cancelled opens leave a cache folder behind (cleaned on reopen); drop-zone drag checked with a real Explorer drag only once ([slice 15](docs/plan/slices/15-open-dino-books.md)).
+- Slice 16: pre-print status and Cancel on a large folder (wait over 500 ms); suggestion quality on real noisy photos, thresholds tuned only on synthetic images ([slice 16](docs/plan/slices/16-text-band-suggestion.md)).
+- Slice 14: a real paper print and fold; performance with many story pages (re-layout on the UI thread on each typing pause) ([slice 14](docs/plan/slices/14-typed-text-pages.md)).
+- Letter paper verified 2026-10-27 for Slices 14-16 (Print to PDF: page size, bands within 30%, own page, shrink, Dino cover title). Seen then: three-little-pigs.dino warns "5 pages have more words than fit" on Letter (Dino pages default to the bottom band, so long text is cut at 14 pt; consider Own page or a smaller minimum for Dino books); "Print test sheet" on a Dino book printed page 1, not the cover (not investigated).
 - Slice 9: a real printed page with numbers (print to PDF or paper) ([slice 09](docs/plan/slices/09-page-numbers.md)).
 - Slice 7 code follow-ups from Slice 11 review: `SnapLayoutHook` hover state not cleared without non-client mouse tracking; `NocturneDialog` CoverOwner sizing / null owner; `ClearStatusUnlessBusy` doesn't reset `PrintStatusKind`; `TestSheetSent` mid-send check only covers RotateBacks ([slice 11](docs/plan/slices/11-microsoft-store.md)).
 - Site CI deploy: the user creates a Cloudflare API token (Workers edit) in the dashboard and sets it as the `CLOUDFLARE_API_TOKEN` repo secret ([slice 10](docs/plan/slices/10-landing-site.md)).

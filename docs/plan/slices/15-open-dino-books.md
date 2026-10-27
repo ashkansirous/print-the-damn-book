@@ -82,11 +82,11 @@ the Decisions above.
 
 *From review:* high found 14, applied 1-10 and 14, skipped 11, 12, 13. Medium found 10, applied all (9 was already handled). 293 tests pass, including hostile-zip tests.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-10-27)
 
 - .dino files are untrusted: parse only through `Core/Dino` (`DinoBookReader`) with its caps and name checks; extracted books live in the per-hash cache (`DinoBookCache`), never next to the .dino. (Slice 15: docs/plan/slices/15-open-dino-books.md)
 
-#### For README.md
+#### For README.md (lifted 2026-10-27)
 
 - Open a Dino Reader book (`.dino`): pictures, words and the title on the cover, and choose a language.
 

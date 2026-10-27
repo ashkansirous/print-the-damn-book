@@ -22,6 +22,8 @@ Options (scaling, flip edge, margin, paper, printer, two-sided) are remembered b
 
 Story text: type words for each page, on the picture or on its own page; saved in `book.json` in the folder.
 
+Open a Dino Reader book (`.dino`): pictures, words and the title on the cover, and choose a language.
+
 Printers without two-sided printing: choose Manual; print the test sheet once to check the backs' rotation.
 
 ## Download
