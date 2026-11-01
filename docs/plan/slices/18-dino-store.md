@@ -1,6 +1,6 @@
 ### Slice 18 — Get a story from Dino's store
 
-*Built (wave 2026-11-01), PR #34.*
+*Built (wave 2026-11-01), merged as PR #34 (e83ab51).*
 
 **Touches:** `src/PrintTheDamnBook.Core/Dino/**` (store catalog parsing, new), `tests/PrintTheDamnBook.Core.Tests/**`,
 `src/PrintTheDamnBook.App/Services/DinoStoreClient.cs` (new), `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`,
@@ -145,7 +145,7 @@ Settled by the mock: the language filter is a select with counts; the privacy li
 on the Check step with 12 pages and text; Cancel leaves no `.part` or `.dino`; offline (process-only proxy) shows "I couldn't
 reach Dino's store" with Try again; `--language fa` hand-over of a store book opens with Right to left selected.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-01)
 
 - Store network access goes only through `Services/DinoStoreClient` with the `DinoStoreCatalog` allow-list: plain GETs, no
   identifiers. Downloaded files go through `DinoBookReader` like any .dino. The site's privacy text (`site/public/privacy.html`)
