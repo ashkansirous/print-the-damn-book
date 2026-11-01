@@ -1,6 +1,6 @@
 ### Slice 21 — Scripted desktop checks (test harness)
 
-*Built 2026-11-01, verified in the VM on 2026-11-01 (store check skipped, VM offline); not merged (draft PR #44).* It was parked earlier that night because Claude Code's auto mode denied the first VM run (category "Modify Shared Resources"). The user then added an `autoMode` environment entry for the shared VM (2026-11-01) and the run was finished from the interactive session. The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
+*Built 2026-11-01, verified in the VM on 2026-11-01 (store check skipped, VM offline); merged as PR #44 (6221069).* It was parked earlier that night because Claude Code's auto mode denied the first VM run (category "Modify Shared Resources"). The user then added an `autoMode` environment entry for the shared VM (2026-11-01) and the run was finished from the interactive session. The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
 ([note](../notes/2026-11-01-1141-feedback-loop-w1.md)).
 
 **Touches:** `tools/desktop-test/**` (new), `tools/desktop-vm/**` (new), `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1` (moved to `tools/desktop-test/`), `src/PrintTheDamnBook.App/**/*.xaml` (AutomationIds only), `.github/workflows/**` (only if a check runs in CI). The root `CLAUDE.md` line goes in this file's *For CLAUDE.md* block and is lifted by the index pass.
@@ -62,7 +62,7 @@ pipeline from an app's first UI slice; this repo never got one.
 Verify: each script passes in the VM against a Release build, and the unverified lines it covers
 are removed from `docs/plan/unverified.md`.
 
-## For CLAUDE.md
+## For CLAUDE.md (lifted 2026-11-01)
 
 - Desktop checks are scripts in `tools/desktop-test/` (exit 0/1, controls found by `AutomationId`); device-test agents run them through `tools/desktop-vm/Invoke-DesktopTest.ps1`, a thin runner over the shared `rtst-desktop-test` VM (RTST's lock, restore `clean` before and after, never change VMs or checkpoints, RTST's password), and add a missing check as a new script, never a throw-away. (Slice 21: docs/plan/slices/21-desktop-test-harness.md)
 
@@ -97,7 +97,7 @@ Both go to the folder `CLAUDE.md` files (already present in `tools/desktop-test/
 - Device-test agents run `tools/desktop-vm/Invoke-DesktopTest.ps1` first and add a missing check as a new script in `tools/desktop-test/`.
 - The VM is the shared `rtst-desktop-test`, never a new one.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-01)
 
 - Device-test agents run `tools/desktop-vm/Invoke-DesktopTest.ps1` first; a missing check is a new script in `tools/desktop-test/`, never a throw-away. The VM is the shared `rtst-desktop-test`, never a new one. (Slice 21: docs/plan/slices/21-desktop-test-harness.md)
 

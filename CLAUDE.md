@@ -50,6 +50,7 @@ dotnet run --project src/PrintTheDamnBook.App
   (Slice 4: docs/plan/slices/04-options-and-settings.md)
 - No Dockerfile, no container image: desktop app, no backend. Releases are a self-contained
   exe built by `release.yml` (Slice 05).
+- Desktop checks: device-test agents run `tools/desktop-vm/Invoke-DesktopTest.ps1` first and add a missing check as a new script in `tools/desktop-test/`, never a throw-away. The VM is the shared `rtst-desktop-test` (lock `Global\rtst-desktop-test-vm`), never a new one; details in those folders' `CLAUDE.md`. (Slice 21: docs/plan/slices/21-desktop-test-harness.md)
 - Files are LF (`.gitattributes`, `.editorconfig`); don't convert line endings.
   (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
 - Thumbnail decoding happens off the UI thread in `LoadFolderAsync` (`MainViewModel.cs`); keep

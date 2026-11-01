@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 21: Scripted desktop checks ([slice](slices/21-desktop-test-harness.md))
+
+- `store-dialog` (list, download, Cancel) has not run: the VM has no network; it needs the host run with `-HostStore -AcknowledgeHostDesktop`.
+- `open-dino` and `handover-check` ran with the `-Dino` file given at the run; no sample .dino is in the repo.
+
 ### Slice 20: Dino open and store hardening ([slice](slices/20-dino-open-hardening.md))
 
 - The failed state with Back to list on a real download failure (cannot be forced without changing live state).
