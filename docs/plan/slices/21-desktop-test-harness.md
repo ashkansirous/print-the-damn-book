@@ -1,6 +1,6 @@
 ### Slice 21 — Scripted desktop checks (test harness)
 
-*Planned.* The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
+*Parked 2026-11-01.* Built and reviewed on draft PR #44 (719882e, branch feat/desktop-test-harness); the first in-VM run was denied by the auto-mode permission check (Modify Shared Resources), so nothing has run. Unpark with an allow rule for that run, or run it interactively; another check pass is due (fixes landed after the last review). The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
 ([note](../notes/2026-11-01-1141-feedback-loop-w1.md)).
 
 **Touches:** `tools/desktop-test/**` (new), `tools/desktop-vm/**` (new), `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`, `src/PrintTheDamnBook.App/**/*.xaml` (AutomationIds only), `CLAUDE.md`, `.github/workflows/**` (only if a check runs in CI)

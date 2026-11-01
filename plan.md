@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Every slice except 12, 13 and 21 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 was parked by the 2026-11-01 feedback loop and waits for the user. 20 merged 2026-11-01 (PR #45).
+Every slice except 12, 13 and 21 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 was built on draft PR #44 by night 2026-11-01-2024 and parked because the auto-mode permission check denied its VM run. 20 merged 2026-11-01 (PR #45).
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -26,7 +26,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | --- | --- | --- | --- | --- | --- |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
-| 21 | Scripted desktop checks (test harness) | planned | | | [21](docs/plan/slices/21-desktop-test-harness.md) |
+| 21 | Scripted desktop checks (test harness) | parked: waits for the user to allow the VM run | #44 (draft) | | [21](docs/plan/slices/21-desktop-test-harness.md) |
 
 Notes:
 
@@ -37,6 +37,7 @@ Notes:
 ## Outstanding work
 
 - **Not yet tried on a device:** 5 checks across 3 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- Slice 21, waiting on the user: built and reviewed on draft PR #44, but the first in-VM run (`tools/desktop-vm/Invoke-DesktopTest.ps1` on the shared rtst-desktop-test VM) was denied by the auto-mode permission check, so nothing in the harness has run. Allow that run (or run it from an interactive session); then a check pass on PR #44 is due, since review fixes landed after the last pass ([slice 21](docs/plan/slices/21-desktop-test-harness.md)).
 - Slice 20, waiting on the user: words typed into a book opened in an `.alt-<guid>` folder (another window held the cache) are saved only there and go when the lone-instance sweep runs (Slice 19 behaviour on main, kept); decide whether to warn or merge them back ([slice 20](docs/plan/slices/20-dino-open-hardening.md)).
 - Slice 19: sweeping older versions of a book also deletes that version's `book.json` (Slice 15 behaviour, found in check 2); Dino Reader follow-up: add a "Print this book" slice to its plan (`D:\ReadTheStupidText`) now that Slice 19 has merged ([slice 19](docs/plan/slices/19-open-from-dino-reader.md)).
 - Slice 15: memory not returned after a very large book (about 1.6 GB held after a 420-page stress book is replaced, also on main for folder opens; needs a profiler); about 3 in 18 cancelled opens leave a cache folder behind (cleaned on reopen); drop-zone drag checked with a real Explorer drag only once ([slice 15](docs/plan/slices/15-open-dino-books.md)).
