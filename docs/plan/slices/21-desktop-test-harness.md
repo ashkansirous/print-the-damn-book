@@ -1,9 +1,9 @@
 ### Slice 21 — Scripted desktop checks (test harness)
 
-*In progress (wave 2026-11-01), draft PR.* The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
+*Parked (wave 2026-11-01): built and through both review passes plus a check pass, never run in the VM.* The first in-VM run (a `device-test` agent calling `tools/desktop-vm/Invoke-DesktopTest.ps1` against `rtst-desktop-test`) was denied by Claude Code's auto-mode permission check (category "Modify Shared Resources") on 2026-11-01 in the unattended night run, so nothing here has run yet. To go on: allow that run (an allow rule for the Agent/Bash call running `tools/desktop-vm/Invoke-DesktopTest.ps1`, or run it in an interactive session), then run the checks and fix what they find. The code is on draft PR #44. The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
 ([note](../notes/2026-11-01-1141-feedback-loop-w1.md)).
 
-**Touches:** `tools/desktop-test/**` (new), `tools/desktop-vm/**` (new), `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`, `src/PrintTheDamnBook.App/**/*.xaml` (AutomationIds only), `.github/workflows/**` (only if a check runs in CI). The root `CLAUDE.md` line goes in this file's *For CLAUDE.md* block and is lifted by the index pass.
+**Touches:** `tools/desktop-test/**` (new), `tools/desktop-vm/**` (new), `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1` (moved to `tools/desktop-test/`), `src/PrintTheDamnBook.App/**/*.xaml` (AutomationIds only), `.github/workflows/**` (only if a check runs in CI). The root `CLAUDE.md` line goes in this file's *For CLAUDE.md* block and is lifted by the index pass.
 
 **Claim notes (2026-11-01, unattended night run; premise check on this PC).**
 - No AutomationId exists in `src` yet; the checks need them in `Views/OpenStepView.xaml`,
@@ -11,21 +11,25 @@
 - RTST's harness (`D:/ReadTheStupidText/tools/desktop-vm`) builds its VM from the Windows 11
   Enterprise evaluation ISO (about 8 GB) with an answer file; it needs Hyper-V Administrators (the
   user has it), not elevation. Its only reusable disk is RTST's own `disk.vhdx` (25 GB, with RTST's
-  app and password inside); copying or chaining it would reuse the RTST VM, which this slice forbids.
-- D: has 31 GB free (C: is outside the allowed folders). A fresh VM needs the 8 GB ISO plus a VHDX
-  that grows to about 20 GB during install: most of D:, with other sessions writing there. **Decision
-  (taken unattended):** this slice builds the harness scripts (`New-TestVm.ps1` with a `-VmRoot`
-  parameter so the VM can live on another drive, `Reset-TestVm.ps1`, `Build-TestPackage.ps1`,
-  `Invoke-DesktopTest.ps1`) and the check scripts, but does not create the VM tonight. Creating it
-  and the first in-VM run wait for the user to pick a drive with room (see *Waiting on the user*).
-  The package is the self-contained exe from `release.yml`'s `dotnet publish` command, not an MSIX.
-- The checks are not run on the host desktop (user's answer). They get a parse check and a
-  `-WhatIf`/dry-run where possible; the in-VM run goes to *Not yet verified*.
+  app and password inside).
+- D: has 31 GB free, too little for a second VM. The first build (before the user's answer below)
+  wrote a `New-TestVm.ps1` for an own VM; the answer replaces that.
+- The package is the self-contained exe from `release.yml`'s `dotnet publish` command, not an MSIX.
+- The checks are not run on the host desktop (user's answer), except the live-store check: the VM
+  has no network adapter, so that one runs on the host or is skipped.
 
-## Waiting on the user
-
-- Where the test VM lives: D: has 31 GB free, the VM needs about 28 GB at its peak. Run
-  `tools/desktop-vm/New-TestVm.ps1 -VmRoot <folder on a drive with 40 GB free>` once, or free space on D:.
+**User's answer on the VM (2026-11-01, about 20:38, relayed by the run's supervising session):** do
+not build a new VM; reuse the Hyper-V VM `rtst-desktop-test` that ReadTheStupidText and Dino Reader
+share (`D:/ReadTheStupidText-worktrees/_desktop-vm/`). Rules for using it:
+- Take the same host lock (mutex `Global\rtst-desktop-test-vm`, `Enter-VmLock` in RTST's
+  `tools/desktop-vm/_common.ps1`), so a PTDB run never overlaps an RTST or Dino run.
+- Restore the `clean` checkpoint before and after every run (RTST's `Reset-TestVm.ps1` pattern) and
+  leave the VM Saved. Never take, delete or change checkpoints; never rebuild the VM.
+- Password: `DESKTOP_VM_PASSWORD` in `D:/secrets/readthestupidtext/secrets.env`.
+- Copy the Release build (self-contained exe) into the guest; no MSIX.
+- So `tools/desktop-vm/` here is a thin runner over that VM (it may dot-source or copy RTST's
+  `_common.ps1` helpers): build, restore `clean`, copy in, run the `tools/desktop-test` checks in
+  the guest session, copy results out, restore `clean`. No `New-TestVm.ps1`, no own VM.
 
 **Why.** The repo has no repeatable desktop checks. `tools/` holds only `store-assets`, plus one
 committed script, `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`. On 2026-11-01, the three
@@ -52,13 +56,20 @@ pipeline from an app's first UI slice; this repo never got one.
 - [ ] A headless Hyper-V VM harness in `tools/desktop-vm/` (user's choice, 2026-11-01), modelled on
   ReadTheStupidText's `D:\ReadTheStupidText\tools\desktop-vm` (`New-TestVm.ps1`, `Reset-TestVm.ps1`,
   `Build-TestPackage.ps1`, `Invoke-DesktopTest.ps1`, `checks/`): build a package, copy it into the VM,
-  run the `tools/desktop-test` scripts there, collect the report. Its own VM name (for example
-  `ptdb-desktop-test`); never start, change or reuse the `rtst-desktop-test` VM. Cheapest path first:
-  if RTST's base image or VHD can be copied, copy it rather than install Windows from scratch.
-  Snapshot after setup and reset from the snapshot before each run.
+  run the `tools/desktop-test` scripts there, collect the report. Superseded by the user's answer
+  above: reuse `rtst-desktop-test` under its lock and `clean` checkpoint, no own VM.
 
 Verify: each script passes in the VM against a Release build, and the unverified lines it covers
 are removed from `docs/plan/unverified.md`.
+
+## For CLAUDE.md
+
+- Desktop checks are scripts in `tools/desktop-test/` (exit 0/1, controls found by `AutomationId`); device-test agents run them through `tools/desktop-vm/Invoke-DesktopTest.ps1`, a thin runner over the shared `rtst-desktop-test` VM (RTST's lock, restore `clean` before and after, never change VMs or checkpoints, RTST's password), and add a missing check as a new script, never a throw-away. (Slice 21: docs/plan/slices/21-desktop-test-harness.md)
+
+## Built (premise findings)
+
+- The app has no folder command line (only a .dino path), so `open-folder` drives the native folder picker (ids 1152 and 1).
+- No sample .dino is in the repo; the Dino checks take `-Dino` and are skipped, loudly, without it.
 
 ## User's answer
 

@@ -75,3 +75,13 @@ if (-not $existedBefore[0]) {
 foreach ($i in 1..2) {
     if (-not $existedBefore[$i]) { Remove-Item $handlerKeys[$i] -Recurse -Force -ErrorAction SilentlyContinue }
 }
+
+# Exit 0 only when every launch case passed (and, when it was checked, the open-with command points at this exe).
+$failures = @()
+if (-not $goodResult) { $failures += 'good .dino did not land on the Check step' }
+if (-not $missingResult) { $failures += 'missing file showed no alert' }
+if (-not $badResult) { $failures += '.txt file showed no alert' }
+if (-not $skipped -and -not $commandMatches) { $failures += 'open-with command does not point at this exe' }
+if ($failures.Count) { Write-Host "FAIL  handover-check: $($failures -join '; ')"; exit 1 }
+Write-Host 'PASS  handover-check: launch cases passed'
+exit 0

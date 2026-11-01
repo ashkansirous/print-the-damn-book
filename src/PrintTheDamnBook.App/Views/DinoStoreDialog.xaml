@@ -133,7 +133,7 @@
             </ComboBox>
           </StackPanel>
           <Button Grid.Column="2" Style="{StaticResource GhostButton}" views:Ui.Icon="{StaticResource IconX}" Command="{Binding CloseCommand}" VerticalAlignment="Top"
-                  Margin="12,0,0,0" ToolTip="Close" AutomationProperties.Name="Close" />
+                  Margin="12,0,0,0" ToolTip="Close" AutomationProperties.Name="Close" AutomationProperties.AutomationId="StoreCloseButton" />
         </Grid>
 
         <!-- Loading the list -->
@@ -143,7 +143,7 @@
             <TextBlock Text="Loading stories…" FontSize="15" FontWeight="Medium" Margin="0,10,0,0" />
             <TextBlock Style="{StaticResource Muted}" Text="Asking dinoreader.sirous.uk for its list." Margin="0,10,0,0" />
             <Button Style="{StaticResource GhostButton}" Content="Cancel" Command="{Binding CancelCommand}" HorizontalAlignment="Left" Margin="0,10,0,0"
-                    AutomationProperties.Name="Cancel loading stories" />
+                    AutomationProperties.Name="Cancel loading stories" AutomationProperties.AutomationId="StoreCancelLoadingButton" />
           </StackPanel>
         </Grid>
 
@@ -184,7 +184,7 @@
             <TextBlock FontSize="12" Foreground="{StaticResource Neutral400Brush}" Text="{Binding Note}" AutomationProperties.Name="Download note" />
           </StackPanel>
           <ScrollViewer MaxHeight="540" VerticalScrollBarVisibility="Auto" Padding="2">
-            <ItemsControl ItemsSource="{Binding Cards}" AutomationProperties.Name="Stories">
+            <ItemsControl ItemsSource="{Binding Cards}" AutomationProperties.Name="Stories" AutomationProperties.AutomationId="StoreList">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                   <UniformGrid Columns="5" />
@@ -192,7 +192,7 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Button Style="{StaticResource StoreCardButton}" IsEnabled="{Binding IsEnabled}" ToolTip="{Binding Tooltip}" AutomationProperties.Name="{Binding Title}"
+                  <Button Style="{StaticResource StoreCardButton}" IsEnabled="{Binding IsEnabled}" ToolTip="{Binding Tooltip}" AutomationProperties.Name="{Binding Title}" AutomationProperties.AutomationId="StoreCardButton"
                           Command="{Binding DataContext.ChooseCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}" Margin="0,0,0,6">
                     <StackPanel>
                       <Border Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource ThreeByFour}}" Background="{StaticResource Neutral800Brush}"
@@ -236,10 +236,10 @@
                 <TextBlock Style="{StaticResource DownloadTitle}" Text="{Binding DownloadTitle}" />
                 <TextBlock FontSize="15" FontWeight="Medium" Text="…" />
               </StackPanel>
-              <ProgressBar Style="{StaticResource DownloadBar}" Value="{Binding DownloadPercent}" Margin="0,10,0,0" AutomationProperties.Name="Download" />
+              <ProgressBar Style="{StaticResource DownloadBar}" Value="{Binding DownloadPercent}" Margin="0,10,0,0" AutomationProperties.Name="Download" AutomationProperties.AutomationId="StoreDownloadBar" />
               <TextBlock FontSize="12" Foreground="{StaticResource Neutral400Brush}" Text="{Binding DownloadText}" Margin="0,10,0,0" />
               <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Command="{Binding CancelCommand}" HorizontalAlignment="Left" Margin="0,10,0,0"
-                      AutomationProperties.Name="Cancel download" />
+                      AutomationProperties.Name="Cancel download" AutomationProperties.AutomationId="StoreCancelDownloadButton" />
             </StackPanel>
           </StackPanel>
         </Grid>

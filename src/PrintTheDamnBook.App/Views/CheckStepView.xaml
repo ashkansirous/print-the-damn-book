@@ -302,12 +302,12 @@
     <Border Style="{StaticResource SegBorder}" ToolTip="{Binding DirectionTooltip}" AutomationProperties.Name="Reading direction">
       <StackPanel Orientation="Horizontal">
         <RadioButton Style="{StaticResource SegOption}" Content="Left to right" views:Ui.Icon="{StaticResource IconArrowLineRight}" GroupName="ReadingDirection"
-                     AutomationProperties.Name="Left to right"
+                     AutomationProperties.Name="Left to right" AutomationProperties.AutomationId="DirectionLeftToRight"
                      Tag="{x:Static text:ReadingDirection.LeftToRight}" Click="OnDirectionClick"
                      IsChecked="{Binding BookDirection, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:ReadingDirection.LeftToRight}}" />
         <Rectangle Style="{StaticResource SegDivider}" />
         <RadioButton Style="{StaticResource SegOption}" Content="Right to left" views:Ui.Icon="{StaticResource IconArrowLineLeft}" GroupName="ReadingDirection"
-                     AutomationProperties.Name="Right to left"
+                     AutomationProperties.Name="Right to left" AutomationProperties.AutomationId="DirectionRightToLeft"
                      Tag="{x:Static text:ReadingDirection.RightToLeft}" Click="OnDirectionClick"
                      IsChecked="{Binding BookDirection, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:ReadingDirection.RightToLeft}}" />
       </StackPanel>

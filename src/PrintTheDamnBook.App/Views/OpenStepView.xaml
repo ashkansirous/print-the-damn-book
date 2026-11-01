@@ -14,7 +14,7 @@
   <StackPanel HorizontalAlignment="Left" MaxWidth="620">
     <!-- A book Dino Reader handed over that could not be opened (Slice 19) -->
     <Border Background="{StaticResource SurfaceBrush}" CornerRadius="{StaticResource RadiusMd}" Padding="14,12" Margin="0,0,0,14" Effect="{StaticResource ShadowMd}"
-            AutomationProperties.Name="Could not open the book Dino Reader sent" Visibility="{Binding HandoverProblemFile, Converter={StaticResource PresentToVisibility}}">
+            AutomationProperties.Name="Could not open the book Dino Reader sent" AutomationProperties.AutomationId="HandoverAlert" Visibility="{Binding HandoverProblemFile, Converter={StaticResource PresentToVisibility}}">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="Auto" />
@@ -86,11 +86,11 @@
         </StackPanel>
         <WrapPanel Orientation="Horizontal" Margin="0,16,0,0">
           <Button Style="{StaticResource PrimaryButton}" Content="Open folder…" views:Ui.Icon="{StaticResource IconFolderOpen}" Command="{Binding OpenFolderCommand}"
-                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" AutomationProperties.Name="Open folder" />
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" AutomationProperties.Name="Open folder" AutomationProperties.AutomationId="OpenFolderButton" />
           <Button Style="{StaticResource SecondaryButton}" Content="Open a Dino book…" views:Ui.Icon="{StaticResource IconBookBookmark}" Command="{Binding OpenDinoCommand}"
-                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" Margin="10,0,0,0" AutomationProperties.Name="Open a Dino book" />
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" Margin="10,0,0,0" AutomationProperties.Name="Open a Dino book" AutomationProperties.AutomationId="OpenDinoButton" />
           <Button Style="{StaticResource SecondaryButton}" Content="Get a story from Dino" views:Ui.Icon="{StaticResource IconStorefront}" Click="OnGetStoryClick"
-                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" Margin="10,0,0,0" AutomationProperties.Name="Get a story from Dino" />
+                  IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" Margin="10,0,0,0" AutomationProperties.Name="Get a story from Dino" AutomationProperties.AutomationId="GetStoryButton" />
         </WrapPanel>
         <Button Style="{StaticResource GhostButton}" Content="Cancel" Command="{Binding CancelLoadCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"
                 AutomationProperties.Name="Cancel opening" Visibility="{Binding IsLoadingSlow, Converter={StaticResource BoolToVisibility}}" />
