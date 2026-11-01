@@ -55,6 +55,19 @@ public static class DinoBookReader
         }
     }
 
+    /// <summary>The file names <see cref="ExtractPictures"/> writes for <paramref name="book"/>, without reading the package.</summary>
+    public static DinoPictures PlannedPictures(DinoBook book)
+    {
+        var cover = book.CoverFile is { } c ? PictureFileName(c, "cover") : null;
+        var pages = book.Pages.Select((page, i) => PictureFileName(page.ImageFile, (i + 1).ToString(CultureInfo.InvariantCulture))).ToList();
+        return new DinoPictures(cover, pages);
+    }
+
+    private static string PictureFileName(string entryName, string stem)
+    {
+        return stem + Path.GetExtension(entryName).ToLowerInvariant();
+    }
+
     /// <summary>
     /// Writes the cover and page pictures of <paramref name="book"/> into <paramref name="folder"/> as <c>cover.jpg</c>, <c>1.jpg</c>, <c>2.jpg</c> and so on,
     /// which the folder ordering understands. A picture the book uses twice is inflated once and copied; everything written counts against <see cref="MaxTotalBytes"/>.
@@ -287,7 +300,7 @@ public static class DinoBookReader
         public string Write(string entryName, string stem)
         {
             var entry = entries[entryName];
-            var fileName = stem + Path.GetExtension(entry.FullName).ToLowerInvariant();
+            var fileName = PictureFileName(entry.FullName, stem);
             var target = Path.Combine(folder, fileName);
             if (_firstWrite.TryGetValue(entryName, out var first))
             {

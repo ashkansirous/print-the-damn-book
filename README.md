@@ -24,6 +24,17 @@ Story text: type words for each page, on the picture or on its own page; saved i
 
 Open a Dino Reader book (`.dino`): pictures, words and the title on the cover, and choose a language.
 
+### Open from Dino Reader
+
+```
+PrintTheDamnBook.exe "<path-to-book.dino>" [--language <code>]
+```
+
+The path must be an existing local `.dino` file. The book is copied into this app's cache at once, so the caller may delete its
+file. It opens on the Check step; `--language fa` (or `sv`, ...) shows the words in that language when the book has it, else in the
+book's own. Each call opens a new window. On every start the app adds itself to Windows' *Open with* list for `.dino` (current user
+only; it never becomes the default).
+
 Printers without two-sided printing: choose Manual; print the test sheet once to check the backs' rotation.
 
 ## Download

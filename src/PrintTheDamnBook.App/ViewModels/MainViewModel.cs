@@ -111,7 +111,7 @@ public sealed partial class MainViewModel : ObservableObject
             }
             else
             {
-                DiscardLoad(loaded, cancel);
+                DiscardLoad(loaded);
             }
         }
         catch (OperationCanceledException)
@@ -163,6 +163,11 @@ public sealed partial class MainViewModel : ObservableObject
         _pageList = new PageList([]);
         _thumbnails = new ThumbnailLoader();
         CancelTranslation();
+        if (_dino is not null)
+        {
+            DinoBookCache.ReleaseShown(_dino);
+        }
+
         _dino = null;
         IsDinoBook = false;
         DinoLanguages = [];
@@ -203,7 +208,14 @@ public sealed partial class MainViewModel : ObservableObject
         CloseBookText();
         CancelTranslation();
         var retired = _thumbnails;
+        var previous = _dino;
         _dino = loaded.Dino;
+        if (previous is not null)
+        {
+            DinoBookCache.ReleaseShown(previous);
+        }
+
+        _stashedHandoverProblem = null;
         _pageList = new PageList(loaded.Pages);
         _thumbnails = loaded.Thumbnails;
         OpenBookText(folder, loaded.Text);
@@ -418,6 +430,7 @@ public sealed partial class MainViewModel : ObservableObject
         IsLoading = false;
         IsLoadingSlow = false;
         LoadingText = ReadingImagesText;
+        ClearHandoverText();
         ClearBook();
         Print.ClearStatus();
         Refresh();

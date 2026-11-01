@@ -31,6 +31,7 @@ public sealed partial class MainViewModel
     private const string SkippedManyText = " pages had no picture and were left out.";
     private const string HeadingCheckDino = "Check the order and the words";
     private const string SubheadingCheckDino = "Every page came with its words. Click one to change them or move them to a page of their own.";
+    private const string HandoverLoadingTitle = "Opening a book from Dino Reader…";
     private const string SubheadingOpenLoadedDino = "Happy with this book? Next you check the order and the words.";
 
     private readonly Func<string?> _pickDino;
@@ -45,6 +46,9 @@ public sealed partial class MainViewModel
     private CancellationTokenSource? _loadCancel;
     private CancellationTokenSource? _translateCancel;
     private string? _languageNotice;
+
+    /// <summary>The alert of an unusable hand-over that the start of a load dismissed; put back if that load is cancelled.</summary>
+    private string? _stashedHandoverProblem;
 
     /// <summary>True once a load has run past the slow-wait mark: the Open step then says what it waits for and offers Cancel.</summary>
     [ObservableProperty]
@@ -77,6 +81,24 @@ public sealed partial class MainViewModel
     [ObservableProperty]
     public partial string SourcePath { get; set; } = string.Empty;
 
+    /// <summary>The file name of a hand-over that could not be opened (Slice 19); the Open step shows a dismissible alert while it is set.</summary>
+    [ObservableProperty]
+    public partial string? HandoverProblemFile { get; set; }
+
+    /// <summary>The file name of the hand-over being read; the Open step says Dino Reader handed it over while it is set.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowHandoverText))]
+    public partial string? HandoverFile { get; set; }
+
+    /// <summary>" in Farsi" when the hand-over asked for a language, else empty.</summary>
+    [ObservableProperty]
+    public partial string HandoverLanguageSuffix { get; set; } = string.Empty;
+
+    /// <summary>True once a hand-over has run past the slow-wait mark: the drop card then tells the user what is happening.</summary>
+    public bool ShowHandoverText => HandoverFile is not null && IsLoadingSlow;
+
+    partial void OnIsLoadingSlowChanged(bool value) => OnPropertyChanged(nameof(ShowHandoverText));
+
     /// <summary>The name the book goes by: the folder's name, or the Dino book's title.</summary>
     private string BookName => _dino is { } dino
         ? dino.Book.Title.Length > 0 ? dino.Book.Title : Path.GetFileNameWithoutExtension(dino.SourcePath)
@@ -102,38 +124,159 @@ public sealed partial class MainViewModel
         }
     }
 
-    /// <summary>Opens a <c>.dino</c> file; if called again before it finishes, only the newest call updates the view.</summary>
-    public async Task LoadDinoAsync(string path)
+    [RelayCommand]
+    private void DismissHandoverProblem()
     {
-        var (version, cancel, slow) = BeginLoad(ReadingBookText);
+        HandoverProblemFile = null;
+    }
+
+    /// <summary>Shows the hand-over alert for <paramref name="fileName"/> on the Open step.</summary>
+    public void ReportHandoverProblem(string fileName)
+    {
+        ClearHandoverText();
+        HandoverProblemFile = fileName;
+    }
+
+    /// <summary>Opens the book another app handed over: a bad path shows the alert on the Open step, a good one lands on the Check step in the language asked for.</summary>
+    public async Task LoadHandoverAsync(HandoverRequest request)
+    {
+        if (!request.IsUsable)
+        {
+            System.Diagnostics.Debug.WriteLine($"[handover] rejected file={request.FileName}");
+            HandoverProblemFile = request.FileName;
+            return;
+        }
+
+        await LoadDinoAsync(request.Path, request);
+    }
+
+    /// <summary>Opens a <c>.dino</c> file; if called again before it finishes, only the newest call updates the view.</summary>
+    public Task LoadDinoAsync(string path) => LoadDinoAsync(path, null);
+
+    private async Task LoadDinoAsync(string path, HandoverRequest? handover)
+    {
+        var (version, cancel, slow) = BeginLoad(handover is null ? ReadingBookText : HandoverLoadingTitle);
         try
         {
+            AnnounceHandover(handover);
             // No token on Task.Run: a cancelled open waits for the extraction to notice and stop, so a re-open never races it on the folder.
             var loaded = await Task.Run(() => ReadDino(path, cancel.Token));
             if (IsCurrentLoad(version, cancel))
             {
                 Show(loaded.Dino!.Folder, loaded);
+                await ApplyHandoverLanguageSafelyAsync(handover?.Language);
             }
             else
             {
-                DiscardLoad(loaded, cancel);
+                DiscardLoad(loaded);
+                RestoreHandoverProblem(version);
             }
         }
         catch (OperationCanceledException)
         {
             // Cancelled by the user (or replaced by a newer load): the view stays as it was.
+            RestoreHandoverProblem(version);
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             if (version == _loadVersion)
             {
-                ShowFailure(FailureMessage(ex));
+                _stashedHandoverProblem = null;
+                ShowDinoFailure(ex, handover);
             }
         }
         finally
         {
             EndLoad(version, cancel, slow);
+            if (version == _loadVersion)
+            {
+                ClearHandoverText();
+            }
         }
+    }
+
+    /// <summary>A load the user cancelled brings back the alert for the unusable hand-over that starting it had dismissed, so the failure is still explained.</summary>
+    private void RestoreHandoverProblem(int version)
+    {
+        if (version == _loadVersion)
+        {
+            HandoverProblemFile ??= _stashedHandoverProblem;
+            _stashedHandoverProblem = null;
+        }
+    }
+
+    /// <summary>Sets the drop card's "Dino Reader handed me ..." text for this load; a load that is not a hand-over clears it.</summary>
+    private void AnnounceHandover(HandoverRequest? handover)
+    {
+        HandoverFile = handover?.FileName;
+        HandoverLanguageSuffix = handover?.Language is { } code ? " in " + DinoBook.DescribeLanguage(code).Name : string.Empty;
+    }
+
+    private void ClearHandoverText()
+    {
+        HandoverFile = null;
+        HandoverLanguageSuffix = string.Empty;
+    }
+
+    /// <summary>A hand-over that cannot be read shows the alert; a book picked by hand keeps its normal message.</summary>
+    private void ShowDinoFailure(Exception ex, HandoverRequest? handover)
+    {
+        if (handover is null || ex is DinoBookException)
+        {
+            ShowFailure(FailureMessage(ex));
+            return;
+        }
+
+        System.Diagnostics.Debug.WriteLine($"[handover] could not be read file={handover.FileName}: {ex.GetType().Name}");
+        HandoverProblemFile = handover.FileName;
+    }
+
+    /// <summary>The book is already on screen, so a failure to switch its language is reported as that, never as the book failing to open.</summary>
+    private async Task ApplyHandoverLanguageSafelyAsync(string? requested)
+    {
+        try
+        {
+            await ApplyHandoverLanguageAsync(requested);
+        }
+        catch (OperationCanceledException)
+        {
+            // The user changed the language themselves first; their choice stands.
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[handover] language switch failed: {ex.GetType().Name}");
+            Status = TranslateFailureText;
+        }
+    }
+
+    /// <summary>Switches the freshly shown hand-over to the language it asked for when the book offers it, keeping the loading state until the words are switched; otherwise the book's own stays.</summary>
+    private async Task ApplyHandoverLanguageAsync(string? requested)
+    {
+        if (requested is null || _dino is null)
+        {
+            return;
+        }
+
+        var code = DinoBook.Primary(requested);
+        var offered = DinoLanguages.Any(l => l.Code == code && l.IsEnabled);
+        System.Diagnostics.Debug.WriteLine($"[handover] language requested={code} offered={offered} selected={SelectedDinoLanguage}");
+        if (!offered || code == SelectedDinoLanguage)
+        {
+            return;
+        }
+
+        var from = SelectedDinoLanguage;
+        _syncingLanguage = true;
+        try
+        {
+            SelectedDinoLanguage = code;
+        }
+        finally
+        {
+            _syncingLanguage = false;
+        }
+
+        await ApplyLanguageAsync(from, code);
     }
 
     /// <summary>The reason shown for a book that could not be opened: the file's own message when it is meant for the user, else a plain sentence.</summary>
@@ -153,6 +296,9 @@ public sealed partial class MainViewModel
         LoadingText = text;
         IsLoadingSlow = false;
         OpenFailure = null;
+        _stashedHandoverProblem = HandoverProblemFile ?? _stashedHandoverProblem;
+        HandoverProblemFile = null;
+        ClearHandoverText();
         IsLoading = true;
         _ = AfterSlowWaitAsync(slow.Token, () => IsLoadingSlow = true);
         return (version, cancel, slow);
@@ -164,15 +310,14 @@ public sealed partial class MainViewModel
         return version == _loadVersion && !cancel.IsCancellationRequested;
     }
 
-    /// <summary>Drops a result nobody will see: its thumbnails, and the cache folder it created unless a newer open may be using it.</summary>
-    private void DiscardLoad(LoadedFolder loaded, CancellationTokenSource cancel)
+    /// <summary>Drops a result nobody will see: its thumbnails, and (off the UI thread, since it takes the cross-process mutex) its hold on the cache folder, which is removed when this open created it and nothing else uses it.</summary>
+    private static void DiscardLoad(LoadedFolder loaded)
     {
         loaded.Thumbnails.Clear();
         ReleaseMemory(null);
-        var newerOpen = _loadCancel is not null && !ReferenceEquals(_loadCancel, cancel);
-        if (loaded.Dino is { } dino && !newerOpen && !string.Equals(dino.Folder, _dino?.Folder, StringComparison.OrdinalIgnoreCase))
+        if (loaded.Dino is { } dino)
         {
-            DinoBookCache.Discard(dino);
+            _ = Task.Run(() => DinoBookCache.Discard(dino));
         }
     }
 
@@ -220,12 +365,20 @@ public sealed partial class MainViewModel
     private static LoadedFolder ReadDino(string path, CancellationToken cancel)
     {
         var dino = DinoBookCache.Open(path, cancel);
-        var start = dino.Book.StartLanguage() ?? throw new DinoBookException(NoPrintableLanguageText);
-        var pages = PageOrdering.FromFolder(dino.Files);
-        cancel.ThrowIfCancellationRequested();
-        var thumbnails = new ThumbnailLoader();
-        thumbnails.Preload(pages.Select(p => p.Path));
-        return new LoadedFolder(pages, thumbnails, DinoText(dino, start)) { Dino = dino };
+        try
+        {
+            var start = dino.Book.StartLanguage() ?? throw new DinoBookException(NoPrintableLanguageText);
+            var pages = PageOrdering.FromFolder(dino.Files);
+            cancel.ThrowIfCancellationRequested();
+            var thumbnails = new ThumbnailLoader();
+            thumbnails.Preload(pages.Select(p => p.Path));
+            return new LoadedFolder(pages, thumbnails, DinoText(dino, start)) { Dino = dino };
+        }
+        catch
+        {
+            DinoBookCache.Discard(dino);
+            throw;
+        }
     }
 
     /// <summary>The words saved for this book on an earlier visit, or the ones that came in the file.</summary>

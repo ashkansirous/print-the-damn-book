@@ -18,6 +18,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         var print = new PrintViewModel(new PrinterService(), new NocturnePrompts(), SettingsStore.AtDefaultPath());
         DataContext = new MainViewModel(PickFolder, print);
+        _ = OpenHandoverAsync();
         Closing += (_, _) => print.FlushSettings();
         Loaded += async (_, _) => await print.LoadPrintersAsync();
         SourceInitialized += (_, _) => new SnapLayoutHook(this, MaximizeButton).Attach();
@@ -28,6 +29,25 @@ public partial class MainWindow : Window
     private string? _dragFolder;
 
     private bool _dragChecked;
+
+    /// <summary>Opens the book another app handed over on the command line, started as soon as the view model exists so the copy begins before the window is up (Slice 19). Any failure becomes the hand-over alert.</summary>
+    private async Task OpenHandoverAsync()
+    {
+        if (App.Handover is not { } handover)
+        {
+            return;
+        }
+
+        try
+        {
+            await ViewModel.LoadHandoverAsync(handover);
+        }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            System.Diagnostics.Debug.WriteLine($"[handover] failed before the load: {ex.GetType().Name}");
+            ViewModel.ReportHandoverProblem(handover.FileName);
+        }
+    }
 
     private MainViewModel ViewModel => (MainViewModel)DataContext;
 

@@ -206,6 +206,9 @@ public class DinoBookReaderTests
 
             Assert.Equal("cover.jpg", pictures.CoverFile);
             Assert.Equal(["1.jpg", "2.jpg"], pictures.PageFiles);
+            var planned = DinoBookReader.PlannedPictures(book);
+            Assert.Equal(pictures.CoverFile, planned.CoverFile);
+            Assert.Equal(pictures.PageFiles, planned.PageFiles);
             Assert.Equal(Picture, File.ReadAllBytes(Path.Combine(folder, "2.jpg")));
             var order = PageOrdering.FromFolder(Directory.GetFiles(folder));
             Assert.Equal([PageKind.Cover, PageKind.Numbered, PageKind.Numbered], order.Select(p => p.Kind));
