@@ -1,12 +1,21 @@
 ### Slice 18 — Get a story from Dino's store
 
-*Planned 2026-11-01.*
+*Built (wave 2026-11-01), PR #34.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Dino/**` (store catalog parsing, new), `tests/PrintTheDamnBook.Core.Tests/**`,
 `src/PrintTheDamnBook.App/Services/DinoStoreClient.cs` (new), `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`,
 `src/PrintTheDamnBook.App/Views/OpenStepView.xaml*`, `src/PrintTheDamnBook.App/Views/DinoStoreDialog.xaml*` (new),
 `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/DinoStoreViewModel.cs`
-(new), `site/public/privacy.html`
+(new), `site/public/privacy.html` (line 7 meta description too), `src/PrintTheDamnBook.App/MainWindow.xaml*`,
+`src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs` (added at the claim, wave 2026-11-01)
+
+**Wave note (2026-11-01, coordinator's choice).** The downloaded `.dino` lives in
+`%LOCALAPPDATA%\PrintTheDamnBook\store\<id>-v<version>.dino` and is then opened through `LoadDinoAsync(path)` exactly like a
+picked file, which extracts it into `DinoBookCache` as usual; `DinoBookCache.cs` changes only if that path needs it. Why:
+one open path, and the store folder is the reuse cache for re-downloads. Card enablement for right-to-left languages uses
+the same Core language-support check the Dino language select uses, so it follows Slice 17 (merged first) without a
+second rule. Open points take the defaults written below. Slices 17 and 19 also edit `MainViewModel.Dino.cs`: keep
+this slice's edits to `OpenDinoAsync`/the picker block and new members. Merge order 17, 19, 18.
 
 **Why.** The user wants to pick and print a book from Dino Reader's free story store without first getting the `.dino`
 into Dino Reader (2026-11-01).
@@ -42,16 +51,16 @@ into Dino Reader (2026-11-01).
 
 **Work.** First item: the end-to-end path with a plain text list.
 
-- [ ] Core: `DinoStoreCatalog` parser (entries, validation, URL allow-list, schema filter, language list). Tests from
+- [x] Core: `DinoStoreCatalog` parser (entries, validation, URL allow-list, schema filter, language list). Tests from
       fixture JSON: good catalog, missing fields, a foreign host, schema 2, oversize.
-- [ ] App: `DinoStoreClient` (`HttpClient`, timeouts, size cap, cancel) downloading to
+- [x] App: `DinoStoreClient` (`HttpClient`, timeouts, size cap, cancel) downloading to
       `%LOCALAPPDATA%\PrintTheDamnBook\store\<id>-v<version>.dino`, reusing a finished download of the same version;
       partial files are deleted on failure or cancel.
-- [ ] App: Open-step button and `DinoStoreDialog` (Nocturne tokens, FocusRing, `AutomationProperties.Name` on every
+- [x] App: Open-step button and `DinoStoreDialog` (Nocturne tokens, FocusRing, `AutomationProperties.Name` on every
       control; no mock exists, reuse the Open step's card style): list, language filter, "Loading stories...", an
       offline/failed state with Retry, then download progress with Cancel, then the Check step.
-- [ ] App: covers in the list, loaded lazily with a placeholder.
-- [ ] Site: if `site/public/privacy.html` says the app makes no network requests, add that it fetches Dino's story
+- [x] App: covers in the list, loaded lazily with a placeholder.
+- [x] Site: if `site/public/privacy.html` says the app makes no network requests, add that it fetches Dino's story
       list and books only when the store is opened, and sends no identifiers.
 
 #### Design (Story Text mock, sections 2d-2f, added 2026-11-01)
@@ -105,3 +114,45 @@ Settled by the mock: the language filter is a select with counts; the privacy li
 - Desktop (device-test, scripted): open the store, see the list with covers, filter by language, download one book,
   land on the Check step with its pages and text; cancel a download mid-way and see no partial file; disconnect the
   network and see the failed state with Retry.
+
+**Changed while building:**
+
+- Catalog parser `DinoStoreCatalog`: 1 MB cap, 500 entries, BOM stripped, duplicate ids dropped, schema above 1 hidden,
+  https allow-list on `dinoreader.sirous.uk` under `/api/stories/`, relative URLs resolved. A present but disallowed
+  `downloadUrl` drops the entry.
+- Capped transfer and `.part`/rename logic live in Core `DinoStoreTransfer` (tested). Stall timeout 30 s. No redirects are
+  followed (live server checked 2026-11-01: it sends none).
+- Downloads go to `%LOCALAPPDATA%/PrintTheDamnBook/store/<id>-v<version>.dino`, then open through `LoadDinoAsync`, which now
+  returns `DinoLoadResult` (Opened/Failed/Rejected/Skipped). A file is deleted only when Rejected; older versions are pruned
+  only when Opened.
+- Card support uses Slice 17's `DinoBook.DescribeLanguage` check (Farsi and Arabic on, other right-to-left languages off).
+- The scrim uses the existing `BackdropBrush` at 50% where the mock says 60% (no 60% token).
+- Privacy text says no identifiers, cookies or analytics, and that the store sees the PC's internet address (`privacy.html`,
+  dialog footer, `docs/store/listing.md`). `SubheadingOpen` updated in `MainViewModel.Wizard.cs`. An empty-catalog state was added.
+- Known behaviour: a download that finishes at the moment of Cancel is kept and reused next time; the loaded Open card has no
+  store button (as the mock); the dialog repeats `NocturneDialog`'s cover-the-owner code.
+
+**From review** (files in `D:/print-the-damn-book-worktrees/reviews/`):
+
+- `slice-18-high.md`: all 10 applied.
+- `slice-18-medium.md`: 1-9 applied; 10 skipped (redirect handling; the live server has no redirects).
+- `slice-18-check.md`: 1 and 3-8 applied; 2, 9 and 10 skipped.
+- `slice-18-check2.md`: 1-4 and 6 applied; 5 left (low).
+- `slice-18-check3.md`: all 4 applied (4 after merging Slice 17).
+- `slice-18-check4.md`: 7 findings, all low, none applied.
+
+**Desktop run 2026-11-01: PASS.** Button present; 15 live stories listed, covers fetched; downloading "Good Enough" lands
+on the Check step with 12 pages and text; Cancel leaves no `.part` or `.dino`; offline (process-only proxy) shows "I couldn't
+reach Dino's store" with Try again; `--language fa` hand-over of a store book opens with Right to left selected.
+
+#### For CLAUDE.md
+
+- Store network access goes only through `Services/DinoStoreClient` with the `DinoStoreCatalog` allow-list: plain GETs, no
+  identifiers. Downloaded files go through `DinoBookReader` like any .dino. The site's privacy text (`site/public/privacy.html`)
+  and the dialog footer must stay in step. (Slice 18: docs/plan/slices/18-dino-store.md)
+
+#### Not yet verified
+
+- Cover thumbnails seen rendered.
+- The language filter (the live store has only English books today).
+- Farsi/Arabic store cards and right-aligned Farsi text on the Check step (no Farsi book in the store yet).

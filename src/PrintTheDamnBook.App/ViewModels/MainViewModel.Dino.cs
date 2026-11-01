@@ -150,12 +150,16 @@ public sealed partial class MainViewModel
         await LoadDinoAsync(request.Path, request);
     }
 
-    /// <summary>Opens a <c>.dino</c> file; if called again before it finishes, only the newest call updates the view.</summary>
-    public Task LoadDinoAsync(string path) => LoadDinoAsync(path, null);
+    /// <summary>
+    /// Opens a <c>.dino</c> file; if called again before it finishes, only the newest call updates the view. <see cref="DinoLoadResult.Opened"/>
+    /// only when this call's book is now the open one; <see cref="DinoLoadResult.Rejected"/> only when the reader refused the file as not a usable Dino book.
+    /// </summary>
+    public Task<DinoLoadResult> LoadDinoAsync(string path) => LoadDinoAsync(path, null);
 
-    private async Task LoadDinoAsync(string path, HandoverRequest? handover)
+    private async Task<DinoLoadResult> LoadDinoAsync(string path, HandoverRequest? handover)
     {
         var (version, cancel, slow) = BeginLoad(handover is null ? ReadingBookText : HandoverLoadingTitle);
+        var result = DinoLoadResult.Skipped;
         try
         {
             AnnounceHandover(handover);
@@ -164,6 +168,7 @@ public sealed partial class MainViewModel
             if (IsCurrentLoad(version, cancel))
             {
                 Show(loaded.Dino!.Folder, loaded);
+                result = DinoLoadResult.Opened;
                 await ApplyHandoverLanguageSafelyAsync(handover?.Language);
             }
             else
@@ -183,6 +188,7 @@ public sealed partial class MainViewModel
             {
                 _stashedHandoverProblem = null;
                 ShowDinoFailure(ex, handover);
+                result = ex is DinoBookException ? DinoLoadResult.Rejected : DinoLoadResult.Failed;
             }
         }
         finally
@@ -193,6 +199,14 @@ public sealed partial class MainViewModel
                 ClearHandoverText();
             }
         }
+
+        return result;
+    }
+
+    /// <summary>Shows a failure from outside the open itself (the store dialog) in the Open step's normal failure status.</summary>
+    public void ReportOpenFailure(Exception ex)
+    {
+        ShowFailure(FailureMessage(ex));
     }
 
     /// <summary>A load the user cancelled brings back the alert for the unusable hand-over that starting it had dismissed, so the failure is still explained.</summary>

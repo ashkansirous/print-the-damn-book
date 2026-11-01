@@ -25,7 +25,7 @@ public sealed partial class MainViewModel
     private const string HeadingOpenLoaded = "Got your pages";
     private const string SubheadingOpenLoaded = "Happy with this folder? Next you check the order.";
     private const string HeadingOpen = "Point me at your pages";
-    private const string SubheadingOpen = "Name them Cover, 1, 2, 3 … Back cover, or open a book you made in Dino Reader. Its words come along.";
+    private const string SubheadingOpen = "Name them Cover, 1, 2, 3 … Back cover, open a book you made in Dino Reader, or get a free one from Dino's store. Its words come along.";
     private const string HeadingCheck = "Check the order";
     private const string HeadingPrint = "Send it to the printer";
     private const string HeadingDone = "Sent. Now fold the damn thing.";
