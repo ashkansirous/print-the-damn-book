@@ -22,4 +22,4 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 16 | Top and middle bands, empty-space suggestion (after 14) | built | #27 | | [16](../slices/16-text-band-suggestion.md) |
 | 17 | Right-to-left books (Farsi and Arabic) | built | #36 | | [17](../slices/17-right-to-left-books.md) |
 | 18 | Get a story from Dino's store | built | #34 | | [18](../slices/18-dino-store.md) |
-| 19 | Open a book handed over by Dino Reader | built | #35 | | [19](../slices/19-open-from-dino-reader.md) |
+| 19 | Open a book handed over by Dino Reader | verified | #35 | | [19](../slices/19-open-from-dino-reader.md) |

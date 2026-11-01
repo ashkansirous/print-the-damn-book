@@ -37,7 +37,7 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 11 checks across 3 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 2 checks across 2 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
 - Slice 19: sweeping older versions of a book also deletes that version's `book.json` (Slice 15 behaviour, found in check 2); Dino Reader follow-up: add a "Print this book" slice to its plan (`D:\ReadTheStupidText`) now that Slice 19 has merged ([slice 19](docs/plan/slices/19-open-from-dino-reader.md)).
 - Slice 15: memory not returned after a very large book (about 1.6 GB held after a 420-page stress book is replaced, also on main for folder opens; needs a profiler); about 3 in 18 cancelled opens leave a cache folder behind (cleaned on reopen); drop-zone drag checked with a real Explorer drag only once ([slice 15](docs/plan/slices/15-open-dino-books.md)).
 - Slice 16: pre-print status and Cancel on a large folder (wait over 500 ms); suggestion quality on real noisy photos, thresholds tuned only on synthetic images ([slice 16](docs/plan/slices/16-text-band-suggestion.md)).
