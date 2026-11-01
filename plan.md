@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Every slice except 12, 13, 21 and 22 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 was built on draft PR #44 by night 2026-11-01-2024 and parked because the auto-mode permission check denied its VM run. The user allowed the run at 21:43, and the interactive session took it back up (PR #44). 20 merged 2026-11-01 (PR #45).
+Every slice except 12, 13 and 22 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45).
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -26,7 +26,6 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | --- | --- | --- | --- | --- | --- |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
-| 21 | Scripted desktop checks (test harness) | in progress (interactive session) | #44 | | [21](docs/plan/slices/21-desktop-test-harness.md) |
 | 22 | Dino follow-ups from Slice 20's reviews and tests | parked: feedback loop, waits for the user | | | [22](docs/plan/slices/22-dino-review-followups.md) |
 
 Notes:
@@ -39,12 +38,10 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 6 checks across 3 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
-- Slice 21, owned by the user's interactive session. At 22:59 on 2026-11-01, PR #44 was open, ready for review and `CONFLICTING` with `main`, with its code committed (352165b, "desktop checks pass in the shared VM"). Before it merges: its last check pass (`D:/print-the-damn-book-worktrees/reviews/slice-21-check-final-4.md`) was read by hand with no fork and isn't marked `REVIEW INCOMPLETE`, so a pass that runs the fork is still due. It also needs the `.gitignore` lines below. Also: its runs use a sample `.dino` from `D:/print-the-damn-book-worktrees/reviews/verify-checks-scratch/books/` outside the repo, and the slice file doesn't name it. Its draft record has no dispositions for the last check-pass findings, and its "Verified" line predates the last fixes ([slice 21](docs/plan/slices/21-desktop-test-harness.md)).
-- Agent scratch files are not ignored on `main`: no `tmp/` and no `tmp_*` line in `.gitignore` (feedback loops of night 2026-11-01-2024, see their notes). PR #44's working tree adds `/tmp/` only. Add both when #44 merges, or in the next index pass if it doesn't. Verify: `git check-ignore tmp/x tmp_fix.py` prints both.
+- **Not yet tried on a device:** 8 checks across 4 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- Agent scratch files are not ignored on `main`: no `tmp/` and no `tmp_*` line in `.gitignore` (feedback loops of night 2026-11-01-2024, see their notes). `main` has `/tmp/` only (from PR #44); `tmp_*` is still missing. Verify: `git check-ignore tmp/x tmp_fix.py` prints both.
 - `.dino` "Open with" on this PC is empty (read 22:26 on 2026-11-01: `HKCU\Software\Classes\.dino\OpenWithProgids` has no values, and the `PrintTheDamnBook.dino` key is absent). A test agent deleted the three HKCU keys during the checks of 2026-11-01 (PR #46) without saving them first. The app re-registers only when `PrintTheDamnBook.exe` runs from outside a build output or packaged install (`Services/OpenWithRegistration.cs:33-35`, `Core/Dino/OpenWithRegistrar.cs:34`). No release exists yet (`v0.1.0` not cut), so a dev run doesn't bring it back. Dino Reader is installed as an MSIX package (`AshkanSirous.DinoReader`, read 22:50). An audit pass found no `.dino` association in its repo's manifest on `origin/main`, and the installed package's manifest couldn't be read (empty install location). So nothing of Dino Reader's is known to be lost. Slice 21's runs must restore what they change (`agents/device-test.md`, reg export).
 - Slice 20, waiting on the user: words typed into a book opened in an `.alt-<guid>` folder (another window held the cache) are saved only there and go when the lone-instance sweep runs (Slice 19 behaviour on main, kept); decide whether to warn or merge them back ([slice 20](docs/plan/slices/20-dino-open-hardening.md)).
-- Slice 21, stale text on `main` (feedback loop 2026-11-01-2024): its slice file still says "own VM, never reuse `rtst-desktop-test`", and its row says the VM run waits for permission. The user gave the permission at 21:43, and PR #44's copy of the file holds the reuse contract. Merging #44 fixes both; if it doesn't merge, the next index pass corrects them.
 - Slice 22, waiting on the user (parked by the feedback loop): Slice 20's App tests likely use the real `%LOCALAPPDATA%` cache, failures are still classified by message text in one place, ten low review notes, and the store dialog's failed states were written without a design. Decide whether to build it, and whether to send the failed states to Claude Design first ([slice 22](docs/plan/slices/22-dino-review-followups.md)).
 - Slice 19: sweeping older versions of a book also deletes that version's `book.json` (Slice 15 behaviour, found in check 2); Dino Reader follow-up: add a "Print this book" slice to its plan (`D:\ReadTheStupidText`) now that Slice 19 has merged ([slice 19](docs/plan/slices/19-open-from-dino-reader.md)).
 - Slice 15: memory not returned after a very large book (about 1.6 GB held after a 420-page stress book is replaced, also on main for folder opens; needs a profiler); about 3 in 18 cancelled opens leave a cache folder behind (cleaned on reopen); drop-zone drag checked with a real Explorer drag only once ([slice 15](docs/plan/slices/15-open-dino-books.md)).

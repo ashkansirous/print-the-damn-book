@@ -2,7 +2,7 @@
 
 Rows moved out of `plan.md` once built. Status `built` until the user confirms on a device, then `verified`.
 
-Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 18, 19 and 20 merged 2026-11-01.
+Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 18, 19, 20 and 21 merged 2026-11-01.
 
 | Slice | Title | Status | PR | Issue | File |
 | --- | --- | --- | --- | --- | --- |
@@ -24,3 +24,4 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 18 | Get a story from Dino's store | built | #34 | | [18](../slices/18-dino-store.md) |
 | 19 | Open a book handed over by Dino Reader | verified | #35 | | [19](../slices/19-open-from-dino-reader.md) |
 | 20 | Dino open and store hardening (review leftovers) | built | #45 | | [20](../slices/20-dino-open-hardening.md) |
+| 21 | Scripted desktop checks (test harness) | built | #44 | | [21](../slices/21-desktop-test-harness.md) |
