@@ -2,6 +2,8 @@
 
 Rows moved out of `plan.md` once built. Status `built` until the user confirms on a device, then `verified`.
 
+Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 18 and 19 merged 2026-11-01.
+
 | Slice | Title | Status | PR | Issue | File |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Open a folder and preview the imposed sheets | built | #2 | | [01](../slices/01-folder-to-sheet-preview.md) |

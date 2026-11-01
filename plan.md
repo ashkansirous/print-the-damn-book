@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 18 and 19 merged 2026-11-01. The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked.
+Every slice except 12 and 13 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked.
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -34,7 +34,7 @@ Notes:
 ## Outstanding work
 
 - **Not yet tried on a device:** 11 checks across 3 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
-- Slice 18 / Slice 10: the Site workflow skipped its deploy on 2026-11-01 (no `CLOUDFLARE_API_TOKEN` secret), so the live privacy page still says the app makes no network connections; it must deploy before the first release that contains Slice 18. Folds into the `CLOUDFLARE_API_TOKEN` item below ([slice 18](docs/plan/slices/18-dino-store.md), [slice 10](docs/plan/slices/10-landing-site.md)).
+- Slice 18 / Slice 10: the Site workflow skipped its deploy on 2026-11-01 (no `CLOUDFLARE_API_TOKEN` secret), so the live privacy page still says the app makes no network connections; it must deploy before the first release that contains Slice 18. Folds into the Slice 10 `CLOUDFLARE_API_TOKEN` item below ([slice 18](docs/plan/slices/18-dino-store.md), [slice 10](docs/plan/slices/10-landing-site.md)).
 - Slice 19: sweeping older versions of a book also deletes that version's `book.json` (Slice 15 behaviour, found in check 2); Dino Reader follow-up: add a "Print this book" slice to its plan (`D:\ReadTheStupidText`) now that Slice 19 has merged ([slice 19](docs/plan/slices/19-open-from-dino-reader.md)).
 - Slice 15: memory not returned after a very large book (about 1.6 GB held after a 420-page stress book is replaced, also on main for folder opens; needs a profiler); about 3 in 18 cancelled opens leave a cache folder behind (cleaned on reopen); drop-zone drag checked with a real Explorer drag only once ([slice 15](docs/plan/slices/15-open-dino-books.md)).
 - Slice 16: pre-print status and Cancel on a large folder (wait over 500 ms); suggestion quality on real noisy photos, thresholds tuned only on synthetic images ([slice 16](docs/plan/slices/16-text-band-suggestion.md)).
@@ -42,7 +42,6 @@ Notes:
 - Letter paper verified 2026-10-27 for Slices 14-16 (Print to PDF: page size, bands within 30%, own page, shrink, Dino cover title). Seen then: three-little-pigs.dino warns "5 pages have more words than fit" on Letter (Dino pages default to the bottom band, so long text is cut at 14 pt; consider Own page or a smaller minimum for Dino books); "Print test sheet" on a Dino book printed page 1, not the cover (not investigated).
 - Slice 9: a real printed page with numbers (print to PDF or paper) ([slice 09](docs/plan/slices/09-page-numbers.md)).
 - Slice 7 code follow-ups from Slice 11 review: `SnapLayoutHook` hover state not cleared without non-client mouse tracking; `NocturneDialog` CoverOwner sizing / null owner; `ClearStatusUnlessBusy` doesn't reset `PrintStatusKind`; `TestSheetSent` mid-send check only covers RotateBacks ([slice 11](docs/plan/slices/11-microsoft-store.md)).
-- Site CI deploy: the user creates a Cloudflare API token (Workers edit) in the dashboard and sets it as the `CLOUDFLARE_API_TOKEN` repo secret ([slice 10](docs/plan/slices/10-landing-site.md)).
 - First release tag `v0.1.0` is not yet cut; it unblocks Slice 5's `release.yml` and the site download link ([slice 05](docs/plan/slices/05-release-pipeline.md)).
 - Slice 7: focus ring on the A4/Letter radios and switches, done-step footer wrap, the stuck drag tooltip (not reproduced), snap layout on a high-DPI monitor, all seen on screen ([slice 07](docs/plan/slices/07-wizard-redesign.md)).
 - Slice 8: the icon by eye in Explorer, title bar and taskbar, light and dark. The screenshot re-shoot from the real app is carried by Slice 11 ([slice 08](docs/plan/slices/08-icon-and-store-assets.md)).
