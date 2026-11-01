@@ -1,6 +1,6 @@
 ### Slice 20 — Dino open and store hardening (review leftovers)
 
-*parked: feedback loop, waits for the user.* Found by the round-1 feedback loop on 2026-11-01
+*Planned.* The user said build it (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
 ([note](../notes/2026-11-01-1141-feedback-loop-w1.md)). These are low-severity findings that
 review passes on Slices 18 and 19 left unapplied. Their findings files live outside the repo
 (`D:/print-the-damn-book-worktrees/reviews/`), so each one is written out here.
@@ -65,7 +65,6 @@ Find the others by the member they name (`DeleteOtherVersions` / `OtherVersions`
 - [ ] Minor (Slice 18 `check4` #6, #7): `pageCount` 0 shows "0 pages" (`DinoStoreCatalog.cs:153`); a
   cover that fails once stays a placeholder until Try again (`DinoStoreViewModel.cs:337`).
 
-## Waiting on the user
+## User's answer
 
-Whether to build this slice, and when. The feedback loop may not schedule it (not the
-implementation phase).
+2026-11-01: build it.
