@@ -1,9 +1,31 @@
 ### Slice 21 — Scripted desktop checks (test harness)
 
-*Planned.* The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
+*In progress (wave 2026-11-01), draft PR.* The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
 ([note](../notes/2026-11-01-1141-feedback-loop-w1.md)).
 
-**Touches:** `tools/desktop-test/**` (new), `tools/desktop-vm/**` (new), `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`, `src/PrintTheDamnBook.App/**/*.xaml` (AutomationIds only), `CLAUDE.md`, `.github/workflows/**` (only if a check runs in CI)
+**Touches:** `tools/desktop-test/**` (new), `tools/desktop-vm/**` (new), `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`, `src/PrintTheDamnBook.App/**/*.xaml` (AutomationIds only), `.github/workflows/**` (only if a check runs in CI). The root `CLAUDE.md` line goes in this file's *For CLAUDE.md* block and is lifted by the index pass.
+
+**Claim notes (2026-11-01, unattended night run; premise check on this PC).**
+- No AutomationId exists in `src` yet; the checks need them in `Views/OpenStepView.xaml`,
+  `Views/CheckStepView.xaml`, `Views/PrintStepView.xaml`, `Views/DinoStoreDialog.xaml`, `MainWindow.xaml`.
+- RTST's harness (`D:/ReadTheStupidText/tools/desktop-vm`) builds its VM from the Windows 11
+  Enterprise evaluation ISO (about 8 GB) with an answer file; it needs Hyper-V Administrators (the
+  user has it), not elevation. Its only reusable disk is RTST's own `disk.vhdx` (25 GB, with RTST's
+  app and password inside); copying or chaining it would reuse the RTST VM, which this slice forbids.
+- D: has 31 GB free (C: is outside the allowed folders). A fresh VM needs the 8 GB ISO plus a VHDX
+  that grows to about 20 GB during install: most of D:, with other sessions writing there. **Decision
+  (taken unattended):** this slice builds the harness scripts (`New-TestVm.ps1` with a `-VmRoot`
+  parameter so the VM can live on another drive, `Reset-TestVm.ps1`, `Build-TestPackage.ps1`,
+  `Invoke-DesktopTest.ps1`) and the check scripts, but does not create the VM tonight. Creating it
+  and the first in-VM run wait for the user to pick a drive with room (see *Waiting on the user*).
+  The package is the self-contained exe from `release.yml`'s `dotnet publish` command, not an MSIX.
+- The checks are not run on the host desktop (user's answer). They get a parse check and a
+  `-WhatIf`/dry-run where possible; the in-VM run goes to *Not yet verified*.
+
+## Waiting on the user
+
+- Where the test VM lives: D: has 31 GB free, the VM needs about 28 GB at its peak. Run
+  `tools/desktop-vm/New-TestVm.ps1 -VmRoot <folder on a drive with 40 GB free>` once, or free space on D:.
 
 **Why.** The repo has no repeatable desktop checks. `tools/` holds only `store-assets`, plus one
 committed script, `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`. On 2026-11-01, the three
