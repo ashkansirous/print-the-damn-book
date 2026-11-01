@@ -54,6 +54,51 @@ into Dino Reader (2026-11-01).
 - [ ] Site: if `site/public/privacy.html` says the app makes no network requests, add that it fetches Dino's story
       list and books only when the store is opened, and sends no identifiers.
 
+#### Design (Story Text mock, sections 2d-2f, added 2026-11-01)
+
+Three frames, live renders of `docs/design/StoryCheck.dc.html`: 2d the list (`Story Text.dc.html:36`), 2e downloading
+(`:40`), 2f offline (`:44`). The mock agrees with the plan, and adds the points below. Dialog markup is
+`StoryCheck.dc.html:274-337`; card data `:389-400`; state logic `:538-558`, `:661-675`.
+
+- **Open step.** Third button after "Open folder..." and "Open a Dino book...": `btn-secondary`, `ph storefront`,
+  "Get a story from Dino" (`:122`). All three buttons are disabled while a load runs. The drop text reads "A folder
+  of page images (JPG or PNG), a .dino book from Dino Reader, or a free story from Dino's store. I don't touch the files."
+  and the sub-heading "Name them Cover, 1, 2, 3 ... Back cover, open a book you made in Dino Reader, or get a free one
+  from Dino's store. Its words come along."
+- **Dialog frame.** Modal `.dialog`, `role="dialog"`, `aria-label="Stories from Dino"`, `width: min(880px, 100%)`,
+  60% `--color-neutral-900` scrim over the window, 40 px padding. Title "Stories from Dino" (`dialog-title`), sub-line "Free
+  books from Dino Reader's store. Pick one and I'll open it here, words and all." Close: `btn-ghost btn-icon`, `ph x`,
+  title and label "Close". Footer line, always shown, 11 px `--color-neutral-500`, `ph shield-check` 13 px: "I fetch
+  only the list, the covers and the book you pick. Nothing about you is sent."
+- **Loading (list).** Spinner `ph circle-notch` 32 px `--color-accent` (0.9 s), "Loading stories...", "Asking
+  dinoreader.sirous.uk for its list.", a ghost "Cancel" that closes the dialog. Body min-height 420 px.
+- **List (2d).** Language select top right with a `ph translate` icon, `aria-label="Language"`: "All languages · 10" then
+  one entry per language ("English · 4", "فارسی · 2" ...). Grid of 5 columns, 14 px / 10 px gaps, scrolls past 540 px. Each
+  card is a button: 3:4 cover on `--color-neutral-800` with `--shadow-md`, then title (13 px, 500, one line, ellipsis; own
+  direction and Vazirmatn for Arabic script), then "<Language> · 12 pages · ages 4–7" (11 px, `--color-neutral-500`). Hover
+  tints 6% text colour. Tooltip "Download and open".
+- **Lazy covers.** Covers appear one by one (~110 ms apart); until then a `ph image` 22 px, `--color-neutral-600` on the box.
+- **Not-supported card.** Hebrew is listed, opacity 0.45, not clickable, tooltip "Hebrew books are not supported yet", and
+  the line "This language is not supported yet". Farsi and Arabic cards are enabled.
+- **Downloading (2e).** Body: 132 px 3:4 cover; "Downloading <title>..." (title isolated, own direction); 4 px progress
+  bar (`role="progressbar"`, `aria-label="Download"`, `--color-neutral-800` track, `--color-accent` fill with glow);
+  "3.2 of 8.4 MB"; `btn-secondary` "Cancel". On finish the dialog closes and the Check step opens on the cover.
+- **Cancel (adds behaviour).** Cancel during a download returns to the list with a note above the grid, `ph info` 14 px
+  `--color-accent-300`, 12 px: "Download cancelled. Nothing was kept." Cancel while loading the list closes the dialog.
+- **Failed (2f).** `ph wifi-slash` 32 px `--color-neutral-400`; "I couldn't reach Dino's store"; "Check the internet
+  connection and try again. Folders and .dino files on this PC still open as usual."; `btn-primary` with `ph
+  arrow-clockwise` "Try again", and ghost "Close".
+- **Simplified in the mock:** the ten catalog entries, covers (sample pages) and the byte count (8.4 MB) are invented.
+
+**New strings:** every quoted string above.
+
+**Open point: Retry label.** Plan: "Retry". Mock: "Try again" plus a "Close" button. **Default:** use the mock.
+**Open point: cancelled download.** Plan: Cancel, nothing more. Mock: back to the list with the note. **Default:** use the mock.
+**Open point: Hebrew card.** Plan: right-to-left books "disabled until [Slice 17] lands, enabled after". Mock: Hebrew
+stays disabled, Farsi and Arabic enabled. **Default:** after Slice 17 enable only Arabic-script languages.
+Settled by the mock: the language filter is a select with counts; the privacy line is in the dialog itself, so the
+`privacy.html` text should say the same.
+
 **Verification.**
 
 - `dotnet test`: catalog parser tests.

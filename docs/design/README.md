@@ -1,6 +1,6 @@
 # Design: print-the-damn-book
 
-Copied from Claude Design on 2026-10-22; `Redesign Directions.dc.html` and the mobile files refreshed 2026-10-23; `Story Text.dc.html` and `StoryCheck.dc.html` added 2026-10-26. Source project:
+Copied from Claude Design on 2026-10-22; `Redesign Directions.dc.html` and the mobile files refreshed 2026-10-23; `Story Text.dc.html` and `StoryCheck.dc.html` added 2026-10-26 and refreshed 2026-11-01 (frames 2a–2h for Slices 17–19). Source project:
 https://claude.ai/design/p/71f50eae-822f-45b1-9a5f-287e52c02bdc (project id `71f50eae-822f-45b1-9a5f-287e52c02bdc`).
 
 Read visual values (colors, sizes, spacing, copy) from these files; never guess them, and never call
@@ -15,8 +15,8 @@ overwrite these copies.
 | `MobileWizard.dc.html` | The working phone prototype the 4a–4g frames render: Open → Check → Print → Done for iOS and Android, all copy and state logic in its script |
 | `ios-frame.jsx`, `android-frame.jsx` | Generic iOS 26 and Material 3 device frames (bezel, status bar, home indicator); mock chrome only, not app UI |
 | `BookWizard.dc.html` | The working prototype the directions render: Open → Check → Print → Done, all copy and state logic in its script |
-| `Story Text.dc.html` | Canvas for Slices 14–16: frames 1a–1f of the Check-step story-text editor, each a live `StoryCheck` |
-| `StoryCheck.dc.html` | The working prototype the 1a–1f frames render: Open (folder or Dino book) and Check with the right-hand text editor, band picker, fit line and text/spacer tiles |
+| `Story Text.dc.html` | Canvas: frames 2a–2h for Slices 17–19 (right-to-left books, Dino store, hand-over from Dino Reader) and 1a–1f for Slices 14–16 (Check-step story-text editor), each a live `StoryCheck` |
+| `StoryCheck.dc.html` | The working prototype the frames render: Open (folder or Dino book), Check with the right-hand text editor, band picker, fit line and text/spacer tiles, the Reading direction switch, the Dino store dialog and the Dino Reader hand-over states |
 | `reference/blackberry-path.png` | A picture made with room for its words: the bottom ~30% is plain (user's reference, 2026-10-26). Bottom-band reference for Slice 14, a test picture for Slice 16 |
 | `Store Kit.dc.html` | App icon in the shell (2a), .ico ladder (2b), MSIX assets (2c), Store logos (2d), hero art (2e), screenshots (2f) |
 | `icons/app-icon.svg`, `icons/app-icon-sm.svg` | The app icon (48 px and up) and the simplified glyph (32 px and below) |
@@ -67,17 +67,29 @@ Not copied: `_ds_bundle.js` and `support.js` (they only render the mock in Claud
 
 | Id | Title | Line |
 | --- | --- | --- |
-| 1a | On the picture, bottom band (Slice 14; page 3 selected, page 1 shrinks to fit) | 24 |
-| 1b | Own page, facing its picture (page 2 needs a spacer) | 28 |
-| 1c | As printed, words and all | 32 |
-| 1d | Band picker with a suggestion (Slice 16) | 36 |
-| 1e | Open: folder or Dino book (Slice 15) | 40 |
-| 1f | A Dino book, title on the cover (Slices 15 + 16) | 44 |
+| 2a | A Farsi Dino book, right to left (Slice 17) | 24 |
+| 2b | As printed, mirrored (Slice 17) | 28 |
+| 2c | Folder book, direction guessed (Slice 17) | 32 |
+| 2d | Get a story from Dino (Slice 18) | 36 |
+| 2e | Downloading a store book (Slice 18) | 40 |
+| 2f | Store offline (Slice 18) | 44 |
+| 2g | Handed over by Dino Reader (Slice 19) | 48 |
+| 2h | Hand-over that can’t be opened (Slice 19) | 52 |
+| 1a | On the picture, bottom band (Slice 14; page 3 selected, page 1 shrinks to fit) | 65 |
+| 1b | Own page, facing its picture (page 2 needs a spacer) | 69 |
+| 1c | As printed, words and all | 73 |
+| 1d | Band picker with a suggestion (Slice 16) | 77 |
+| 1e | Open: folder or Dino book (Slice 15) | 81 |
+| 1f | A Dino book, title on the cover (Slices 15 + 16) | 85 |
 
 ### StoryCheck.dc.html
 
 One component with props `mode` (check | open), `source` (folder | dino), `view` (book | sheets),
-`selected` (a page id like `p3`, `cover`, or `none`) and `bands` (Slice 16 band picker on/off).
+`selected` (a page id like `p3`, `cover`, or `none`), `bands` (Slice 16 band picker on/off),
+`lang` (en | de | fa), `dir` (auto | ltr | rtl; Slice 17), `store` (none | loading | list | failed |
+downloading; Slice 18) and `handover` (none | loading | bad; Slice 19). The direction guess (`dirOf`,
+`guessDir`), mirrored imposition (`impose(list, rtl)`), Persian and Arabic digits and the store
+catalogue (`Component.STORE`) live in its script.
 Shrink steps (`BAND`, `PAGE`), the panel colours, the spacer/blank logic (`layout()`) and every
 string live in its script; `renderVals()` holds the copy.
 
@@ -124,3 +136,19 @@ layout, with `isIOS` / `isAndroid` branches for the native chrome.
 >    - StoryCheck.dc.html (the Check step with the story-text editor; props: mode, source, view, selected, bands)
 >    - Story Text.dc.html (canvas of frames 1a–1f that imports StoryCheck)
 >    Keep the existing BookWizard/MobileWizard/Store Kit files as they are.
+
+> Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /design-login) to import this project:
+> https://claude.ai/design/p/71f50eae-822f-45b1-9a5f-287e52c02bdc?file=Story+Text.dc.html
+>
+> Focus on these files (the whole project is readable):
+> - `Story Text.dc.html`
+>
+> Also read these files the selection imports:
+> - `_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/_ds_bundle.js`
+> - `_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/styles.css`
+> - `support.js`
+>
+> Implement: `Story Text.dc.html`
+>
+> (2026-11-01, followed by "update plan and then /run-all-waves". `StoryCheck.dc.html` was fetched too,
+> because the canvas renders it; `styles.css` matched the existing `nocturne/styles.css` tokens.)

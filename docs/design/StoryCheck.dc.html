@@ -10,7 +10,7 @@
 <helmet>
 <link rel="stylesheet" href="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/styles.css">
 <script src="_ds/nocturne-f068244e-5107-4aa9-b6a1-47e310b20b06/_ds_bundle.js"></script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Andika:wght@400;700&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Andika:wght@400;700&amp;family=Vazirmatn:wght@400;700&amp;display=swap">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
 <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
 <style>html,body{margin:0;height:100%;background:var(--color-bg)}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}@keyframes ptdb-spin{to{transform:rotate(360deg)}}</style>
@@ -74,6 +74,10 @@
                   </select>
                 </label>
               </sc-if>
+              <div class="seg" role="radiogroup" aria-label="Reading direction" title="{{ dirTitle }}">
+                <label class="seg-opt"><input type="radio" name="{{ dirName }}" checked="{{ isLtr }}" onChange="{{ setLtr }}"><i class="ph ph-arrow-line-right"></i>Left to right</label>
+                <label class="seg-opt"><input type="radio" name="{{ dirName }}" checked="{{ isRtl }}" onChange="{{ setRtl }}"><i class="ph ph-arrow-line-left"></i>Right to left</label>
+              </div>
               <div class="seg">
                 <label class="seg-opt"><input type="radio" name="{{ viewName }}" checked="{{ isBookView }}" onChange="{{ setBookView }}"><i class="ph ph-book-open"></i>Reading order</label>
                 <label class="seg-opt"><input type="radio" name="{{ viewName }}" checked="{{ isSheetView }}" onChange="{{ setSheetView }}"><i class="ph ph-files"></i>As printed</label>
@@ -84,12 +88,23 @@
         </div>
 
         <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ handoverBad }}" hint-placeholder-val="{{ false }}">
+            <div role="alert" style="display:flex;align-items:flex-start;gap:10px;max-width:620px;box-sizing:border-box;margin-bottom:14px;padding:12px 14px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-sm)">
+              <i class="ph-fill ph-warning" style="font-size:18px;flex:none;color:oklch(0.82 0.12 78)"></i>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                <span style="font-weight:500">I couldn't open what Dino Reader sent</span>
+                <span style="color:var(--color-neutral-400);text-wrap:pretty"><span style="font-family:ui-monospace,Consolas,monospace;color:var(--color-neutral-300)">notes.txt</span> is missing or isn't a .dino book. Open a folder or a Dino book here instead.</span>
+              </div>
+              <button class="btn btn-ghost btn-icon" onClick="{{ dismissBad }}" title="Dismiss" aria-label="Dismiss"><i class="ph ph-x"></i></button>
+            </div>
+          </sc-if>
           <div style="display:flex;flex-direction:column;align-items:flex-start;gap:16px;max-width:620px;padding:36px 32px;border:1px dashed var(--color-neutral-700);border-radius:var(--radius-lg);background:radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--color-accent-900) 80%, transparent), transparent 60%)">
             <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}"><i class="ph ph-folder-open" style="font-size:40px;color:var(--color-accent)"></i></sc-if>
             <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><i class="ph ph-circle-notch" style="font-size:40px;color:var(--color-accent);animation:ptdb-spin 0.9s linear infinite"></i></sc-if>
             <div style="display:flex;flex-direction:column;gap:4px">
               <span style="font-size:17px;font-weight:500">{{ dropTitle }}</span>
-              <span style="color:var(--color-neutral-400);text-wrap:pretty">A folder of page images (JPG or PNG), or a .dino book from Dino Reader. I don't touch the files.</span>
+              <sc-if value="{{ notHandover }}" hint-placeholder-val="{{ true }}"><span style="color:var(--color-neutral-400);text-wrap:pretty">A folder of page images (JPG or PNG), a .dino book from Dino Reader, or a free story from Dino's store. I don't touch the files.</span></sc-if>
+              <sc-if value="{{ handoverLoading }}" hint-placeholder-val="{{ false }}"><span style="color:var(--color-neutral-400);text-wrap:pretty">Dino Reader handed me <span style="color:var(--color-neutral-200)">Good Enough.dino</span> in Farsi. I'm copying it into my own cache first, so Dino can tidy up its copy.</span></sc-if>
             </div>
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
               <span class="tag tag-accent">Cover</span>
@@ -104,6 +119,8 @@
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <button class="btn btn-primary" onClick="{{ openFolder }}" disabled="{{ loading }}"><i class="ph ph-folder-open"></i>Open folder…</button>
               <button class="btn btn-secondary" onClick="{{ openDino }}" disabled="{{ loading }}"><i class="ph ph-book-bookmark"></i>Open a Dino book…</button>
+              <button class="btn btn-secondary" onClick="{{ openStore }}" disabled="{{ loading }}"><i class="ph ph-storefront"></i>Get a story from Dino</button>
+              <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}"><button class="btn btn-ghost" onClick="{{ cancelLoad }}">Cancel</button></sc-if>
             </div>
           </div>
         </sc-if>
@@ -122,8 +139,8 @@
                             <sc-if value="{{ t.isReal }}">
                               <div onClick="{{ t.onClick }}" title="{{ t.title }}" style="display:flex;flex-direction:column;gap:6px;cursor:{{ t.cursor }}">
                                 <div style="position:relative;width:{{ t.w }};height:{{ t.h }};box-sizing:border-box;display:flex;align-items:center;justify-content:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:{{ t.ring }};border-radius:2px;transition:box-shadow .15s">
-                                  <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.25;text-align:center;text-wrap:balance;overflow:hidden">{{ t.text }}</div></sc-if></div></sc-if>
-                                  <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.35;text-wrap:pretty;overflow:hidden">{{ t.text }}</div></sc-if>
+                                  <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:{{ t.font }};direction:{{ t.dir }};font-size:{{ t.fs }};line-height:1.25;text-align:center;text-wrap:balance;overflow:hidden">{{ t.text }}</div></sc-if></div></sc-if>
+                                  <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:{{ t.font }};direction:{{ t.dir }};font-size:{{ t.fs }};line-height:1.35;text-wrap:pretty;overflow:hidden">{{ t.text }}</div></sc-if>
                                   <sc-if value="{{ t.isBlank }}"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">{{ t.blankLabel }}</span></sc-if>
                                 </div>
                                 <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:{{ t.labelColor }};min-width:0">
@@ -155,8 +172,8 @@
                               <sc-for list="{{ f.tiles }}" as="t" hint-placeholder-count="2">
                                 <div onClick="{{ t.onClick }}" title="{{ t.title }}" style="display:flex;flex-direction:column;gap:4px;width:{{ t.w }};cursor:{{ t.cursor }}">
                                   <div style="position:relative;width:{{ t.w }};height:{{ t.h }};box-sizing:border-box;display:flex;align-items:center;justify-content:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:{{ t.ring }}">
-                                    <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.25;text-align:center;overflow:hidden">{{ t.text }}</div></sc-if></div></sc-if>
-                                    <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.35;overflow:hidden">{{ t.text }}</div></sc-if>
+                                    <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:{{ t.font }};direction:{{ t.dir }};font-size:{{ t.fs }};line-height:1.25;text-align:center;overflow:hidden">{{ t.text }}</div></sc-if></div></sc-if>
+                                    <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:{{ t.font }};direction:{{ t.dir }};font-size:{{ t.fs }};line-height:1.35;overflow:hidden">{{ t.text }}</div></sc-if>
                                     <sc-if value="{{ t.isBlank }}"><span style="font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">{{ t.blankLabel }}</span></sc-if>
                                   </div>
                                   <span style="font-size:11px;color:{{ t.labelColor }};text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.label }}</span>
@@ -193,8 +210,8 @@
                 <div style="display:flex;justify-content:center;gap:2px;padding:14px 0;border-radius:var(--radius-md);background:color-mix(in srgb, var(--color-bg) 55%, transparent)">
                   <sc-for list="{{ preview }}" as="t" hint-placeholder-count="1">
                     <div style="position:relative;width:{{ t.w }};height:{{ t.h }};box-sizing:border-box;display:flex;align-items:center;justify-content:center;overflow:hidden;background:{{ t.bg }};border:{{ t.border }};box-shadow:var(--shadow-md);border-radius:2px">
-                      <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.25;text-align:center;text-wrap:balance;overflow:hidden;transition:top .2s, bottom .2s">{{ t.text }}</div></sc-if></div></sc-if>
-                      <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:Andika,sans-serif;font-size:{{ t.fs }};line-height:1.35;text-wrap:pretty;overflow:hidden">{{ t.text }}</div></sc-if>
+                      <sc-if value="{{ t.hasImg }}"><div style="position:relative;width:100%;aspect-ratio:3 / 4;flex:none"><img src="{{ t.src }}" alt="" draggable="false" style="width:100%;height:100%;object-fit:cover;display:block"><sc-if value="{{ t.hasBand }}"><div style="position:absolute;left:5%;right:5%;top:{{ t.bandTop }};bottom:{{ t.bandBottom }};transform:{{ t.bandShift }};max-height:30%;box-sizing:border-box;padding:{{ t.bandPad }};border-radius:{{ t.bandRadius }};background:oklch(0.97 0.025 85 / 0.93);color:oklch(0.33 0.04 55);font-family:{{ t.font }};direction:{{ t.dir }};font-size:{{ t.fs }};line-height:1.25;text-align:center;text-wrap:balance;overflow:hidden;transition:top .2s, bottom .2s">{{ t.text }}</div></sc-if></div></sc-if>
+                      <sc-if value="{{ t.isTextPage }}"><div style="width:100%;box-sizing:border-box;padding:{{ t.tpPad }};color:oklch(0.33 0.04 55);font-family:{{ t.font }};direction:{{ t.dir }};font-size:{{ t.fs }};line-height:1.35;text-wrap:pretty;overflow:hidden">{{ t.text }}</div></sc-if>
                       <sc-if value="{{ t.isBlank }}"><span style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-neutral-600)">{{ t.blankLabel }}</span></sc-if>
                     </div>
                   </sc-for>
@@ -202,7 +219,7 @@
 
                 <div class="field">
                   <label>Story text</label>
-                  <textarea class="input" value="{{ selText }}" onChange="{{ onText }}" placeholder="{{ textPlaceholder }}" rows="4" style="width:100%;box-sizing:border-box;resize:vertical;min-height:92px;font-family:Andika,var(--font-body);font-size:15px;line-height:1.4"></textarea>
+                  <textarea class="input" dir="{{ selDir }}" value="{{ selText }}" onChange="{{ onText }}" placeholder="{{ textPlaceholder }}" rows="4" style="width:100%;box-sizing:border-box;resize:vertical;min-height:92px;font-family:{{ selFont }};font-size:15px;line-height:1.4"></textarea>
                   <sc-if value="{{ hasFitNote }}"><span style="display:flex;gap:6px;font-size:12px;color:{{ fitColor }};text-wrap:pretty"><i class="{{ fitIcon }}" style="font-size:14px;flex:none;margin-top:1px"></i>{{ fitNote }}</span></sc-if>
                 </div>
 
@@ -254,12 +271,75 @@
       </div>
     </div>
   </div>
+<sc-if value="{{ storeOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding:40px;box-sizing:border-box;background:color-mix(in srgb, var(--color-neutral-900) 60%, transparent)">
+    <div class="dialog" role="dialog" aria-label="Stories from Dino" style="width:min(880px,100%);max-height:100%;box-sizing:border-box;overflow:hidden">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+          <span class="dialog-title">Stories from Dino</span>
+          <span style="color:var(--color-neutral-400);text-wrap:pretty">Free books from Dino Reader's store. Pick one and I'll open it here, words and all.</span>
+        </div>
+        <sc-if value="{{ storeList }}" hint-placeholder-val="{{ false }}">
+          <label style="display:flex;align-items:center;gap:8px;color:var(--color-neutral-400);font-size:12px"><i class="ph ph-translate" style="font-size:16px"></i>
+            <select class="input" aria-label="Language" value="{{ storeLang }}" onChange="{{ onStoreLang }}" style="width:auto">
+              <sc-for list="{{ storeLangs }}" as="o" hint-placeholder-count="4"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+            </select>
+          </label>
+        </sc-if>
+        <button class="btn btn-ghost btn-icon" onClick="{{ closeStore }}" title="Close" aria-label="Close"><i class="ph ph-x"></i></button>
+      </div>
+      <sc-if value="{{ storeLoading }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:420px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:0 8px">
+          <i class="ph ph-circle-notch" style="font-size:32px;color:var(--color-accent);animation:ptdb-spin 0.9s linear infinite"></i>
+          <span style="font-size:15px;font-weight:500">Loading stories…</span>
+          <span style="color:var(--color-neutral-400)">Asking dinoreader.sirous.uk for its list.</span>
+          <button class="btn btn-ghost" onClick="{{ closeStore }}">Cancel</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ storeFailed }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:420px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:0 8px">
+          <i class="ph ph-wifi-slash" style="font-size:32px;color:var(--color-neutral-400)"></i>
+          <span style="font-size:15px;font-weight:500">I couldn't reach Dino's store</span>
+          <span style="color:var(--color-neutral-400);max-width:46ch;text-wrap:pretty">Check the internet connection and try again. Folders and .dino files on this PC still open as usual.</span>
+          <div style="display:flex;gap:8px"><button class="btn btn-primary" onClick="{{ retryStore }}"><i class="ph ph-arrow-clockwise"></i>Try again</button><button class="btn btn-ghost" onClick="{{ closeStore }}">Close</button></div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ storeList }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ hasStoreNote }}"><span style="display:flex;gap:6px;font-size:12px;color:var(--color-neutral-400)"><i class="ph ph-info" style="font-size:14px;color:var(--color-accent-300)"></i>{{ storeNote }}</span></sc-if>
+        <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px 10px;overflow:auto;max-height:540px;padding:2px">
+          <sc-for list="{{ storeCards }}" as="c" hint-placeholder-count="10">
+            <button onClick="{{ c.onClick }}" disabled="{{ c.dis }}" title="{{ c.tip }}" style="display:flex;flex-direction:column;gap:5px;padding:8px;border:0;border-radius:var(--radius-md);background:transparent;color:inherit;font:inherit;text-align:left;cursor:{{ c.cursor }};opacity:{{ c.op }}" style-hover="background:color-mix(in srgb, var(--color-text) 6%, transparent)">
+              <div style="position:relative;width:100%;aspect-ratio:3 / 4;overflow:hidden;border-radius:2px;display:grid;place-items:center;background:var(--color-neutral-800);box-shadow:var(--shadow-md)">
+                <sc-if value="{{ c.hasCover }}"><img src="{{ c.src }}" alt="" draggable="false" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block"></sc-if>
+                <sc-if value="{{ c.noCover }}"><i class="ph ph-image" style="font-size:22px;color:var(--color-neutral-600)"></i></sc-if>
+              </div>
+              <span dir="{{ c.dir }}" style="font-size:13px;font-weight:500;text-align:left;font-family:{{ c.font }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.title }}</span>
+              <span style="font-size:11px;color:var(--color-neutral-500)"><span style="unicode-bidi:isolate">{{ c.langName }}</span> · {{ c.meta }}</span>
+              <sc-if value="{{ c.dis }}"><span style="font-size:11px;color:var(--color-neutral-400)">This language is not supported yet</span></sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ storeDownloading }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:420px;display:flex;align-items:center;gap:24px;padding:0 8px">
+          <div style="width:132px;aspect-ratio:3 / 4;flex:none;overflow:hidden;border-radius:2px;box-shadow:var(--shadow-md)"><img src="{{ dlCover }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block"></div>
+          <div style="flex:1;max-width:400px;display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:15px;font-weight:500">Downloading <span dir="{{ dlDir }}" style="font-family:{{ dlFont }};unicode-bidi:isolate">{{ dlTitle }}</span>…</span>
+            <div role="progressbar" aria-label="Download" style="height:4px;border-radius:2px;overflow:hidden;background:var(--color-neutral-800)"><div style="height:100%;width:{{ dlPct }};background:var(--color-accent);box-shadow:0 0 10px color-mix(in srgb, var(--color-accent) 60%, transparent);transition:width .12s linear"></div></div>
+            <span style="font-size:12px;color:var(--color-neutral-400)">{{ dlText }}</span>
+            <div style="display:flex"><button class="btn btn-secondary" onClick="{{ cancelDl }}">Cancel</button></div>
+          </div>
+        </div>
+      </sc-if>
+      <span style="display:flex;gap:6px;font-size:11px;color:var(--color-neutral-500)"><i class="ph ph-shield-check" style="font-size:13px"></i>I fetch only the list, the covers and the book you pick. Nothing about you is sent.</span>
+    </div>
+  </div>
+</sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;check&quot;,&quot;open&quot;],&quot;default&quot;:&quot;check&quot;,&quot;tsType&quot;:&quot;'check'|'open'&quot;},&quot;source&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;folder&quot;,&quot;dino&quot;],&quot;default&quot;:&quot;folder&quot;,&quot;tsType&quot;:&quot;'folder'|'dino'&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;book&quot;,&quot;sheets&quot;],&quot;default&quot;:&quot;book&quot;,&quot;tsType&quot;:&quot;'book'|'sheets'&quot;},&quot;selected&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;p3&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;bands&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;framed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;height&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:800},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;check&quot;,&quot;open&quot;],&quot;default&quot;:&quot;check&quot;,&quot;tsType&quot;:&quot;'check'|'open'&quot;},&quot;source&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;folder&quot;,&quot;dino&quot;],&quot;default&quot;:&quot;folder&quot;,&quot;tsType&quot;:&quot;'folder'|'dino'&quot;},&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;book&quot;,&quot;sheets&quot;],&quot;default&quot;:&quot;book&quot;,&quot;tsType&quot;:&quot;'book'|'sheets'&quot;},&quot;selected&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;p3&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;bands&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;framed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;height&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;en&quot;,&quot;de&quot;,&quot;fa&quot;],&quot;default&quot;:&quot;en&quot;,&quot;tsType&quot;:&quot;'en'|'de'|'fa'&quot;},&quot;dir&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;ltr&quot;,&quot;rtl&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;'auto'|'ltr'|'rtl'&quot;},&quot;store&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;loading&quot;,&quot;list&quot;,&quot;failed&quot;,&quot;downloading&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;'none'|'loading'|'list'|'failed'|'downloading'&quot;},&quot;handover&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;loading&quot;,&quot;bad&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;'none'|'loading'|'bad'&quot;}}">
 class Component extends DCLogic {
   static MM = 0.3528;
-  static INK = 'oklch(0.33 0.04 55)';
   static EN = {
     cover: 'Good Enough',
     p1: 'Saturday morning. Carrot and Hazelnut put on their scarves, one blue and one orange, and walk all the way to Bright Stadium without stopping once for snacks. Well, once.',
@@ -286,33 +366,74 @@ class Component extends DCLogic {
     p9: 'Es ist nicht der beste Platz im Stadion. Aber er ist gut genug.',
     p10: 'Auf dem Heimweg sind sie sich einig: Nächstes Mal bringen sie eine Leiter mit.',
   };
+  static FA = {
+    cover: 'همین هم خوب است',
+    p1: 'صبح شنبه. هویج و فندق شال‌گردن‌هایشان را می‌بندند، یکی آبی و یکی نارنجی، و تمام راه را تا ورزشگاه روشن پیاده می‌روند، بی‌آنکه حتی یک بار برای خوراکی بایستند. خب، یک بار.',
+    p2: 'داخل، ورزشگاه خیلی بزرگ است. صندلی‌ها بیشتر از آن‌اند که هویج بتواند بشمارد، و هویج تا صد می‌شمارد. پرچم‌ها در باد تکان می‌خورند. کسی بلوط داغ می‌فروشد. آن پایین، بازیکن‌ها گرم می‌کنند، به کوچکی مورچه.',
+    p3: 'هویج دلش می‌خواهد بهتر ببیند. فندق می‌گوید برویم پایین‌تر.',
+    p4: 'از لای زانوها و کیف‌ها و یک گورکن خیلی خواب‌آلود رد می‌شوند.',
+    p5: 'بعد سوت زده می‌شود.',
+    p6: 'توپ از بالای سر همه پرواز می‌کند.',
+    p7: 'همه از جا می‌پرند. هویج هیچ چیز نمی‌بیند.',
+    p8: 'فندق از دیوار بالا می‌رود و داد می‌زند چه خبر است.',
+    p9: 'بهترین جای ورزشگاه نیست. ولی همین هم خوب است.',
+    p10: 'در راه خانه با هم قرار می‌گذارند: دفعه‌ی بعد نردبان می‌آورند.',
+  };
   static SUG = { cover: 'top', p2: 'top', p6: 'top', p8: 'middle' };
   static BAND = [22, 20, 18, 16, 14];
   static PAGE = [28, 24, 20, 18, 16];
+  static ARAB = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+  static STRONG = /[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+  static RTLCH = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/;
+  static LANGS = { en: 'English', de: 'Deutsch', fa: 'فارسی', ar: 'العربية', he: 'עברית' };
+  static STORE = [
+    { id: 'good-enough', title: 'Good Enough', lang: 'en', pages: 12, age: '4–7', src: 'book/cover.jpg' },
+    { id: 'good-enough-fa', title: 'همین هم خوب است', lang: 'fa', pages: 12, age: '4–7', src: 'book/9.jpg' },
+    { id: 'sleepy-badger', title: 'The Very Sleepy Badger', lang: 'en', pages: 16, age: '3–6', src: 'book/4.jpg' },
+    { id: 'ball', title: 'Der Ball fliegt hoch', lang: 'de', pages: 8, age: '3–5', src: 'book/6.jpg' },
+    { id: 'ar-ball', title: 'الكرة الطائرة', lang: 'ar', pages: 10, age: '4–8', src: 'book/7.jpg' },
+    { id: 'ladder', title: 'Next Time, a Ladder', lang: 'en', pages: 20, age: '5–8', src: 'book/10.jpg' },
+    { id: 'he-wall', title: 'על החומה', lang: 'he', pages: 12, age: '4–7', src: 'book/8.jpg' },
+    { id: 'flags', title: 'Flags in the Wind', lang: 'en', pages: 14, age: '4–7', src: 'book/2.jpg' },
+    { id: 'chestnuts', title: 'Heiße Maronen', lang: 'de', pages: 8, age: '3–5', src: 'book/5.jpg' },
+    { id: 'fa-seats', title: 'صد تا صندلی', lang: 'fa', pages: 10, age: '4–7', src: 'book/3.jpg' },
+  ];
 
   constructor(props) {
     super(props);
     this.uid = Math.random().toString(36).slice(2, 8);
     this.timers = [];
+    this.dlRun = 0;
+    this.loadRun = 0;
     this.state = this.initial(props);
   }
+  componentDidMount() { if (this.state.store === 'list') this.loadCovers(); }
   componentWillUnmount() { this.timers.forEach(clearTimeout); }
   componentDidUpdate(prev) {
     const p = this.props;
-    if (['mode', 'view', 'selected', 'source', 'bands'].some(k => prev[k] !== p[k])) this.setState(this.initial(p));
+    if (['mode', 'view', 'selected', 'source', 'bands', 'lang', 'dir', 'store', 'handover'].some(k => prev[k] !== p[k])) {
+      this.setState(this.initial(p), () => { if (this.state.store === 'list') this.loadCovers(); });
+    }
   }
   initial(p) {
-    const source = p.source ?? 'folder';
-    return { mode: p.mode ?? 'check', source, texts: this.seed(source), selected: p.selected === 'none' ? null : (p.selected ?? 'p3'), view: p.view ?? 'book', lang: 'en', save: 'saved', loading: false };
+    const source = p.source ?? 'folder', ho = p.handover ?? 'none', store = p.store ?? 'none';
+    const pd = p.dir && p.dir !== 'auto' ? p.dir : null;
+    return {
+      mode: ho !== 'none' || store !== 'none' ? 'open' : (p.mode ?? 'check'), source, texts: this.seed(source),
+      selected: p.selected === 'none' ? null : (p.selected ?? 'p3'), view: p.view ?? 'book', lang: p.lang ?? 'en',
+      dir: pd || 'ltr', dirPicked: !!pd, save: 'saved', loading: ho === 'loading', handover: ho,
+      store, storeLang: 'all', covers: 0, storeNote: '', dlId: store === 'downloading' ? 'good-enough-fa' : null, dlPct: store === 'downloading' ? 38 : 0,
+    };
   }
   seed(src) {
     const ids = src === 'dino' ? Object.keys(Component.EN) : ['p1', 'p2', 'p3', 'p5', 'p6'];
     const own = src === 'dino' ? [] : ['p2', 'p5'];
     const t = {};
-    ids.forEach(id => { t[id] = { en: Component.EN[id], de: Component.DE[id], place: own.includes(id) ? 'own' : 'pic', band: null }; });
+    ids.forEach(id => { t[id] = { en: Component.EN[id], de: Component.DE[id], fa: Component.FA[id], place: own.includes(id) ? 'own' : 'pic', band: null }; });
     return t;
   }
   later(fn, ms) { this.timers.push(setTimeout(fn, ms)); }
+  loadCovers() { this.setState({ covers: 0 }); for (let i = 1; i <= Component.STORE.length; i++) this.later(() => this.setState({ covers: i }), 250 + i * 110); }
   pages() {
     const out = [{ id: 'cover', kind: 'cover', label: 'Cover', src: 'book/cover.jpg' }];
     for (let i = 1; i <= 10; i++) out.push({ id: 'p' + i, kind: 'page', label: String(i), src: `book/${i}.jpg` });
@@ -321,6 +442,14 @@ class Component extends DCLogic {
   }
   entry(id) { const e = this.state.texts[id]; return e && (e[this.state.lang] || '').trim() ? e : null; }
   txt(e) { return e ? e[this.state.lang] : ''; }
+  dirOf(t) { const m = (t || '').match(Component.STRONG); return m && Component.RTLCH.test(m[0]) ? 'rtl' : 'ltr'; }
+  fontOf(t) { return Component.ARAB.test(t || '') ? 'Vazirmatn,sans-serif' : 'Andika,sans-serif'; }
+  guessDir() { for (const p of this.pages()) { const e = this.entry(p.id); if (e) return this.dirOf(this.txt(e)); } return 'ltr'; }
+  bookDir() {
+    const s = this.state;
+    if (s.dirPicked) return s.dir;
+    return s.source === 'dino' ? (['fa', 'ar'].includes(s.lang) ? 'rtl' : 'ltr') : this.guessDir();
+  }
   isOwn(p) { const e = this.entry(p.id); return !!e && e.place === 'own' && p.kind === 'page'; }
   sug(id) { return Component.SUG[id] || 'bottom'; }
   bandOf(id) { const e = this.state.texts[id]; if (!this.props.bands) return 'bottom'; return (e && e.band) || this.sug(id); }
@@ -353,20 +482,20 @@ class Component extends DCLogic {
   }
   tile(it, wpx, preview) {
     const s = this.state, sc = wpx / 148, h = Math.round(wpx * 210 / 148), MM = Component.MM;
-    const t = { id: it.id, isReal: true, w: wpx + 'px', h: h + 'px', hasImg: false, hasBand: false, isTextPage: false, isBlank: false, bandTop: 'auto', bandBottom: 'auto', bandShift: 'none', text: '', fs: '10px', note: '', hasNote: false, blankLabel: '' };
+    const t = { id: it.id, isReal: true, w: wpx + 'px', h: h + 'px', hasImg: false, hasBand: false, isTextPage: false, isBlank: false, bandTop: 'auto', bandBottom: 'auto', bandShift: 'none', text: '', fs: '10px', font: 'Andika,sans-serif', dir: 'ltr', note: '', hasNote: false, blankLabel: '' };
     const sel = !preview && s.selected && (it.id === s.selected || it.of === s.selected);
     const isImg = it.kind === 'page' || it.kind === 'cover' || it.kind === 'back';
     if (isImg) {
       t.hasImg = true; t.src = it.src;
       const e = this.entry(it.id);
       if (e && !this.isOwn(it)) {
-        const b = this.bandOf(it.id), f = this.bandFit(this.txt(e));
-        Object.assign(t, { hasBand: true, text: this.txt(e), fs: (f.pt * MM * sc).toFixed(2) + 'px', bandPad: `${(2.6 * sc).toFixed(1)}px ${(4 * sc).toFixed(1)}px`, bandRadius: Math.max(2, 4 * sc).toFixed(1) + 'px' });
+        const b = this.bandOf(it.id), tx = this.txt(e), f = this.bandFit(tx);
+        Object.assign(t, { hasBand: true, text: tx, font: this.fontOf(tx), dir: this.dirOf(tx), fs: (f.pt * MM * sc).toFixed(2) + 'px', bandPad: `${(2.6 * sc).toFixed(1)}px ${(4 * sc).toFixed(1)}px`, bandRadius: Math.max(2, 4 * sc).toFixed(1) + 'px' });
         if (b === 'top') t.bandTop = '3%'; else if (b === 'middle') { t.bandTop = '50%'; t.bandShift = 'translateY(-50%)'; } else t.bandBottom = '3%';
       }
     } else if (it.kind === 'text') {
       const tx = this.txt(this.entry(it.of)), f = this.pageFit(tx);
-      Object.assign(t, { isTextPage: true, text: tx, fs: (f.pt * MM * sc).toFixed(2) + 'px', tpPad: (148 * 0.12 * sc).toFixed(1) + 'px' });
+      Object.assign(t, { isTextPage: true, text: tx, font: this.fontOf(tx), dir: this.dirOf(tx), fs: (f.pt * MM * sc).toFixed(2) + 'px', tpPad: (148 * 0.12 * sc).toFixed(1) + 'px' });
     } else {
       t.isBlank = true;
       t.blankLabel = it.kind === 'spacer' ? 'spacer' : it.kind === 'backblank' ? 'blank back' : 'blank';
@@ -385,38 +514,67 @@ class Component extends DCLogic {
     t.onClick = () => { if (target) this.setState({ selected: target }); };
     return t;
   }
-  impose(p) {
+  impose(p, rtl) {
     const n = p.length, out = [];
-    for (let k = 0; k < n / 4; k++) out.push({ num: k + 1, front: [p[n - 1 - 2 * k], p[2 * k]], back: [p[2 * k + 1], p[n - 2 - 2 * k]] });
+    for (let k = 0; k < n / 4; k++) out.push(rtl
+      ? { num: k + 1, front: [p[2 * k], p[n - 1 - 2 * k]], back: [p[n - 2 - 2 * k], p[2 * k + 1]] }
+      : { num: k + 1, front: [p[n - 1 - 2 * k], p[2 * k]], back: [p[2 * k + 1], p[n - 2 - 2 * k]] });
     return out;
   }
+  digits(str, lang) {
+    const set = lang === 'fa' ? '۰۱۲۳۴۵۶۷۸۹' : lang === 'ar' ? '٠١٢٣٤٥٦٧٨٩' : null;
+    return set ? str.replace(/\d/g, d => set[d]) : str;
+  }
+  savePulse() { clearTimeout(this.saveT); this.saveT = setTimeout(() => this.setState({ save: 'saved' }), 700); this.timers.push(this.saveT); }
   patch(id, ch) {
     this.setState(s => {
-      const t = { ...s.texts }, cur = t[id] || { en: '', de: '', place: 'pic', band: null };
+      const t = { ...s.texts }, cur = t[id] || { en: '', de: '', fa: '', place: 'pic', band: null };
       t[id] = { ...cur, ...ch };
       return { texts: t, save: 'saving' };
     });
-    clearTimeout(this.saveT);
-    this.saveT = setTimeout(() => this.setState({ save: 'saved' }), 700);
-    this.timers.push(this.saveT);
+    this.savePulse();
+  }
+  pickDir(d) { this.setState({ dir: d, dirPicked: true, save: 'saving' }); this.savePulse(); }
+  openStore() {
+    this.dlRun++;
+    this.setState({ store: 'loading', storeNote: '' });
+    this.later(() => { if (this.state.store === 'loading') { this.setState({ store: 'list' }); this.loadCovers(); } }, 1100);
+  }
+  startDl(c) {
+    const token = ++this.dlRun;
+    this.setState({ store: 'downloading', dlId: c.id, dlPct: 0 });
+    const tick = () => {
+      if (token !== this.dlRun) return;
+      const pct = Math.min(100, this.state.dlPct + 6);
+      this.setState({ dlPct: pct });
+      if (pct < 100) this.later(tick, 110);
+      else this.later(() => {
+        if (token !== this.dlRun) return;
+        const L = ['en', 'de', 'fa'].includes(c.lang) ? c.lang : 'en';
+        this.setState({ store: 'none', mode: 'check', source: 'dino', texts: this.seed('dino'), selected: 'cover', lang: L, dirPicked: false, view: 'book', handover: 'none', loading: false });
+      }, 300);
+    };
+    this.later(tick, 200);
   }
   renderVals() {
-    const s = this.state, dino = s.source === 'dino', list = this.layout(), sheets = this.impose(list);
+    const s = this.state, dino = s.source === 'dino', dir = this.bookDir(), rtl = dir === 'rtl';
+    const list = this.layout(), sheets = this.impose(list, rtl);
     const pages = this.pages(), selectable = pages.filter(p => p.kind !== 'backblank');
     const withText = pages.filter(p => this.entry(p.id)).length;
     const textPages = list.filter(x => x.kind === 'text').length, spacers = list.filter(x => x.kind === 'spacer').length;
     const bookName = dino ? 'Good Enough.dino' : 'Good Enough';
     const empty = { isReal: false };
-    const spreads = [{ label: 'Front cover', slots: [empty, this.tile(list[0], 96)] }];
-    for (let i = 1; i < list.length - 1; i += 2) spreads.push({ label: `Spread ${(i + 1) / 2}`, slots: [this.tile(list[i], 96), this.tile(list[i + 1], 96)] });
-    spreads.push({ label: 'Back cover', slots: [this.tile(list[list.length - 1], 96), empty] });
+    const pair = (a, b) => rtl ? [b, a] : [a, b];
+    const spreads = [{ label: 'Front cover', slots: pair(empty, this.tile(list[0], 96)) }];
+    for (let i = 1; i < list.length - 1; i += 2) spreads.push({ label: `Spread ${(i + 1) / 2}`, slots: pair(this.tile(list[i], 96), this.tile(list[i + 1], 96)) });
+    spreads.push({ label: 'Back cover', slots: pair(this.tile(list[list.length - 1], 96), empty) });
     const sheetCards = sheets.map(sh => ({ title: `Sheet ${sh.num}`, faces: [{ name: 'Front', tiles: sh.front.map(p => this.tile(p, 62)) }, { name: 'Back', tiles: sh.back.map(p => this.tile(p, 62)) }] }));
 
     const sp = selectable.find(p => p.id === s.selected) || null;
     const si = sp ? selectable.indexOf(sp) : -1;
     const e = sp ? s.texts[sp.id] : null, text = e ? (e[s.lang] || '') : '', has = !!text.trim();
     const own = sp ? this.isOwn(sp) : false;
-    const preview = !sp ? [] : own ? [this.tile({ id: 'tx-' + sp.id, kind: 'text', of: sp.id, label: sp.label }, 128, true), this.tile(sp, 128, true)] : [this.tile(sp, 212, true)];
+    const preview = !sp ? [] : own ? pair(this.tile({ id: 'tx-' + sp.id, kind: 'text', of: sp.id, label: sp.label }, 128, true), this.tile(sp, 128, true)) : [this.tile(sp, 212, true)];
     const ti = list.findIndex(x => x.id === 'tx-' + (sp && sp.id));
     const spacerBefore = ti > 0 && list[ti - 1].kind === 'spacer';
     let fitNote = '', fitColor = 'var(--color-neutral-400)', fitIcon = 'ph ph-check';
@@ -427,8 +585,9 @@ class Component extends DCLogic {
       else fitNote = `${f.pt} pt, fits ${where}.`;
     }
     const isCover = sp && sp.kind !== 'page';
+    const sides = rtl ? 'Text on the right, picture on the left' : 'Text on the left, picture on the right';
     const placeNote = own
-      ? (spacerBefore ? 'Text on the left, picture on the right. I put a spacer page in front so they face each other.' : 'Text on the left, picture on the right, facing each other when the book is open.')
+      ? (spacerBefore ? sides + '. I put a spacer page in front so they face each other.' : sides + ', facing each other when the book is open.')
       : isCover ? 'Covers keep their words on the picture.' : 'A soft panel over the picture, never more than 30% of it.';
     const band = sp ? this.bandOf(sp.id) : 'bottom', sugB = sp ? this.sug(sp.id) : 'bottom', picked = !!(e && e.band);
     const steps = [
@@ -446,18 +605,37 @@ class Component extends DCLogic {
     }));
     const isOpen = s.mode === 'open', isCheck = s.mode === 'check';
     const extra = [textPages && `${textPages} text ${textPages === 1 ? 'page' : 'pages'}`, spacers && `${spacers} spacer`].filter(Boolean).join(', ');
-    const go = src => { if (this.state.loading) return; this.setState({ loading: true }); this.later(() => this.setState({ loading: false, mode: 'check', source: src, texts: this.seed(src), selected: src === 'dino' ? 'cover' : null, lang: 'en' }), 900); };
+    const go = src => {
+      if (this.state.loading) return;
+      const token = ++this.loadRun;
+      this.setState({ loading: true, handover: 'none' });
+      this.later(() => { if (token === this.loadRun) this.setState({ loading: false, mode: 'check', source: src, texts: this.seed(src), selected: src === 'dino' ? 'cover' : null, lang: 'en', dirPicked: false }); }, 900);
+    };
+    const dirWhy = s.dirPicked ? 'your pick' : dino ? 'set by the language' : 'guessed from the first story text';
+    const rtlTail = s.dirPicked ? '' : dino ? ' Set by the language.' : ' Guessed from the first story text.';
+    const numLang = dino && rtl ? s.lang : null;
+    const handoverLoading = s.loading && s.handover === 'loading';
+    const all = Component.STORE, shown = s.storeLang === 'all' ? all : all.filter(c => c.lang === s.storeLang);
+    const langsInStore = [...new Set(all.map(c => c.lang))];
+    const dl = all.find(c => c.id === s.dlId) || all[0];
     return {
       rootH: this.props.height ?? '100vh', winRadius: this.props.framed ? '8px' : '0', winShadow: this.props.framed ? 'var(--shadow-lg)' : 'none',
       hasBook: isCheck, bookName, statusShort: `${list.length} pages on ${sheets.length} sheets`, steps,
-      isOpen, isCheck, loading: s.loading, notLoading: !s.loading, dropTitle: s.loading ? 'Reading the book…' : 'Drop a folder or a Dino book here',
-      openFolder: () => go('folder'), openDino: () => go('dino'),
+      isOpen, isCheck, loading: s.loading, notLoading: !s.loading,
+      dropTitle: handoverLoading ? 'Opening a book from Dino Reader…' : s.loading ? 'Reading the book…' : 'Drop a folder or a Dino book here',
+      handoverLoading, notHandover: !handoverLoading, handoverBad: isOpen && s.handover === 'bad',
+      dismissBad: () => this.setState({ handover: 'none' }),
+      cancelLoad: () => { this.loadRun++; this.setState({ loading: false, handover: 'none' }); },
+      openFolder: () => go('folder'), openDino: () => go('dino'), openStore: () => this.openStore(),
       heading: isOpen ? 'Point me at your pages' : dino ? 'Check the order and the words' : 'Check the order',
-      subheading: isOpen ? "Name them Cover, 1, 2, 3 … Back cover, or open a book you made in Dino Reader. Its words come along." : s.view === 'book'
-        ? (dino ? 'Every page came with its words. Click one to change them or move them to a page of their own.' : 'Click a page to give it words. Drag to move it; a text page travels with its picture.')
-        : 'What comes out of the printer, words and all.',
-      isDino: dino, lang: s.lang, onLang: ev => { if (ev.target.value !== 'fa') this.setState({ lang: ev.target.value }); },
-      langs: [{ v: 'en', label: "English (the book's own)", dis: false }, { v: 'de', label: 'Deutsch', dis: false }, { v: 'fa', label: 'فارسی · right-to-left books are not supported yet', dis: true }],
+      subheading: isOpen ? "Name them Cover, 1, 2, 3 … Back cover, open a book you made in Dino Reader, or get a free one from Dino's store. Its words come along." : s.view === 'book'
+        ? (rtl ? 'Reads right to left: the book opens from the right, so each spread starts on its right page.' + rtlTail
+          : dino ? 'Every page came with its words. Click one to change them or move them to a page of their own.' : 'Click a page to give it words. Drag to move it; a text page travels with its picture.')
+        : rtl ? "What comes out of the printer, mirrored: the cover sits on the left of sheet 1's front, so the fold opens from the right." : 'What comes out of the printer, words and all.',
+      isDino: dino, lang: s.lang, onLang: ev => { const v = ev.target.value; if (v !== 'he') this.setState({ lang: v, dirPicked: false }); },
+      langs: [{ v: 'en', label: "English (the book's own)", dis: false }, { v: 'de', label: 'Deutsch', dis: false }, { v: 'fa', label: 'فارسی', dis: false }, { v: 'he', label: 'עברית · this language is not supported yet', dis: true }],
+      dirName: 'd-' + this.uid, isLtr: !rtl, isRtl: rtl, dirTitle: 'Reading direction · ' + dirWhy,
+      setLtr: () => this.pickDir('ltr'), setRtl: () => this.pickDir('rtl'),
       viewName: 'v-' + this.uid, isBookView: s.view === 'book', isSheetView: s.view === 'sheets',
       setBookView: () => this.setState({ view: 'book' }), setSheetView: () => this.setState({ view: 'sheets' }),
       spreads, sheetCards,
@@ -465,7 +643,8 @@ class Component extends DCLogic {
       selFile: !sp ? '' : dino ? (sp.kind === 'cover' ? 'cover-1.jpg' : `page-${sp.label}.jpg`) : `${sp.label}.jpg`,
       atFirst: si <= 0, atLast: si >= selectable.length - 1,
       prev: () => si > 0 && this.setState({ selected: selectable[si - 1].id }), next: () => si < selectable.length - 1 && this.setState({ selected: selectable[si + 1].id }),
-      preview, selText: text, textPlaceholder: isCover ? 'A title, if you want one on the cover' : 'What happens on this page?',
+      preview, selText: text, selDir: has ? this.dirOf(text) : dir, selFont: this.fontOf(text || (rtl ? 'ا' : '')).replace('sans-serif', 'var(--font-body)'),
+      textPlaceholder: isCover ? 'A title, if you want one on the cover' : 'What happens on this page?',
       onText: ev => sp && this.patch(sp.id, { [this.state.lang]: ev.target.value }),
       hasFitNote: !!fitNote, fitNote, fitColor, fitIcon, hasText: has,
       placeName: 'pl-' + this.uid, isPic: !own, isOwn: own, ownDisabled: !!isCover, ownTitle: isCover ? 'Covers keep their words on the picture' : 'Put the words on the page facing the picture',
@@ -477,8 +656,22 @@ class Component extends DCLogic {
       bandHintIcon: picked ? 'ph ph-push-pin' : 'ph-fill ph-sparkle',
       removeText: () => this.patch(sp.id, { [this.state.lang]: '' }),
       saving: s.save === 'saving', saved: s.save === 'saved', saveText: s.save === 'saving' ? 'Saving…' : dino ? 'Saved with this Dino book' : 'Saved to book.json in the folder',
-      footerText: isOpen ? 'Open a folder or a Dino book to begin.' : `${list.length} pages on ${sheets.length} sheets${extra ? ` (incl. ${extra})` : ''}. ${withText} with words.`,
+      footerText: isOpen ? 'Open a folder or a Dino book to begin.' : `${list.length} pages on ${sheets.length} sheets${extra ? ` (incl. ${extra})` : ''}. ${withText} with words.${rtl ? ' Opens from the right.' : ''}${numLang ? ` Page numbers print as ${this.digits('1, 2, 3', numLang)}.` : ''}`,
       goBack: () => this.setState({ mode: 'open' }),
+      storeOpen: s.store !== 'none', storeLoading: s.store === 'loading', storeFailed: s.store === 'failed', storeList: s.store === 'list', storeDownloading: s.store === 'downloading',
+      closeStore: () => { this.dlRun++; this.setState({ store: 'none' }); }, retryStore: () => this.openStore(),
+      storeLang: s.storeLang, onStoreLang: ev => this.setState({ storeLang: ev.target.value }),
+      storeLangs: [{ v: 'all', label: `All languages · ${all.length}` }].concat(langsInStore.map(l => ({ v: l, label: Component.LANGS[l] + '\u200E · ' + all.filter(c => c.lang === l).length }))),
+      hasStoreNote: !!s.storeNote, storeNote: s.storeNote,
+      storeCards: shown.map(c => {
+        const dis = c.lang === 'he';
+        return { title: c.title, dir: this.dirOf(c.title), font: Component.ARAB.test(c.title) ? 'Vazirmatn,var(--font-body)' : 'var(--font-body)', langName: Component.LANGS[c.lang], meta: `${c.pages} pages · ages ${c.age}`,
+          src: c.src, hasCover: all.indexOf(c) < s.covers, noCover: all.indexOf(c) >= s.covers, dis, op: dis ? 0.45 : 1, cursor: dis ? 'default' : 'pointer',
+          tip: dis ? 'Hebrew books are not supported yet' : 'Download and open', onClick: () => { if (!dis) this.startDl(c); } };
+      }),
+      dlTitle: dl.title, dlDir: this.dirOf(dl.title), dlFont: Component.ARAB.test(dl.title) ? 'Vazirmatn,var(--font-body)' : 'inherit', dlCover: dl.src,
+      dlPct: s.dlPct + '%', dlText: `${(8.4 * s.dlPct / 100).toFixed(1)} of 8.4 MB`,
+      cancelDl: () => { this.dlRun++; this.setState({ store: 'list', storeNote: 'Download cancelled. Nothing was kept.' }); },
     };
   }
 }
