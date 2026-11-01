@@ -1,6 +1,6 @@
 ### Slice 20 — Dino open and store hardening (review leftovers)
 
-*Built 2026-11-01 (night wave), PR #45; the desktop run is below, two checks are not yet verified.* The user said build it (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
+*Merged as PR #45 (07797d5), 2026-11-01; the desktop run is below, three checks are not yet verified.* The user said build it (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
 ([note](../notes/2026-11-01-1141-feedback-loop-w1.md)). These are low-severity findings that
 review passes on Slices 18 and 19 left unapplied. Their findings files live outside the repo
 (`D:/print-the-damn-book-worktrees/reviews/`), so each one is written out here.
@@ -95,7 +95,7 @@ Find the others by the member they name (`DeleteOtherVersions` / `OtherVersions`
 
 *Waiting on the user:* words typed into a book opened in an `.alt-<guid>` folder (another window held the cache) are saved only there and go when the lone-instance sweep runs. This is Slice 19 behaviour on main, kept. Decide whether to warn or merge them back.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-01)
 
 - App view-model tests live in `tests/PrintTheDamnBook.App.Tests` (`InternalsVisibleTo`). (Slice 20: docs/plan/slices/20-dino-open-hardening.md)
 - Store failure kinds are typed (`DinoDiskException`, `DinoNetworkException`); never classify a failure from a bare `IOException` or message text. (Slice 20: docs/plan/slices/20-dino-open-hardening.md)
