@@ -1,12 +1,21 @@
 ### Slice 18 — Get a story from Dino's store
 
-*Planned 2026-11-01.*
+*In progress (wave 2026-11-01), draft PR.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Dino/**` (store catalog parsing, new), `tests/PrintTheDamnBook.Core.Tests/**`,
 `src/PrintTheDamnBook.App/Services/DinoStoreClient.cs` (new), `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`,
 `src/PrintTheDamnBook.App/Views/OpenStepView.xaml*`, `src/PrintTheDamnBook.App/Views/DinoStoreDialog.xaml*` (new),
 `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/DinoStoreViewModel.cs`
-(new), `site/public/privacy.html`
+(new), `site/public/privacy.html` (line 7 meta description too), `src/PrintTheDamnBook.App/MainWindow.xaml*`,
+`src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs` (added at the claim, wave 2026-11-01)
+
+**Wave note (2026-11-01, coordinator's choice).** The downloaded `.dino` lives in
+`%LOCALAPPDATA%\PrintTheDamnBook\store\<id>-v<version>.dino` and is then opened through `LoadDinoAsync(path)` exactly like a
+picked file, which extracts it into `DinoBookCache` as usual; `DinoBookCache.cs` changes only if that path needs it. Why:
+one open path, and the store folder is the reuse cache for re-downloads. Card enablement for right-to-left languages uses
+the same Core language-support check the Dino language select uses, so it follows Slice 17 (merged first) without a
+second rule. Open points take the defaults written below. Slices 17 and 19 also edit `MainViewModel.Dino.cs`: keep
+this slice's edits to `OpenDinoAsync`/the picker block and new members. Merge order 17, 19, 18.
 
 **Why.** The user wants to pick and print a book from Dino Reader's free story store without first getting the `.dino`
 into Dino Reader (2026-11-01).
