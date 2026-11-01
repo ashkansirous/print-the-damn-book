@@ -6,7 +6,7 @@ public enum TextPlacement
     /// <summary>On a soft panel over the picture (the bottom band).</summary>
     OnPicture,
 
-    /// <summary>On a page of its own, on the left, facing the picture on the right.</summary>
+    /// <summary>On a page of its own facing the picture: on the left of a left-to-right book's spread, on the right of a right-to-left one's (the page before the picture).</summary>
     OwnPage,
 }
 

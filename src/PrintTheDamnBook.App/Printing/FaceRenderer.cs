@@ -246,7 +246,7 @@ internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
         var rect = rotate180 ? HalfSheetLayout.Rotate180(strip.Value, _sheetMm) : strip.Value;
         var path = new System.Windows.Shapes.Path
         {
-            Data = NumberGeometry(number, ToDip(PageNumbering.FontMm(_sheetMm))),
+            Data = NumberGeometry(number, ToDip(PageNumbering.FontMm(_sheetMm)), layout.PageNumbers.Digits),
             Fill = PageNumberBrush,
         };
         var bounds = path.Data.Bounds;
@@ -257,9 +257,10 @@ internal sealed class FaceRenderer(PaperKind paper, JobLayout layout)
     }
 
     /// <summary>The digits as outlines, so the caller can centre them by their real ink bounds rather than a line-height guess.</summary>
-    private static Geometry NumberGeometry(int number, double fontDip)
+    private static Geometry NumberGeometry(int number, double fontDip, PageNumberDigits digits)
     {
-        var text = new FormattedText(number.ToString(CultureInfo.InvariantCulture), CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NumberTypeface, fontDip, PageNumberBrush, NumberPixelsPerDip);
+        var typeface = digits == PageNumberDigits.Latin ? NumberTypeface : StoryPainter.DigitsTypeface;
+        var text = new FormattedText(PageNumbering.Format(number, digits), CultureInfo.InvariantCulture, FlowDirection.LeftToRight, typeface, fontDip, PageNumberBrush, NumberPixelsPerDip);
         return text.BuildGeometry(new Point(0, 0));
     }
 

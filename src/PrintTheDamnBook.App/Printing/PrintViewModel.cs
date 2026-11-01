@@ -36,6 +36,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     private readonly ManualDuplexRunner _manual;
     private IReadOnlyList<Sheet> _sheets = [];
     private IReadOnlyDictionary<BookPage, int> _pageNumbers = new Dictionary<BookPage, int>();
+    private PageNumberDigits _pageDigits = PageNumberDigits.Latin;
     private string _bookName = FallbackJobName;
     private readonly SettingsStore _store;
     private volatile PrintSettings _settings;
@@ -218,10 +219,11 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
     }
 
     /// <summary>Sets the sheets to print; <paramref name="bookName"/> (the folder name) names the print jobs and <paramref name="pageNumbers"/> says which pages print a number.</summary>
-    public void SetSheets(IReadOnlyList<Sheet> sheets, string bookName, IReadOnlyDictionary<BookPage, int> pageNumbers)
+    public void SetSheets(IReadOnlyList<Sheet> sheets, string bookName, IReadOnlyDictionary<BookPage, int> pageNumbers, PageNumberDigits digits = PageNumberDigits.Latin)
     {
         _sheets = sheets;
         _pageNumbers = pageNumbers;
+        _pageDigits = digits;
         _bookName = string.IsNullOrWhiteSpace(bookName) ? FallbackJobName : bookName;
         TestSheetSent = false;
         ClearStatusUnlessBusy();
@@ -696,7 +698,7 @@ public sealed partial class PrintViewModel : ObservableObject, IManualDuplexSess
 
     private PrintTarget CurrentTarget()
     {
-        return new PrintTarget(SelectedPrinter!.Name, SelectedPaper, new JobLayout(Scaling, MarginMm, Flip, PageNumbers == PageNumberPosition.Off ? null : new PageNumberSetup(PageNumbers, _pageNumbers), TextPages == TextPageBackground.TintedFromCover ? CoverTint : null), _bookName);
+        return new PrintTarget(SelectedPrinter!.Name, SelectedPaper, new JobLayout(Scaling, MarginMm, Flip, PageNumbers == PageNumberPosition.Off ? null : new PageNumberSetup(PageNumbers, _pageNumbers, _pageDigits), TextPages == TextPageBackground.TintedFromCover ? CoverTint : null), _bookName);
     }
 
     private async Task PrintBookletAsync(IReadOnlyList<Sheet> sheets, PrintTarget target)

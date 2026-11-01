@@ -1,3 +1,5 @@
+using PrintTheDamnBook.Core.Text;
+
 namespace PrintTheDamnBook.Core;
 
 /// <summary>Saddle-stitch imposition: which page goes on which face of which sheet.</summary>
@@ -23,10 +25,13 @@ public static class Imposition
         return [.. pages.Take(pages.Count - 1), .. blanks, pages[^1]];
     }
 
-    public static Sheet[] Compute(IReadOnlyList<BookPage> pages) => Impose(Pad(pages));
+    public static Sheet[] Compute(IReadOnlyList<BookPage> pages, ReadingDirection direction = ReadingDirection.LeftToRight) => Impose(Pad(pages), direction);
 
-    /// <summary>Lays out pages that are already padded to a multiple of 4 (see <see cref="Pad"/>).</summary>
-    public static Sheet[] Impose(IReadOnlyList<BookPage> p)
+    /// <summary>
+    /// Lays out pages that are already padded to a multiple of 4 (see <see cref="Pad"/>). A right-to-left book opens from the right, so
+    /// every face has its two pages swapped: front <c>left = p[2k]</c>, <c>right = p[N-1-2k]</c>; back <c>left = p[N-2-2k]</c>, <c>right = p[2k+1]</c>.
+    /// </summary>
+    public static Sheet[] Impose(IReadOnlyList<BookPage> p, ReadingDirection direction = ReadingDirection.LeftToRight)
     {
         var n = p.Count;
         if (n % PagesPerSheet != 0)
@@ -34,12 +39,14 @@ public static class Imposition
             throw new ArgumentException($"Page count must be a multiple of {PagesPerSheet}; pad first.", nameof(p));
         }
 
-        return Enumerable.Range(0, n / PagesPerSheet)
+        var sheets = Enumerable.Range(0, n / PagesPerSheet)
             .Select(k => new Sheet(
                 k + 1,
                 new SheetFace(Left: p[n - 1 - 2 * k], Right: p[2 * k]),
-                new SheetFace(Left: p[2 * k + 1], Right: p[n - 2 - 2 * k])))
-            .ToArray();
+                new SheetFace(Left: p[2 * k + 1], Right: p[n - 2 - 2 * k])));
+        return direction == ReadingDirection.RightToLeft
+            ? sheets.Select(s => s with { Front = new SheetFace(s.Front.Right, s.Front.Left), Back = new SheetFace(s.Back.Right, s.Back.Left) }).ToArray()
+            : sheets.ToArray();
     }
 
     public static bool IsTooThick(int sheetCount) => sheetCount > MaxFlatSheets;

@@ -1,6 +1,6 @@
 ### Slice 17 — Right-to-left books (Farsi and Arabic)
 
-*In progress (wave 2026-11-01), draft PR.*
+*Built (wave 2026-11-01), PR #36.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Imposition.cs`, `src/PrintTheDamnBook.Core/Spreads.cs`,
 `src/PrintTheDamnBook.Core/Sheet.cs`, `src/PrintTheDamnBook.Core/Layout/**`, `src/PrintTheDamnBook.Core/Text/**`,
@@ -53,6 +53,7 @@ disabled every right-to-left language with "right-to-left books are not supporte
    typing box.
 6. **Page number digits:** Persian digits (۱۲۳) in Farsi books, Arabic-Indic (١٢٣) in Arabic books, Latin otherwise,
    chosen in Core `PageNumbering`.
+   6a (coordinator, wave 2026-11-01): a folder book has no language, so its digits follow its script: Persian letters give Persian digits, other Arabic script Arabic-Indic.
 7. **.dino:** Farsi and Arabic become selectable; the "not supported yet" message stays only for other RTL languages.
 8. **Landing site** stays as is.
 
@@ -63,29 +64,29 @@ in `CLAUDE.md`. Blanks still go before the back cover.
 **Work.** The first item is the smallest end-to-end path: a folder book with the switch set to Right to left prints
 mirrored sheets.
 
-- [ ] Core: `ReadingDirection` enum (`LeftToRight`, `RightToLeft`), carried by the book text model (`Text/BookText.cs`)
+- [x] Core: `ReadingDirection` enum (`LeftToRight`, `RightToLeft`), carried by the book text model (`Text/BookText.cs`)
       and read/written by `BookTextStore` (`readingDirection`, absent = left to right, so old `book.json` files load).
       Tests for the round trip and the missing field.
-- [ ] Core: `Imposition` takes the direction and mirrors faces as above. Tests: 4, 8, 12 and padded page counts in
+- [x] Core: `Imposition` takes the direction and mirrors faces as above. Tests: 4, 8, 12 and padded page counts in
       both directions; RTL sheet `k` equals the LTR sheet with each face's sides swapped.
-- [ ] Core: spread-alignment spacers (`Spreads.cs`), text-page side (`StoryTextLayout.cs`, `rightHalf`), and
+- [x] Core: spread-alignment spacers (`Spreads.cs`), text-page side (`StoryTextLayout.cs`, `rightHalf`), and
       `ManualDuplexPlan` (order and rotation) follow the direction. Tests for each in both directions.
-- [ ] App: *Reading direction* switch on the Check step next to the language select, using the existing segmented
+- [x] App: *Reading direction* switch on the Check step next to the language select, using the existing segmented
       switch style from `Controls.xaml` (no mock exists; labels "Left to right" / "Right to left",
       `AutomationProperties.Name` "Reading direction"). The "As printed" preview shows the mirrored sheets.
-- [ ] Core: `TextDirection.StartsRightToLeft(text)` (first strong character; empty or neutral-only = left to right) and
+- [x] Core: `TextDirection.StartsRightToLeft(text)` (first strong character; empty or neutral-only = left to right) and
       `StoryFont.For(text)` (Vazirmatn when the text has Arabic-script letters, else Andika). Tests including mixed
       text, digits only, and leading punctuation.
-- [ ] Core: default direction for a folder book from the first non-empty story text, applied only while the user has
+- [x] Core: default direction for a folder book from the first non-empty story text, applied only while the user has
       not picked; tests that a saved pick is never replaced.
-- [ ] App: bundle `Vazirmatn-Regular.ttf` with its OFL licence, list it in `FontLicences`; `StoryPainter` uses
+- [x] App: bundle `Vazirmatn-Regular.ttf` with its OFL licence, list it in `FontLicences`; `StoryPainter` uses
       `StoryFont.For` and sets `FlowDirection` and alignment per text; the Check step's text box does the same as you
       type. Shrink-to-fit still comes from Core.
-- [ ] Core: page-number digits by book language (`fa` → U+06F0..U+06F9, `ar` → U+0660..U+0669, else Latin), in
+- [x] Core: page-number digits by book language (`fa` → U+06F0..U+06F9, `ar` → U+0660..U+0669, else Latin), in
       `PageNumbering`; `FaceRenderer` draws the string Core gives it. Tests.
-- [ ] Core/App: `.dino` — Farsi and Arabic enabled in `DinoTranslator`/`DinoBook` (`StartLanguage` no longer skips
+- [x] Core/App: `.dino` — Farsi and Arabic enabled in `DinoTranslator`/`DinoBook` (`StartLanguage` no longer skips
       them; a book is refused only if no language is supported); choosing one sets the reading direction. Tests.
-- [ ] Docs (index pass after merge): replace the imposition rule in `CLAUDE.md` with both directions
+- [ ] Docs (index pass after merge, not yet done): replace the imposition rule in `CLAUDE.md` with both directions
       (`plan.md` *Out of Scope* was already updated by the plan PR).
 
 #### Design (Story Text mock, sections 2a-2c and 1f, added 2026-11-01)
@@ -137,3 +138,33 @@ Settled by the mock: icons and tooltip wording of the switch; the sub-heading an
   offers Farsi, the switch reads Right to left, the "As printed" preview shows the cover on the right, Farsi text is
   right-aligned in Vazirmatn; Print to PDF and compare page order with the RTL formula; page numbers in Persian digits.
 - Paper (user): print and fold one Farsi book; it opens from the right and reads in order.
+
+**Changed while building:**
+
+- `ManualDuplexPlan` and `PageList` needed no code: mirrored sheets flow through them, and tests prove it.
+- `Core/Text/BookDirectionChoice` owns the pick, the guess and "changing the language clears the pick".
+- `PageNumberSetup` carries a typed `Digits` field (`PrintViewModel.cs` touched).
+- The direction guess runs only for Arabic-script text.
+- Alt+Left / Alt+Right flip in an RTL book. Tile page numbers show the book's digits in Vazirmatn.
+- Known behaviour: folder book digits follow the script (6a); Urdu and Pashto stay disabled; an RTL book with a left-to-right pick keeps Persian/Arabic digits (Decision 6); the guess is re-made live while the user has not picked.
+
+**From review** (files in `D:\print-the-damn-book-worktrees\reviews\`):
+
+- High (`slice-17-high.md`): all 9 findings applied.
+- Medium (`slice-17-medium.md`): 1, 3 and 4 applied. Skipped: 2 (Hebrew gets Andika; Hebrew stays unsupported by Decision 2), 5 (digits follow the language even after an opposite pick; Decision 6), 6 (text box direction follows the live text; per Decision 5 and the mock), 7 (the RTL swap stated as a second pass over the LTR faces; design choice, no bug).
+- Check (`slice-17-check.md`): all 6 skipped. 1 (guess re-made while typing) and 2 (language change clears the pick) are per spec and mock; 3 (digits for an RTL folder book) is per 6a; 4 (Spreads keeps the cover alone on the right, Imposition puts it on the left of sheet 1) is consistent with mock 2a/2b; 5 (Urdu disabled in the Dino select) is the fa/ar list of Decision 2; 6 (circular Core dependency via `DinoBook.Primary`) was skipped as a structure-only note with no failure path (low).
+
+**Desktop run 2026-11-01: PASS.** The switch is present on a folder book; LTR and RTL "As printed" for 12 pages match both formulas; RTL sub-headings show; the pick is saved in `book.json` and restored.
+
+#### For CLAUDE.md
+
+- Replace the imposition rule with both directions: LTR as now; RTL front `left = p[2k]`, `right = p[N-1-2k]`; back `left = p[N-2-2k]`, `right = p[2k+1]`; blanks before the back cover still. (Slice 17: docs/plan/slices/17-right-to-left-books.md)
+- Vazirmatn joins Andika as a story font (Arabic-script text); its licence is listed in `Services/FontLicences`. (Slice 17: docs/plan/slices/17-right-to-left-books.md)
+- Reading direction and page-number digits are decided only in Core (`TextDirection`, `StoryFont`, `BookDirectionChoice`, `PageNumbering`); the App never derives them. (Slice 17: docs/plan/slices/17-right-to-left-books.md)
+
+#### Not yet verified
+
+- Farsi .dino: the language select offers Farsi, the switch reads Right to left, the cover is on the right, text is right-aligned in Vazirmatn. (Next run: the native Open dialog's file-name box has no AutomationId 1148; after Slice 19 a .dino can be opened by command line instead.)
+- Print to PDF page order matches the RTL formula.
+- Persian digits on a printed page.
+- Paper print and fold of one Farsi book (user).

@@ -6,8 +6,22 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using PrintTheDamnBook.App.ViewModels;
 using PrintTheDamnBook.Core;
+using PrintTheDamnBook.Core.Layout;
 
 namespace PrintTheDamnBook.App.Views;
+
+/// <summary>Writes a printed page number (first value) in the book's digits (second value, a <see cref="PageNumberDigits"/>), so a tile shows what the print shows.</summary>
+public sealed class PageDigitsConverter : IMultiValueConverter
+{
+    public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+    {
+        var number = values.Length > 0 && values[0] is int n ? n : 0;
+        var digits = values.Length > 1 && values[1] is PageNumberDigits d ? d : PageNumberDigits.Latin;
+        return PageNumbering.Format(number, digits);
+    }
+
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture) => throw new NotSupportedException();
+}
 
 /// <summary>The Check step: raises reorder intents to <see cref="MainViewModel"/>; the rules live in Core.</summary>
 public partial class CheckStepView : UserControl
@@ -90,7 +104,16 @@ public partial class CheckStepView : UserControl
         }
     }
 
-    /// <summary>Alt+Left / Alt+Right moves the focused page one place earlier / later, then puts focus back on it.</summary>
+    /// <summary>A click on either direction option is a pick, even on the one already checked (which raises no change).</summary>
+    private void OnDirectionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: PrintTheDamnBook.Core.Text.ReadingDirection direction })
+        {
+            ViewModel?.PickBookDirection(direction);
+        }
+    }
+
+    /// <summary>Alt+Left / Alt+Right moves the focused page one place earlier / later (swapped in a right-to-left book, where the earlier page is on the right), then puts focus back on it.</summary>
     private void OnTileKeyDown(object sender, KeyEventArgs e)
     {
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
@@ -102,6 +125,11 @@ public partial class CheckStepView : UserControl
         }
 
         var offset = key == Key.Left ? -1 : key == Key.Right ? 1 : 0;
+        if (ViewModel?.IsRightToLeftBook == true)
+        {
+            offset = -offset;
+        }
+
         var item = ItemOf(sender);
         var altHeld = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
         if (!altHeld || offset == 0 || item is not { Source: { } page, IsPinned: false })

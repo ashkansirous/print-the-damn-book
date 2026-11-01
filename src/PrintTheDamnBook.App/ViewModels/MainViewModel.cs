@@ -244,7 +244,8 @@ public sealed partial class MainViewModel : ObservableObject
     {
         var pages = _pageList.Pages;
         var padded = MarkWarnedBlank(_pageList.Padded, pages);
-        var sheets = Imposition.Impose(padded);
+        SyncBookDirection();
+        var sheets = Imposition.Impose(padded, BookDirection);
         var cache = new Dictionary<BookPage, PageViewModel>(ReferenceEqualityComparer.Instance);
         RefreshCoverTint(pages);
         _storyContext = CurrentStoryContext();
@@ -252,10 +253,10 @@ public sealed partial class MainViewModel : ObservableObject
 
         _printedNumbers = PageNumbering.Compute(padded);
         _positions = PositionsOf(pages);
-        Spreads = PrintTheDamnBook.Core.Spreads.Of(padded).Select(s => ToViewModel(s, cache)).ToList();
+        Spreads = PrintTheDamnBook.Core.Spreads.Of(padded, BookDirection).Select(s => ToViewModel(s, cache)).ToList();
         Sheets = sheets.Select(s => ToViewModel(s, cache)).ToList();
-        Print.SetSheets(sheets, BookName, _printedNumbers);
-        Status = LoadProblem ?? BuildStatus(pages.Count, sheets.Length, padded);
+        Print.SetSheets(sheets, BookName, _printedNumbers, PageDigits);
+        Status = LoadProblem ?? BuildStatus(pages.Count, sheets.Length, padded) + (pages.Count > 0 ? DirectionStatusTail() : string.Empty);
         IsLoaded = pages.Count > 0;
         Chips = BuildChips(BookChecks.Find(pages, sheets.Length), sheets.Length, FailedImages(pages), CountTooLong(pages, _storyContext));
         MarkSelectedTiles();
