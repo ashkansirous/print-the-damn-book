@@ -3,6 +3,13 @@
 Copied from Claude Design on 2026-10-22; `Redesign Directions.dc.html` and the mobile files refreshed 2026-10-23; `Story Text.dc.html` and `StoryCheck.dc.html` added 2026-10-26 and refreshed 2026-11-01 (frames 2a–2h for Slices 17–19). Source project:
 https://claude.ai/design/p/71f50eae-822f-45b1-9a5f-287e52c02bdc (project id `71f50eae-822f-45b1-9a5f-287e52c02bdc`).
 
+Not verified against the source: the 2026-11-01 refresh of `Story Text.dc.html` was patched by hand from an unsaved fetch result, so this copy may differ from Claude Design. The next design import replaces it from a saved result.
+
+Where the shipped store dialog (Slice 18) differs from `StoryCheck.dc.html`, the app is right: the
+mock's "Nothing about you is sent" is outdated, since the store sees the PC's internet address
+(`site/public/privacy.html`). The scrim is 50% (`BackdropBrush`), not 60%, and the empty state and
+subheading also differ (see the Slice 18 file).
+
 Read visual values (colors, sizes, spacing, copy) from these files; never guess them, and never call
 `DesignSync` for them. To refresh, re-run the import (main thread, `import-claude-design` skill) and
 overwrite these copies.

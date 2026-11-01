@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Every slice except 12 and 13 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked.
+Every slice except 12, 13, 20 and 21 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 20 and 21 were parked by the 2026-11-01 feedback loop and wait for the user.
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -26,10 +26,13 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | --- | --- | --- | --- | --- | --- |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
+| 20 | Dino open and store hardening (review leftovers) | parked: feedback loop, waits for the user | | | [20](docs/plan/slices/20-dino-open-hardening.md) |
+| 21 | Scripted desktop checks (test harness) | parked: feedback loop, waits for the user | | | [21](docs/plan/slices/21-desktop-test-harness.md) |
 
 Notes:
 
 - [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14 to 19).
+- [2026-11-01-1141-feedback-loop-w1.md](docs/plan/notes/2026-11-01-1141-feedback-loop-w1.md): feedback loop after night round 1 (Slices 17-19).
 
 ## Outstanding work
 
