@@ -1,6 +1,6 @@
 ### Slice 19 — Open a book handed over by Dino Reader
 
-*Built (wave 2026-11-01), PR #35.*
+*Built 2026-11-01, merged as PR #35 (0a364a1).*
 
 **Touches:** `src/PrintTheDamnBook.App/App.xaml`, `src/PrintTheDamnBook.App/App.xaml.cs`,
 `src/PrintTheDamnBook.App/Services/LaunchArguments.cs` (new), `src/PrintTheDamnBook.App/Services/OpenWithRegistration.cs`
@@ -112,7 +112,7 @@ Settled by the mock: the loading text tells the user the book is copied into the
 
 #### From review
 
-Files in `D:\print-the-damn-book-worktreeseviews\`.
+Files in `D:\print-the-damn-book-worktrees\reviews\`.
 
 - High (`slice-19-high.md`): 1-7, 9, 10 applied. 8 skipped: Cancel changed to a ghost button because the design mock asks for a ghost Cancel.
 - Medium (`slice-19-medium.md`): 1, 3, 4, 5, 7, 9 applied. Skipped: 2 (one window per process by design); 6 and 10 (low); 8 (as in high).
@@ -125,17 +125,17 @@ Files in `D:\print-the-damn-book-worktreeseviews\`.
 
 A `.dino` with `--language fa` and without opens on the Check step; a missing file and a `.txt` show the alert; two hand-overs give two windows; the HKCU keys are written with the right command; `UserChoice` is untouched; the keys were removed afterwards. `handover-check.ps1` had a parse error and was fixed after the run, not re-run.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-01)
 
 - Launch arguments are parsed only by Core `HandoverArguments`. (Slice 19: docs/plan/slices/19-open-from-dino-reader.md)
 - Open-with registration writes only the three HKCU keys via Core `OpenWithRegistrar` (plus the Applications `shell\open\command`), never `UserChoice`. (Slice 19: docs/plan/slices/19-open-from-dino-reader.md)
 - The Dino cache (`Services/DinoBookCache.cs`) is content-addressed and shared by windows: extract to a temp folder and rename under the `Local\` mutex; sweep only when no other instance runs. (Slice 19: docs/plan/slices/19-open-from-dino-reader.md)
 
-#### For README.md
+#### For README.md (lifted 2026-11-01)
 
 The "Open from Dino Reader" section is already added on this branch.
 
-#### Outstanding (for the index pass)
+#### Outstanding (lifted to plan.md 2026-11-01)
 
 - Sweeping older versions of a book also deletes that version's `book.json` (Slice 15 behaviour, found in check 2).
 - Dino Reader "Print this book" follow-up (the open Work item above).

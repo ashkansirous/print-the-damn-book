@@ -1,6 +1,6 @@
 ### Slice 17 — Right-to-left books (Farsi and Arabic)
 
-*Built (wave 2026-11-01), PR #36.*
+*Built 2026-11-01, merged as PR #36 (86f848c).*
 
 **Touches:** `src/PrintTheDamnBook.Core/Imposition.cs`, `src/PrintTheDamnBook.Core/Spreads.cs`,
 `src/PrintTheDamnBook.Core/Sheet.cs`, `src/PrintTheDamnBook.Core/Layout/**`, `src/PrintTheDamnBook.Core/Text/**`,
@@ -156,7 +156,7 @@ Settled by the mock: icons and tooltip wording of the switch; the sub-heading an
 
 **Desktop run 2026-11-01: PASS.** The switch is present on a folder book; LTR and RTL "As printed" for 12 pages match both formulas; RTL sub-headings show; the pick is saved in `book.json` and restored.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-01)
 
 - Replace the imposition rule with both directions: LTR as now; RTL front `left = p[2k]`, `right = p[N-1-2k]`; back `left = p[N-2-2k]`, `right = p[2k+1]`; blanks before the back cover still. (Slice 17: docs/plan/slices/17-right-to-left-books.md)
 - Vazirmatn joins Andika as a story font (Arabic-script text); its licence is listed in `Services/FontLicences`. (Slice 17: docs/plan/slices/17-right-to-left-books.md)

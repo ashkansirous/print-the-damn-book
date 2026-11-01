@@ -35,9 +35,10 @@ dotnet run --project src/PrintTheDamnBook.App
 - **All imposition and layout maths lives in Core and is unit-tested.** The App never decides
   which page goes on which face or where it sits; it renders `Sheet[]` from Core.
   (Slice 01: docs/plan/slices/01-folder-to-sheet-preview.md)
-- Sheet `k` of `N` padded pages: front `left = p[N-1-2k]`, `right = p[2k]`; back
-  `left = p[2k+1]`, `right = p[N-2-2k]`. Blanks go before the back cover. Changing this is a
-  slice, not a tweak.
+- Sheet `k` of `N` padded pages, left-to-right: front `left = p[N-1-2k]`, `right = p[2k]`; back
+  `left = p[2k+1]`, `right = p[N-2-2k]`. Right-to-left: front `left = p[2k]`, `right = p[N-1-2k]`;
+  back `left = p[N-2-2k]`, `right = p[2k+1]`. Blanks go before the back cover in both. Changing
+  this is a slice, not a tweak. (Slice 17: docs/plan/slices/17-right-to-left-books.md)
 - Printing always sets orientation, duplex and paper size on the `PrintTicket` itself; never
   rely on the driver's defaults. (Slice 02: docs/plan/slices/02-print-booklet.md)
 - Automatic printing needs a validated `TwoSidedShortEdge`. Manual sends two explicit `OneSided`
@@ -70,6 +71,10 @@ dotnet run --project src/PrintTheDamnBook.App
 - After UI changes, re-run `tools/store-assets` (render + `capture-app.ps1`) so Store screenshots match the app. (Slice 11: docs/plan/slices/11-microsoft-store.md)
 - Story text layout (band rectangle, shrink steps, text-page box, spread-alignment spacers, tint) lives in `Core/Text` and `Core/Layout`; the App only draws it. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
 - `book.json` is read and written only through `Services/BookTextStore`; never overwrite a file it could not read. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
-- Andika is the only story font; its licence is listed in `Services/FontLicences`. (Slice 14: docs/plan/slices/14-typed-text-pages.md)
+- Andika is the story font; Vazirmatn joins it for Arabic-script text. Both licences are listed in `Services/FontLicences`. (Slice 14: docs/plan/slices/14-typed-text-pages.md; Slice 17: docs/plan/slices/17-right-to-left-books.md)
+- Reading direction and page-number digits are decided only in Core (`TextDirection`, `StoryFont`, `BookDirectionChoice`, `PageNumbering`); the App never derives them. (Slice 17: docs/plan/slices/17-right-to-left-books.md)
+- Launch arguments are parsed only by Core `HandoverArguments`. (Slice 19: docs/plan/slices/19-open-from-dino-reader.md)
+- Open-with registration writes only the three HKCU keys via Core `OpenWithRegistrar` (plus the Applications `shell\open\command`), never `UserChoice`. (Slice 19: docs/plan/slices/19-open-from-dino-reader.md)
+- The Dino cache (`Services/DinoBookCache.cs`) is content-addressed and shared by windows: extract to a temp folder and rename under the `Local\` mutex; sweep only when no other instance runs. (Slice 19: docs/plan/slices/19-open-from-dino-reader.md)
 - Band rectangles, `BandSuggestion` scoring and panel opacity live in Core (`Text/`, `Layout/`); the App only decodes via `Services/ImageDecoder` and hands over pixels off the UI thread. A user's band pick is never re-suggested over. (Slice 16: docs/plan/slices/16-text-band-suggestion.md)
 - .dino files are untrusted: parse only through `Core/Dino` (`DinoBookReader`) with its caps and name checks; extracted books live in the per-hash cache (`DinoBookCache`), never next to the .dino. (Slice 15: docs/plan/slices/15-open-dino-books.md)
