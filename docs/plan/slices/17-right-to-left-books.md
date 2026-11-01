@@ -1,6 +1,6 @@
 ### Slice 17 — Right-to-left books (Farsi and Arabic)
 
-*Planned 2026-11-01.*
+*In progress (wave 2026-11-01), draft PR.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Imposition.cs`, `src/PrintTheDamnBook.Core/Spreads.cs`,
 `src/PrintTheDamnBook.Core/Sheet.cs`, `src/PrintTheDamnBook.Core/Layout/**`, `src/PrintTheDamnBook.Core/Text/**`,
@@ -10,7 +10,15 @@
 `src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`,
 `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/Services/BookTextStore.cs`,
 `src/PrintTheDamnBook.App/Services/FontLicences.cs`, `src/PrintTheDamnBook.App/Fonts/Vazirmatn*`,
-`src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj`, `CLAUDE.md` (index pass only)
+`src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`,
+`src/PrintTheDamnBook.App/ViewModels/MainViewModel.Wizard.cs`, `src/PrintTheDamnBook.App/ViewModels/WizardModels.cs`,
+`src/PrintTheDamnBook.App/Themes/Controls.xaml`, `src/PrintTheDamnBook.App/Printing/AutomaticDuplexPlan.cs`,
+`src/PrintTheDamnBook.App/Services/FolderImages.cs`, `CLAUDE.md` (index pass only). New: `Core/Text/TextDirection.cs`,
+`Core/Text/StoryFont.cs`, `ReadingDirection` enum, `Fonts/Vazirmatn-Regular.ttf` and its licence. (Callers of `Imposition`
+added at the claim, wave 2026-11-01.)
+
+**Wave note (2026-11-01).** Slices 18 and 19 are built alongside and also edit `MainViewModel.Dino.cs`; keep this
+slice's edits there to the language/direction block (`:23-26`, `:238`, `:268-370`). Merge order 17, 19, 18.
 
 **Why.** The user asked to "add right to left languages" (2026-11-01). Their Dino books exist in Farsi, and Slice 15
 disabled every right-to-left language with "right-to-left books are not supported yet".
