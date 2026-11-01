@@ -1,11 +1,18 @@
 ### Slice 20 — Dino open and store hardening (review leftovers)
 
-*Planned.* The user said build it (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
+*In progress (wave 2026-11-01), draft PR.* The user said build it (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
 ([note](../notes/2026-11-01-1141-feedback-loop-w1.md)). These are low-severity findings that
 review passes on Slices 18 and 19 left unapplied. Their findings files live outside the repo
 (`D:/print-the-damn-book-worktrees/reviews/`), so each one is written out here.
 
-**Touches:** `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`, `src/PrintTheDamnBook.App/Services/DinoStoreClient.cs`, `src/PrintTheDamnBook.Core/Dino/DinoStoreTransfer.cs`, `src/PrintTheDamnBook.Core/Dino/DinoStoreCatalog.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/DinoStoreViewModel.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`, `src/PrintTheDamnBook.App/Views/OpenStepView.xaml.cs`, `src/PrintTheDamnBook.App/Views/DinoStoreDialog.xaml`, `tests/PrintTheDamnBook.Core.Tests/**`
+**Touches:** `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`, `src/PrintTheDamnBook.App/Services/DinoStoreClient.cs`, `src/PrintTheDamnBook.Core/Dino/DinoStoreTransfer.cs`, `src/PrintTheDamnBook.Core/Dino/DinoStoreCatalog.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/DinoStoreViewModel.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`, `src/PrintTheDamnBook.App/Views/OpenStepView.xaml.cs`, `src/PrintTheDamnBook.App/Views/DinoStoreDialog.xaml`, `tests/PrintTheDamnBook.Core.Tests/**`, `tests/PrintTheDamnBook.App.Tests/**` (new), `src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj` (InternalsVisibleTo only), `PrintTheDamnBook.slnx`
+
+**Claim notes (2026-11-01, premise check on origin/main 234e3dd).** There is no App test project;
+the view-model tests go in a new `tests/PrintTheDamnBook.App.Tests` (net10.0-windows, xUnit v3 like
+the Core tests), added to the slnx. `MetaText` (the "0 pages" text) is at `DinoStoreCatalog.cs:115`,
+not :153. The `File.Move` in `DinoStoreTransfer.cs:246` already uses `overwrite: true` with a unique
+`.part` name, so only the reuse-unchecked half of that item remains. The only XAML change is the
+failed-state block (`DinoStoreDialog.xaml:150-165`); Slice 21 adds AutomationIds in the same file.
 
 **Why.** Two of these delete a valid file the user downloaded, and one can make a .dino fail to
 open when another window holds the cache. Each costs at most a re-download or a confusing alert,
