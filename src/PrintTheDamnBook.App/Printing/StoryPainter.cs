@@ -13,19 +13,29 @@ internal sealed record BandPainting(Rect Panel, double CornerRadius, Brush Fill,
 /// <summary>The words of a text page, in sheet DIPs, clipped to <see cref="WordsClip"/>.</summary>
 internal sealed record TextPagePainting(Geometry Words, Rect WordsClip, TextFitResult Fit);
 
+/// <summary>How a text is set: the way it runs and its font.</summary>
+internal sealed record TextLook(FlowDirection Flow, Typeface Typeface);
+
 /// <summary>
 /// Measures and draws story text into the rectangles Core gives it (Slice 14). The words are outlines, like the page numbers,
 /// so the print and the thumbnails draw exactly the same shapes. Which size, where and how big the panel is stays in Core.
 /// </summary>
 internal static class StoryPainter
 {
-    private const string FontFamilyUri = "pack://application:,,,/Fonts/#Andika";
+    private const string FontFamilyUriPrefix = "pack://application:,,,/Fonts/#";
     private const double PixelsPerDip = 1.0;
     private const double FitSlackMm = 0.01;
-    private static readonly Typeface AndikaTypeface = new(new FontFamily(FontFamilyUri), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+    private static readonly Typeface AndikaTypeface = new(FamilyOf(StoryFont.Andika), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+    private static readonly Typeface VazirmatnTypeface = new(FamilyOf(StoryFont.Vazirmatn), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
     private static readonly Brush InkBrush = FrozenBrush(Color.FromRgb(StoryTextLayout.Ink.R, StoryTextLayout.Ink.G, StoryTextLayout.Ink.B));
 
     public static Brush Ink => InkBrush;
+
+    /// <summary>The bundled font family of this name (<see cref="StoryFont"/>).</summary>
+    public static FontFamily FamilyOf(string name) => new(FontFamilyUriPrefix + name);
+
+    /// <summary>The typeface page numbers are drawn in: Vazirmatn for Persian and Arabic-Indic digits.</summary>
+    public static Typeface DigitsTypeface => VazirmatnTypeface;
 
     /// <summary>The panel paint at a given opacity (0 to 1).</summary>
     public static Brush PanelFor(double opacity)
@@ -38,13 +48,15 @@ internal static class StoryPainter
     public static TextFitResult FitBand(string text, PaperKind paper, RectD visibleMm)
     {
         var area = StoryTextLayout.Band(visibleMm).Text;
-        return StoryTextLayout.Choose(StoryTextLayout.BandStepsPt(paper), pt => HeightMm(Format(text, pt, area.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center)) <= area.Height + FitSlackMm);
+        var look = LookOf(text);
+        return StoryTextLayout.Choose(StoryTextLayout.BandStepsPt(paper), pt => HeightMm(Format(text, look, pt, area.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center)) <= area.Height + FitSlackMm);
     }
 
     /// <summary>The size the words get on a text page.</summary>
     public static TextFitResult FitPage(string text, PaperKind paper, RectD box)
     {
-        return StoryTextLayout.Choose(StoryTextLayout.PageStepsPt(paper), pt => HeightMm(Format(text, pt, box.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left)) <= box.Height + FitSlackMm);
+        var look = LookOf(text);
+        return StoryTextLayout.Choose(StoryTextLayout.PageStepsPt(paper), pt => HeightMm(Format(text, look, pt, box.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left)) <= box.Height + FitSlackMm);
     }
 
     public static BandPainting PaintBand(StoryText story, PaperKind paper, RectD visibleMm)
@@ -52,7 +64,7 @@ internal static class StoryPainter
         var text = story.Text;
         var area = StoryTextLayout.Band(visibleMm, story.EffectiveBand);
         var fit = FitBand(text, paper, visibleMm);
-        var formatted = Format(text, fit.Pt, area.Text.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center);
+        var formatted = Format(text, LookOf(text), fit.Pt, area.Text.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center);
         var textHeight = HeightMm(formatted);
         var panel = StoryTextLayout.Panel(area, textHeight);
         var origin = new Point(ToDip(area.Text.X), ToDip(panel.Y + area.PaddingY));
@@ -64,7 +76,7 @@ internal static class StoryPainter
     public static TextPagePainting PaintTextPage(string text, PaperKind paper, TextPageArea area)
     {
         var fit = FitPage(text, paper, area.Text);
-        var formatted = Format(text, fit.Pt, area.Text.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left);
+        var formatted = Format(text, LookOf(text), fit.Pt, area.Text.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left);
         var textHeight = HeightMm(formatted);
         var top = StoryTextLayout.CentredTop(area.Text, textHeight);
         var origin = new Point(ToDip(area.Text.X), ToDip(top));
@@ -88,15 +100,26 @@ internal static class StoryPainter
         context.Pop();
     }
 
-    private static FormattedText Format(string text, double pt, double widthMm, double lineHeight, TextAlignment alignment)
+    /// <summary>
+    /// Each text picks its own direction and font from its letters, in print and in the thumbnails alike. In FormattedText Left means the
+    /// start edge (checked: a right-to-left text with Left sits against the right edge), so a text page's words start at the right with no remapping.
+    /// </summary>
+    private static FormattedText Format(string text, TextLook look, double pt, double widthMm, double lineHeight, TextAlignment alignment)
     {
         var em = ToDip(StoryTextLayout.PtToMm(pt));
-        return new FormattedText(text.Trim(), CultureInfo.InvariantCulture, FlowDirection.LeftToRight, AndikaTypeface, em, InkBrush, PixelsPerDip)
+        return new FormattedText(text.Trim(), CultureInfo.InvariantCulture, look.Flow, look.Typeface, em, InkBrush, PixelsPerDip)
         {
             MaxTextWidth = Math.Max(1, ToDip(widthMm)),
             LineHeight = em * lineHeight,
             TextAlignment = alignment,
         };
+    }
+
+    /// <summary>The direction and typeface of a text, read once per text (the fit tries many sizes of the same string).</summary>
+    private static TextLook LookOf(string text)
+    {
+        var flow = TextDirection.StartsRightToLeft(text) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+        return new TextLook(flow, StoryFont.For(text) == StoryFont.Vazirmatn ? VazirmatnTypeface : AndikaTypeface);
     }
 
     private static Geometry Outline(FormattedText text, Point origin)

@@ -74,13 +74,10 @@ public sealed class DinoStoreCatalog
             && url.AbsolutePath.StartsWith(StoriesPrefix, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// Whether a book can be chosen: false for a language this app cannot print yet. Right-to-left languages are not printable until Slice 17
-    /// lands; then only the ones it cannot lay out stay off (Hebrew), and this is the one place to change.
-    /// </summary>
+    /// <summary>Whether a book can be chosen: false for a language this app cannot print (the same check as the Check step's language select).</summary>
     public static bool IsSupported(DinoStoreEntry entry)
     {
-        return !DinoBook.DescribeLanguage(entry.Language).IsRightToLeft;
+        return DinoBook.DescribeLanguage(entry.Language).IsSupported;
     }
 
     /// <summary>Each language in the list with its book count, in the order first met.</summary>

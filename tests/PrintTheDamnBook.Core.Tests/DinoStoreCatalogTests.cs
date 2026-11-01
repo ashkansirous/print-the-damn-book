@@ -170,13 +170,18 @@ public class DinoStoreCatalogTests
         Assert.Equal(DinoStoreCatalog.MaxEntries, catalog.Entries.Count);
     }
 
-    [Fact]
-    public void RightToLeftLanguagesAreNotSupportedYet()
+    [Theory]
+    [InlineData("en", true)]
+    [InlineData("de-DE", true)]
+    [InlineData("fa", true)]
+    [InlineData("ar", true)]
+    [InlineData("he", false)]
+    [InlineData("ur", false)]
+    public void SupportFollowsTheDinoLanguageCheck(string language, bool supported)
     {
-        var entries = DinoStoreCatalog.Parse(Good).Entries;
+        var entry = DinoStoreCatalog.Parse(One($"\"id\":\"x1\",\"title\":\"T\",\"language\":\"{language}\",\"downloadUrl\":\"/api/stories/x1/download\"")).Entries[0];
 
-        Assert.True(DinoStoreCatalog.IsSupported(entries[0]));
-        Assert.False(DinoStoreCatalog.IsSupported(entries[1]));
+        Assert.Equal(supported, DinoStoreCatalog.IsSupported(entry));
     }
 
     [Theory]

@@ -1,3 +1,5 @@
+using PrintTheDamnBook.Core.Text;
+
 namespace PrintTheDamnBook.Core;
 
 public enum SpreadKind
@@ -16,8 +18,11 @@ public sealed record Spread(SpreadKind Kind, int Number, BookPage? Left, BookPag
 
 public static class Spreads
 {
-    /// <summary>Groups pages already padded to a multiple of 4 (see <see cref="Imposition.Pad"/>) into spreads.</summary>
-    public static IReadOnlyList<Spread> Of(IReadOnlyList<BookPage> padded)
+    /// <summary>
+    /// Groups pages already padded to a multiple of 4 (see <see cref="Imposition.Pad"/>) into spreads. In a right-to-left book each inside
+    /// spread starts on its right page (the earlier page is on the right); the covers stay where they are.
+    /// </summary>
+    public static IReadOnlyList<Spread> Of(IReadOnlyList<BookPage> padded, ReadingDirection direction = ReadingDirection.LeftToRight)
     {
         if (padded.Count == 0)
         {
@@ -27,7 +32,8 @@ public static class Spreads
         var spreads = new List<Spread> { new(SpreadKind.FrontCover, 0, null, padded[0]) };
         for (var i = 1; i < padded.Count - 1; i += 2)
         {
-            spreads.Add(new Spread(SpreadKind.Inside, (i + 1) / 2, padded[i], padded[i + 1]));
+            var (left, right) = direction == ReadingDirection.RightToLeft ? (padded[i + 1], padded[i]) : (padded[i], padded[i + 1]);
+            spreads.Add(new Spread(SpreadKind.Inside, (i + 1) / 2, left, right));
         }
 
         if (padded.Count > 1)

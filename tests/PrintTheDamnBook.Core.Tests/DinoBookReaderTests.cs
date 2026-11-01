@@ -206,6 +206,9 @@ public class DinoBookReaderTests
 
             Assert.Equal("cover.jpg", pictures.CoverFile);
             Assert.Equal(["1.jpg", "2.jpg"], pictures.PageFiles);
+            var planned = DinoBookReader.PlannedPictures(book);
+            Assert.Equal(pictures.CoverFile, planned.CoverFile);
+            Assert.Equal(pictures.PageFiles, planned.PageFiles);
             Assert.Equal(Picture, File.ReadAllBytes(Path.Combine(folder, "2.jpg")));
             var order = PageOrdering.FromFolder(Directory.GetFiles(folder));
             Assert.Equal([PageKind.Cover, PageKind.Numbered, PageKind.Numbered], order.Select(p => p.Kind));
@@ -338,12 +341,40 @@ public class DinoBookReaderTests
     }
 
     [Fact]
-    public void StartLanguage_SkipsARightToLeftOwnLanguageAndIsNullWhenAllAre()
+    public void StartLanguage_SkipsAnUnsupportedRightToLeftOwnLanguageAndIsNullWhenAllAre()
     {
-        var persian = new DinoBook("x", "t", "fa", null, [], new Dictionary<string, IReadOnlyDictionary<string, string>> { ["de"] = new Dictionary<string, string> { ["a"] = "b" } });
-        var onlyRtl = new DinoBook("x", "t", "fa", null, [], new Dictionary<string, IReadOnlyDictionary<string, string>>());
+        var hebrew = new DinoBook("x", "t", "he", null, [], new Dictionary<string, IReadOnlyDictionary<string, string>> { ["de"] = new Dictionary<string, string> { ["a"] = "b" } });
+        var onlyHebrew = new DinoBook("x", "t", "he", null, [], new Dictionary<string, IReadOnlyDictionary<string, string>>());
 
-        Assert.Equal("de", persian.StartLanguage()?.Code);
-        Assert.Null(onlyRtl.StartLanguage());
+        Assert.Equal("de", hebrew.StartLanguage()?.Code);
+        Assert.Null(onlyHebrew.StartLanguage());
+    }
+
+    [Theory]
+    [InlineData("fa")]
+    [InlineData("ar")]
+    public void StartLanguage_KeepsFarsiAndArabicAsTheBooksOwnLanguage(string code)
+    {
+        var book = new DinoBook("x", "t", code, null, [], new Dictionary<string, IReadOnlyDictionary<string, string>>());
+
+        Assert.Equal(code, book.StartLanguage()?.Code);
+        Assert.True(book.StartLanguage()!.IsRightToLeft);
+        Assert.True(book.StartLanguage()!.IsSupported);
+    }
+
+    [Fact]
+    public void Languages_MarkOnlyOtherRightToLeftLanguagesUnsupported()
+    {
+        var tables = new Dictionary<string, IReadOnlyDictionary<string, string>>
+        {
+            ["fa"] = new Dictionary<string, string>(),
+            ["he"] = new Dictionary<string, string>(),
+            ["de"] = new Dictionary<string, string>(),
+        };
+        var book = new DinoBook("x", "t", "en", null, [], tables);
+
+        var unsupported = book.Languages().Where(l => !l.IsSupported).Select(l => l.Code);
+
+        Assert.Equal(["he"], unsupported);
     }
 }

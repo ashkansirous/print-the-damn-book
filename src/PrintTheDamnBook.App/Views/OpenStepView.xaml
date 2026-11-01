@@ -11,7 +11,28 @@
     <sys:String x:Key="IconFileZip">&#xE958;</sys:String>
     <sys:String x:Key="IconStorefront">&#xE470;</sys:String>
   </UserControl.Resources>
-  <Grid HorizontalAlignment="Left" MaxWidth="620">
+  <StackPanel HorizontalAlignment="Left" MaxWidth="620">
+    <!-- A book Dino Reader handed over that could not be opened (Slice 19) -->
+    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="{StaticResource RadiusMd}" Padding="14,12" Margin="0,0,0,14" Effect="{StaticResource ShadowMd}"
+            AutomationProperties.Name="Could not open the book Dino Reader sent" Visibility="{Binding HandoverProblemFile, Converter={StaticResource PresentToVisibility}}">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Style="{StaticResource Ph}" FontSize="18" Text="{StaticResource IconWarning}" Foreground="{StaticResource WarningBrush}" VerticalAlignment="Top" Margin="0,1,10,0" />
+        <StackPanel Grid.Column="1">
+          <TextBlock FontWeight="Medium" Text="I couldn't open what Dino Reader sent" />
+          <TextBlock Foreground="{StaticResource Neutral400Brush}" TextWrapping="Wrap" Margin="0,2,0,0">
+            <Run Text="{Binding HandoverProblemFile, Mode=OneWay}" FontFamily="{StaticResource MonoFont}" Foreground="{StaticResource Neutral300Brush}" /><Run Text=" is missing, isn't on a local drive (a network share or relative path won't do) or isn't a .dino book. Open a folder or a Dino book here instead." />
+          </TextBlock>
+        </StackPanel>
+        <Button Grid.Column="2" Style="{StaticResource GhostButton}" views:Ui.Icon="{StaticResource IconX}" Command="{Binding DismissHandoverProblemCommand}"
+                ToolTip="Dismiss" AutomationProperties.Name="Dismiss" VerticalAlignment="Top" Margin="8,-4,-6,-4" />
+      </Grid>
+    </Border>
+    <Grid>
     <!-- Not loaded: the drop card -->
     <Grid Visibility="{Binding IsLoaded, Converter={StaticResource InverseBoolToVisibility}}">
       <Border CornerRadius="14">
@@ -42,7 +63,11 @@
             </Style>
           </TextBlock.Style>
         </TextBlock>
-        <TextBlock Style="{StaticResource Muted}" Text="A folder of page images (JPG or PNG), a .dino book from Dino Reader, or a free story from Dino's store. I don't touch the files." Margin="0,4,0,0" />
+        <TextBlock Style="{StaticResource Muted}" Text="A folder of page images (JPG or PNG), a .dino book from Dino Reader, or a free story from Dino's store. I don't touch the files." Margin="0,4,0,0"
+                   Visibility="{Binding ShowHandoverText, Converter={StaticResource InverseBoolToVisibility}}" />
+        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0" Visibility="{Binding ShowHandoverText, Converter={StaticResource BoolToVisibility}}">
+          <Run Text="Dino Reader handed me " /><Run Text="{Binding HandoverFile, Mode=OneWay}" Foreground="{StaticResource Neutral200Brush}" /><Run Text="{Binding HandoverLanguageSuffix, Mode=OneWay}" /><Run Text=". I'm copying it into my own cache first, so Dino can tidy up its copy." />
+        </TextBlock>
         <TextBlock Text="{Binding LoadProblem}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,8,0,0"
                    Visibility="{Binding LoadProblem, Converter={StaticResource PresentToVisibility}}" />
         <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
@@ -67,7 +92,7 @@
           <Button Style="{StaticResource SecondaryButton}" Content="Get a story from Dino" views:Ui.Icon="{StaticResource IconStorefront}" Click="OnGetStoryClick"
                   IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBool}}" Margin="10,0,0,0" AutomationProperties.Name="Get a story from Dino" />
         </WrapPanel>
-        <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Command="{Binding CancelLoadCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"
+        <Button Style="{StaticResource GhostButton}" Content="Cancel" Command="{Binding CancelLoadCommand}" HorizontalAlignment="Left" Margin="0,12,0,0"
                 AutomationProperties.Name="Cancel opening" Visibility="{Binding IsLoadingSlow, Converter={StaticResource BoolToVisibility}}" />
       </StackPanel>
     </Grid>
@@ -106,5 +131,6 @@
         </StackPanel>
       </Grid>
     </Border>
-  </Grid>
+    </Grid>
+  </StackPanel>
 </UserControl>
