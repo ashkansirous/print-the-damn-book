@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
@@ -27,13 +28,23 @@ public static class DinoBookCache
 
     private const string CacheFolder = "dino";
     private const string AppFolder = "PrintTheDamnBook";
-    private const int HashLength = 16;
+    private const int HashLength = DinoCacheLayout.HashLength;
     private const int HashChunk = 81920;
     private const int BlankWidth = 30;
     private const int BlankHeight = 40;
     private const double BlankDpi = 96;
 
-    private static readonly Lock ExtractionLock = new();
+    private const string MutexPrefix = @"Local\PrintTheDamnBook.dino-cache.";
+    private const string TempMarker = ".tmp-";
+    private const string OldMarker = ".old-";
+    private const string AltMarker = ".alt-";
+
+    // One placement and one clean-up at a time across every window of every process (Dino Reader starts a new process per hand-over).
+    private static readonly Mutex CacheMutex = new(false, MutexPrefix + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(Root.ToUpperInvariant())))[..HashLength]);
+
+    // Folders this process is opening or showing, with a count. The clean-up never touches one (or its .tmp-/.old- siblings); a shown book is never released.
+    private static readonly Dictionary<string, int> Holds = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly object HoldsLock = new();
 
     private static readonly Regex SafeId = new(@"\A[A-Za-z0-9_-]{1,64}\z", RegexOptions.Compiled);
 
@@ -41,76 +52,297 @@ public static class DinoBookCache
 
     public static bool IsDinoFile(string path) => path.EndsWith(Extension, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Reads the file and extracts its pictures; safe to call off the UI thread. Throws <see cref="DinoBookException"/> for a file that is not a usable Dino book.</summary>
+    /// <summary>
+    /// Reads the file and makes its cache folder; always call it off the UI thread. A finished folder (its manifest verifies) is reused without
+    /// writing anything; otherwise the book is extracted beside it and renamed into place under the cross-process mutex.
+    /// Throws <see cref="DinoBookException"/> for a file that is not a usable Dino book.
+    /// </summary>
     public static OpenedDino Open(string path, CancellationToken cancel = default)
     {
         using var read = File.OpenRead(path);
         var book = DinoBookReader.Read(read);
         var hash = HashOf(read, cancel);
-        var folder = Path.Combine(Root, FolderNameOf(book, hash));
+        var name = FolderNameOf(book, hash);
+        var folder = Path.Combine(Root, name);
+        var pictures = DinoBookReader.PlannedPictures(book);
+        var names = FileNamesOf(pictures);
 
-        // One extraction at a time: a cancelled open and a quick re-open of the same file never write the same folder together.
-        lock (ExtractionLock)
-        {
-            cancel.ThrowIfCancellationRequested();
-            var opened = ExtractInto(path, read, book, folder, cancel);
-            DeleteOlderVersions(book, hash);
-            return opened;
-        }
-    }
-
-    /// <summary>Removes the cache folder of an open nobody will see (cancelled after it finished); a folder that existed before the open is kept.</summary>
-    public static void Discard(OpenedDino opened)
-    {
-        if (opened.CreatedFolder)
-        {
-            lock (ExtractionLock)
-            {
-                TryDelete(opened.Folder);
-            }
-        }
-    }
-
-    /// <summary>Extracts into <paramref name="folder"/>; a folder this call created is removed again if the open fails or is cancelled.</summary>
-    private static OpenedDino ExtractInto(string path, Stream read, DinoBook book, string folder, CancellationToken cancel)
-    {
-        var isNew = !Directory.Exists(folder);
+        Hold(name);
+        var held = name;
         try
         {
-            var pictures = DinoBookReader.ExtractPictures(read, book, folder, cancel);
-            WriteBlankPicture(Path.Combine(folder, BackCoverFile));
-            var files = new[] { pictures.CoverFile }.OfType<string>().Concat(pictures.PageFiles).Append(BackCoverFile).Select(f => Path.Combine(folder, f)).ToList();
-            return new OpenedDino(path, folder, book, files, pictures) { CreatedFolder = isNew };
+            var opened = Reuse(path, book, folder, names, pictures) ?? ExtractAndPlace(path, read, book, folder, names, cancel);
+            held = HoldPlacedFolder(opened, name);
+            SweepIfAlone(book, name);
+            return opened;
         }
         catch
         {
-            if (isNew)
-            {
-                TryDelete(folder);
-            }
-
+            Release(held);
             throw;
         }
     }
 
-    /// <summary>Removes the folders of older versions of this book (same id, another hash); never another book's, and never one with an unsafe id.</summary>
-    private static void DeleteOlderVersions(DinoBook book, string hash)
+    /// <summary>When the book had to be placed at an alternate folder, this open holds that one instead of the folder it asked for; returns the held name.</summary>
+    private static string HoldPlacedFolder(OpenedDino opened, string name)
     {
-        if (!SafeId.IsMatch(book.Id) || !Directory.Exists(Root))
+        var placed = Path.GetFileName(opened.Folder);
+        if (!string.Equals(placed, name, StringComparison.OrdinalIgnoreCase))
+        {
+            Hold(placed);
+            Release(name);
+        }
+
+        return placed;
+    }
+
+    private static OpenedDino Opened(string path, DinoBook book, string folder, List<string> names, DinoPictures pictures, bool created)
+    {
+        return new OpenedDino(path, folder, book, names.Select(f => Path.Combine(folder, f)).ToList(), pictures) { CreatedFolder = created };
+    }
+
+    /// <summary>The finished folder already there (its pictures may be open in another window, so nothing is written); null when it is missing or does not verify.</summary>
+    private static OpenedDino? Reuse(string path, DinoBook book, string folder, List<string> names, DinoPictures pictures)
+    {
+        return DinoCacheLayout.Verify(folder, names) ? Opened(path, book, folder, names, pictures, false) : null;
+    }
+
+    private static List<string> FileNamesOf(DinoPictures pictures)
+    {
+        return new[] { pictures.CoverFile }.OfType<string>().Concat(pictures.PageFiles).Append(BackCoverFile).ToList();
+    }
+
+    private static void Hold(string name)
+    {
+        lock (HoldsLock)
+        {
+            Holds[name] = Holds.GetValueOrDefault(name) + 1;
+        }
+    }
+
+    private static void Release(string name)
+    {
+        lock (HoldsLock)
+        {
+            if (Holds.GetValueOrDefault(name) <= 1)
+            {
+                Holds.Remove(name);
+            }
+            else
+            {
+                Holds[name]--;
+            }
+        }
+    }
+
+    private static void EnterCache()
+    {
+        try
+        {
+            CacheMutex.WaitOne();
+        }
+        catch (AbandonedMutexException)
+        {
+            // The process that held it died; the mutex is ours now and its leftovers are swept by a lone start.
+        }
+    }
+
+    /// <summary>True when another PrintTheDamnBook process is running; only then can a cache folder be in use that this process does not know about.</summary>
+    private static bool OtherInstanceRunning()
+    {
+        var self = Environment.ProcessId;
+        var others = Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName);
+        try
+        {
+            return others.Any(p => p.Id != self);
+        }
+        finally
+        {
+            foreach (var process in others)
+            {
+                process.Dispose();
+            }
+        }
+    }
+
+    /// <summary>Lets go of the hold on a book that was on screen and has been replaced; never deletes anything (the clean-up of older versions does that later). Quick, so safe on the UI thread.</summary>
+    public static void ReleaseShown(OpenedDino shown)
+    {
+        Release(Path.GetFileName(shown.Folder));
+    }
+
+    /// <summary>Lets go of an open nobody will see (cancelled or superseded) and removes its folder when this open created it, nothing else in this process holds it and no other instance runs. Takes the mutex, so never call it on the UI thread.</summary>
+    public static void Discard(OpenedDino opened)
+    {
+        var name = Path.GetFileName(opened.Folder);
+        Release(name);
+        if (!opened.CreatedFolder)
         {
             return;
         }
 
-        var current = FolderNameOf(book, hash);
-        var older = new Regex(@"\A" + Regex.Escape(book.Id) + "-[0-9a-f]{" + HashLength + @"}\z", RegexOptions.IgnoreCase);
-        foreach (var folder in Directory.EnumerateDirectories(Root))
+        EnterCache();
+        try
         {
-            var name = Path.GetFileName(folder);
-            if (older.IsMatch(name) && !string.Equals(name, current, StringComparison.OrdinalIgnoreCase))
+            lock (HoldsLock)
             {
-                TryDelete(folder);
+                if (!Holds.ContainsKey(name) && !OtherInstanceRunning())
+                {
+                    TryDelete(opened.Folder);
+                }
             }
         }
+        finally
+        {
+            CacheMutex.ReleaseMutex();
+        }
+    }
+
+    /// <summary>Extracts into a sibling temp folder (no lock held), then places it under the mutex; the temp is deleted on any failure.</summary>
+    private static OpenedDino ExtractAndPlace(string path, Stream read, DinoBook book, string folder, List<string> names, CancellationToken cancel)
+    {
+        var temp = folder + TempMarker + Guid.NewGuid().ToString("N");
+        try
+        {
+            var pictures = DinoBookReader.ExtractPictures(read, book, temp, cancel);
+            WriteBlankPicture(Path.Combine(temp, BackCoverFile));
+            DinoCacheLayout.WriteManifest(temp, names);
+            cancel.ThrowIfCancellationRequested();
+            var (placed, created) = PlaceUnderMutex(temp, folder, names);
+            return Opened(path, book, placed, names, pictures, created);
+        }
+        finally
+        {
+            TryDelete(temp);
+        }
+    }
+
+    /// <summary>
+    /// Puts the finished <paramref name="temp"/> at <paramref name="folder"/>; returns where the book now is and whether that folder is new. If another process
+    /// finished it first, ours is dropped and theirs is used. If a damaged folder cannot be moved aside (another window holds its files), the temp is
+    /// placed at <c>&lt;folder&gt;.alt-&lt;guid&gt;</c> instead; the lone-instance clean-up removes it later.
+    /// </summary>
+    private static (string Folder, bool Created) PlaceUnderMutex(string temp, string folder, List<string> names)
+    {
+        EnterCache();
+        try
+        {
+            if (!Directory.Exists(folder))
+            {
+                Directory.Move(temp, folder);
+                return (folder, true);
+            }
+
+            if (DinoCacheLayout.Verify(folder, names))
+            {
+                return (folder, false);
+            }
+
+            return TryReplaceDamaged(temp, folder) ? (folder, false) : (PlaceAlternate(temp, folder), true);
+        }
+        finally
+        {
+            CacheMutex.ReleaseMutex();
+        }
+    }
+
+    private static bool TryReplaceDamaged(string temp, string folder)
+    {
+        try
+        {
+            ReplaceDamaged(temp, folder);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private static string PlaceAlternate(string temp, string folder)
+    {
+        var alternate = folder + AltMarker + Guid.NewGuid().ToString("N");
+        CopySavedWords(folder, temp);
+        Directory.Move(temp, alternate);
+        return alternate;
+    }
+
+    private static void CopySavedWords(string folder, string temp)
+    {
+        var saved = BookTextStore.PathIn(folder);
+        if (File.Exists(saved))
+        {
+            File.Copy(saved, BookTextStore.PathIn(temp), overwrite: true);
+        }
+    }
+
+    /// <summary>Swaps a legacy or damaged folder for the finished temp: its saved words are copied in first, it is renamed aside (not deleted) and put back if the final rename fails.</summary>
+    private static void ReplaceDamaged(string temp, string folder)
+    {
+        CopySavedWords(folder, temp);
+
+        var aside = folder + OldMarker + Guid.NewGuid().ToString("N");
+        Directory.Move(folder, aside);
+        try
+        {
+            Directory.Move(temp, folder);
+        }
+        catch
+        {
+            Directory.Move(aside, folder);
+            throw;
+        }
+    }
+
+    /// <summary>Removes older versions of this book and dead <c>.tmp-</c>/<c>.old-</c> leftovers, only under the mutex and only when no other instance runs (it could be showing or extracting any of them); otherwise the next lone start does it.</summary>
+    private static void SweepIfAlone(DinoBook book, string currentName)
+    {
+        if (!Directory.Exists(Root))
+        {
+            return;
+        }
+
+        EnterCache();
+        try
+        {
+            if (!OtherInstanceRunning())
+            {
+                Sweep(book, currentName);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // A clean-up that cannot finish is only wasted space; never fail an open for it.
+        }
+        finally
+        {
+            CacheMutex.ReleaseMutex();
+        }
+    }
+
+    private static void Sweep(DinoBook book, string currentName)
+    {
+        var safe = SafeId.IsMatch(book.Id);
+        lock (HoldsLock)
+        {
+            foreach (var folder in Directory.EnumerateDirectories(Root))
+            {
+                var name = Path.GetFileName(folder);
+                var removable = DinoCacheLayout.IsLeftover(name) || (safe && DinoCacheLayout.IsOlderVersion(name, book.Id, currentName));
+                if (removable && !IsHeldHere(name))
+                {
+                    TryDelete(folder);
+                }
+            }
+        }
+    }
+
+    /// <summary>True when this process holds <paramref name="name"/> or the folder a <c>.tmp-</c>/<c>.old-</c> leftover name belongs to. Call with <see cref="HoldsLock"/> held.</summary>
+    private static bool IsHeldHere(string name)
+    {
+        return Holds.Keys.Any(held => string.Equals(held, name, StringComparison.OrdinalIgnoreCase)
+            || name.StartsWith(held + TempMarker, StringComparison.OrdinalIgnoreCase)
+            || name.StartsWith(held + OldMarker, StringComparison.OrdinalIgnoreCase));
     }
 
     private static void TryDelete(string folder)
