@@ -2,6 +2,12 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 18: Get a story from Dino's store ([slice](slices/18-dino-store.md))
+
+- Cover thumbnails seen rendered.
+- The language filter (the live store has only English books today).
+- Farsi/Arabic store cards and right-aligned Farsi text on the Check step (no Farsi book in the store yet).
+
 ### Slice 19: Open a book handed over by Dino Reader ([slice](slices/19-open-from-dino-reader.md))
 
 - That `--language fa` shows the Farsi text on the Check step (only the step was checked).
