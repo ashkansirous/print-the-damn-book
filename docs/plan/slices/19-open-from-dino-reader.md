@@ -1,12 +1,16 @@
 ### Slice 19 — Open a book handed over by Dino Reader
 
-*Planned 2026-11-01.*
+*In progress (wave 2026-11-01), draft PR.*
 
 **Touches:** `src/PrintTheDamnBook.App/App.xaml`, `src/PrintTheDamnBook.App/App.xaml.cs`,
 `src/PrintTheDamnBook.App/Services/LaunchArguments.cs` (new), `src/PrintTheDamnBook.App/Services/OpenWithRegistration.cs`
 (new), `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/MainWindow.xaml.cs`,
 `src/PrintTheDamnBook.Core/Dino/**` (argument parsing, if kept in Core), `tests/PrintTheDamnBook.Core.Tests/**`,
-`README.md`
+`README.md`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`, `src/PrintTheDamnBook.App/Views/OpenStepView.xaml*`
+(added at the claim, wave 2026-11-01)
+
+**Wave note (2026-11-01).** Open points take the defaults written below. Slices 17 and 18 also edit
+`MainViewModel.Dino.cs`: keep this slice's edits to `LoadDinoAsync`/`ReadDino` and new members. Merge order 17, 19, 18.
 
 **Why.** The user wants to open a book from Dino Reader and print it (2026-11-01). **This slice is only this app's
 side**: it gives Dino Reader a way in. The Dino Reader button ("Print this book") is a follow-up in Dino Reader's own
