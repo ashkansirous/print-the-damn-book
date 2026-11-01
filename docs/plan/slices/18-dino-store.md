@@ -151,8 +151,12 @@ reach Dino's store" with Try again; `--language fa` hand-over of a store book op
   identifiers. Downloaded files go through `DinoBookReader` like any .dino. The site's privacy text (`site/public/privacy.html`)
   and the dialog footer must stay in step. (Slice 18: docs/plan/slices/18-dino-store.md)
 
+#### Verified 2026-11-01 (host desktop, Release build of main 96cbf2f)
+
+- All 16 cover thumbnails rendered. The language filter shows "All languages · 16" and "English · 16"; picking
+  English keeps 16 cards. Right-aligned Farsi text on the Check step: covered by the Slice 17 check.
+
 #### Not yet verified
 
-- Cover thumbnails seen rendered.
-- The language filter (the live store has only English books today).
-- Farsi/Arabic store cards and right-aligned Farsi text on the Check step (no Farsi book in the store yet).
+- The language filter with more than one language, and Farsi/Arabic store cards (the live store has only
+  English books).
