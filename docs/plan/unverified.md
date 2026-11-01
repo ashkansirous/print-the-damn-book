@@ -2,7 +2,7 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
-### Slice 020: Dino open and store hardening ([slice](slices/20-dino-open-hardening.md))
+### Slice 20: Dino open and store hardening ([slice](slices/20-dino-open-hardening.md))
 
 - The failed state with Back to list on a real download failure (cannot be forced without changing live state).
 - The hand-over alert for an `IOException` hand-over (unit-tested only).
@@ -15,3 +15,4 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 ### Slice 17: Right-to-left books (Farsi and Arabic) ([slice](slices/17-right-to-left-books.md))
 
 - Paper print and fold of one Farsi book (user).
+- The font the Farsi text is drawn in (Vazirmatn): the 2026-11-01 run saw Arabic-script glyphs but did not read the font name from the UI tree.
