@@ -20,7 +20,9 @@
     <sys:String x:Key="IconCheckSmall">&#xE182;</sys:String>
     <sys:String x:Key="IconSparkle">&#xE6A2;</sys:String>
     <sys:String x:Key="IconTranslate">&#xE4A2;</sys:String>
-    <FontFamily x:Key="AndikaFont">pack://application:,,,/Fonts/#Andika</FontFamily>
+    <sys:String x:Key="IconArrowLineLeft">&#xE062;</sys:String>
+    <sys:String x:Key="IconArrowLineRight">&#xE064;</sys:String>
+    <views:PageDigitsConverter x:Key="PageDigits" />
 
     <!-- The Band option the app suggests wears a sparkle. -->
     <Style x:Key="BandOptionTop" TargetType="RadioButton" BasedOn="{StaticResource SegOption}">
@@ -200,7 +202,23 @@
                 <Binding Path="DataContext.ShowsPageNumbers" RelativeSource="{RelativeSource AncestorType=views:CheckStepView}" />
               </MultiBinding>
             </Border.Visibility>
-            <TextBlock Text="{Binding PrintedNumber}" FontSize="10" Foreground="{StaticResource Neutral200Brush}" />
+            <TextBlock FontSize="10" Foreground="{StaticResource Neutral200Brush}">
+              <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                  <Style.Triggers>
+                    <DataTrigger Binding="{Binding DataContext.UsesNativeDigits, RelativeSource={RelativeSource AncestorType=views:CheckStepView}}" Value="True">
+                      <Setter Property="FontFamily" Value="{Binding DataContext.DigitsFontFamily, RelativeSource={RelativeSource AncestorType=views:CheckStepView}}" />
+                    </DataTrigger>
+                  </Style.Triggers>
+                </Style>
+              </TextBlock.Style>
+              <TextBlock.Text>
+                <MultiBinding Converter="{StaticResource PageDigits}">
+                  <Binding Path="PrintedNumber" />
+                  <Binding Path="DataContext.PageDigits" RelativeSource="{RelativeSource AncestorType=views:CheckStepView}" />
+                </MultiBinding>
+              </TextBlock.Text>
+            </TextBlock>
           </Border>
         </Grid>
         <TextBlock x:Name="Label" Text="{Binding Label}" FontSize="11" Foreground="{StaticResource Neutral300Brush}" TextTrimming="CharacterEllipsis"
@@ -253,8 +271,9 @@
       <ColumnDefinition Width="Auto" />
     </Grid.ColumnDefinitions>
   <StackPanel>
-    <!-- Language of a Dino book. Right-to-left languages are listed but disabled. -->
-    <StackPanel Orientation="Horizontal" Margin="0,0,0,14" Visibility="{Binding IsDinoBook, Converter={StaticResource BoolToVisibility}}">
+    <!-- Language of a Dino book (languages the app cannot set in type yet are listed but disabled) and the book's reading direction. -->
+    <WrapPanel Margin="0,0,0,14">
+    <StackPanel Orientation="Horizontal" Margin="0,0,16,0" Visibility="{Binding IsDinoBook, Converter={StaticResource BoolToVisibility}}">
       <TextBlock Style="{StaticResource Ph}" FontSize="16" Text="{StaticResource IconTranslate}" Foreground="{StaticResource Neutral400Brush}" VerticalAlignment="Center" Margin="0,0,8,0" />
       <ComboBox MinWidth="300" ItemsSource="{Binding DinoLanguages}" SelectedValuePath="Code"
                 SelectedValue="{Binding SelectedDinoLanguage, Mode=TwoWay}" IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
@@ -280,6 +299,20 @@
       <Button Style="{StaticResource SecondaryButton}" Content="Cancel" Command="{Binding CancelTranslateCommand}" Margin="10,0,0,0"
               AutomationProperties.Name="Cancel changing the language" Visibility="{Binding IsTranslatingSlow, Converter={StaticResource BoolToVisibility}}" />
     </StackPanel>
+    <Border Style="{StaticResource SegBorder}" ToolTip="{Binding DirectionTooltip}" AutomationProperties.Name="Reading direction">
+      <StackPanel Orientation="Horizontal">
+        <RadioButton Style="{StaticResource SegOption}" Content="Left to right" views:Ui.Icon="{StaticResource IconArrowLineRight}" GroupName="ReadingDirection"
+                     AutomationProperties.Name="Left to right"
+                     Tag="{x:Static text:ReadingDirection.LeftToRight}" Click="OnDirectionClick"
+                     IsChecked="{Binding BookDirection, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:ReadingDirection.LeftToRight}}" />
+        <Rectangle Style="{StaticResource SegDivider}" />
+        <RadioButton Style="{StaticResource SegOption}" Content="Right to left" views:Ui.Icon="{StaticResource IconArrowLineLeft}" GroupName="ReadingDirection"
+                     AutomationProperties.Name="Right to left"
+                     Tag="{x:Static text:ReadingDirection.RightToLeft}" Click="OnDirectionClick"
+                     IsChecked="{Binding BookDirection, Converter={StaticResource EnumBool}, ConverterParameter={x:Static text:ReadingDirection.RightToLeft}}" />
+      </StackPanel>
+    </Border>
+    </WrapPanel>
 
     <!-- Warning chips -->
     <ItemsControl ItemsSource="{Binding Chips}" Margin="0,-4,0,18" Visibility="{Binding HasChips, Converter={StaticResource BoolToVisibility}}">
@@ -411,7 +444,7 @@
 
           <TextBlock Style="{StaticResource EditorLabel}" Text="Story text" Margin="0,16,0,5" />
           <TextBox x:Name="StoryBox" Text="{Binding StoryInput, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="92"
-                   VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" FontFamily="{StaticResource AndikaFont}" FontSize="15" Padding="10,8"
+                   VerticalContentAlignment="Top" VerticalScrollBarVisibility="Auto" FontFamily="{Binding StoryFontFamily}" FlowDirection="{Binding StoryFlowDirection}" FontSize="15" Padding="10,8"
                    AutomationProperties.Name="Story text" />
           <StackPanel Orientation="Horizontal" Margin="0,8,0,0" Visibility="{Binding HasFitNote, Converter={StaticResource BoolToVisibility}}">
             <TextBlock x:Name="FitIcon" FontSize="14" VerticalAlignment="Top" Margin="0,1,6,0">

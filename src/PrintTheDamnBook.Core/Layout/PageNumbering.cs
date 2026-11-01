@@ -1,3 +1,5 @@
+using PrintTheDamnBook.Core.Text;
+
 namespace PrintTheDamnBook.Core.Layout;
 
 /// <summary>Whether page numbers are printed, and on which side of the page image.</summary>
@@ -6,6 +8,19 @@ public enum PageNumberPosition
     Off,
     Below,
     Above,
+}
+
+/// <summary>Which digits the page numbers are written in.</summary>
+public enum PageNumberDigits
+{
+    /// <summary>0123456789</summary>
+    Latin,
+
+    /// <summary>Persian digits, U+06F0 to U+06F9 (Farsi books).</summary>
+    Persian,
+
+    /// <summary>Arabic-Indic digits, U+0660 to U+0669 (Arabic books).</summary>
+    ArabicIndic,
 }
 
 /// <summary>Which pages get which printed number, and the size of the number on the paper.</summary>
@@ -38,7 +53,7 @@ public static class PageNumbering
     /// in the padded book, so the first interior page is 1. Covers and blank pages get none but still count as a position
     /// (padding only sits before the back cover, so it never shifts an interior page).
     /// </summary>
-    public static IReadOnlyDictionary<BookPage, int> Compute(IReadOnlyList<BookPage> padded)
+    public static Dictionary<BookPage, int> Compute(IReadOnlyList<BookPage> padded)
     {
         var numbers = new Dictionary<BookPage, int>(ReferenceEqualityComparer.Instance);
         var firstIsCover = padded.Count > 0 && padded[0].Kind is PageKind.Cover or PageKind.DuplicateCover;
@@ -52,6 +67,48 @@ public static class PageNumbering
         }
 
         return numbers;
+    }
+
+    /// <summary>The digits for a book in this language: Persian for Farsi, Arabic-Indic for Arabic, Latin for everything else (and for no language).</summary>
+    public static PageNumberDigits DigitsFor(string? languageCode)
+    {
+        return Dino.DinoBook.Primary(languageCode) switch
+        {
+            "fa" => PageNumberDigits.Persian,
+            "ar" => PageNumberDigits.ArabicIndic,
+            _ => PageNumberDigits.Latin,
+        };
+    }
+
+    /// <summary>
+    /// The digits for a book. A Dino book follows its language (<see cref="DigitsFor(string?)"/>). A folder book has no language, so its digits follow
+    /// its script: left to right is Latin; right to left is Persian when its story text has Persian-only letters, else Arabic-Indic.
+    /// </summary>
+    public static PageNumberDigits DigitsFor(string? languageCode, ReadingDirection direction, IEnumerable<string?> texts)
+    {
+        if (languageCode is not null)
+        {
+            return DigitsFor(languageCode);
+        }
+
+        if (direction == ReadingDirection.LeftToRight)
+        {
+            return PageNumberDigits.Latin;
+        }
+
+        return texts.Any(TextDirection.HasPersianOnlyLetter) ? PageNumberDigits.Persian : PageNumberDigits.ArabicIndic;
+    }
+
+    /// <summary>The number as printed, written in the given digits.</summary>
+    public static string Format(int number, PageNumberDigits digits)
+    {
+        var zero = digits switch
+        {
+            PageNumberDigits.Persian => '\u06F0',
+            PageNumberDigits.ArabicIndic => '\u0660',
+            _ => '0',
+        };
+        return string.Concat(number.ToString(System.Globalization.CultureInfo.InvariantCulture).Select(c => (char)(zero + (c - '0'))));
     }
 
     private static bool IsUnnumbered(BookPage page)

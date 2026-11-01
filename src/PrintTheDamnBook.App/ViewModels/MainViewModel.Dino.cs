@@ -8,7 +8,7 @@ using PrintTheDamnBook.Core.Text;
 
 namespace PrintTheDamnBook.App.ViewModels;
 
-/// <summary>A language in the Check step's language select; a right-to-left one is listed but cannot be chosen.</summary>
+/// <summary>A language in the Check step's language select; one the app cannot set in type yet (Hebrew ...) is listed but cannot be chosen.</summary>
 public sealed record DinoLanguageOption(string Code, string Label, bool IsEnabled);
 
 /// <summary>Opening a Dino Reader book (Slice 15): the <c>.dino</c> file, its words seeded into the story editor, and the language select.</summary>
@@ -20,10 +20,10 @@ public sealed partial class MainViewModel
     private const string FolderFailurePrefix = "Could not read this folder: ";
     private const string SavedDinoText = "Saved with this Dino book";
     private const string OwnLanguageSuffix = " (the book's own)";
-    private const string RightToLeftSuffix = " · right-to-left books are not supported yet";
+    private const string UnsupportedSuffix = " · this language is not supported yet";
     private const string DinoUnknownFailure = "Could not open this Dino book.";
-    private const string NoPrintableLanguageText = "This book is written right to left, and I can't print those yet.";
-    private const string RightToLeftNoticeFormat = "This book is written right to left, which I can't print yet. Showing it in {0}.";
+    private const string NoPrintableLanguageText = "This book is in a language I can't print yet.";
+    private const string UnsupportedNoticeFormat = "This book's own language is not supported yet. Showing it in {0}.";
     private const string SavedLanguageSuffix = " (as saved with this book)";
     private const string SavedLanguageNotice = "The language this book was saved in is no longer offered, so its words stay as they were.";
     private const string TranslateFailureText = "Could not change the language.";
@@ -387,7 +387,7 @@ public sealed partial class MainViewModel
         return File.Exists(BookTextStore.PathIn(dino.Folder)) ? BookTextStore.Read(dino.Folder) : new BookTextLoad(SeedText(dino, start), true);
     }
 
-    /// <summary>The words as the book came, in its starting language (its own, unless that is right-to-left).</summary>
+    /// <summary>The words as the book came, in its starting language (its own, unless that is not supported yet).</summary>
     private static BookText SeedText(OpenedDino dino, DinoLanguage start)
     {
         var entries = new Dictionary<string, PageTextEntry>(StringComparer.OrdinalIgnoreCase);
@@ -435,7 +435,7 @@ public sealed partial class MainViewModel
         }
     }
 
-    /// <summary>The select's entries. A saved language the file no longer offers (or offers only right-to-left) stays listed, so the words saved in it are not mislabelled.</summary>
+    /// <summary>The select's entries. A saved language the file no longer offers (or offers only an unsupported one) stays listed, so the words saved in it are not mislabelled.</summary>
     private List<DinoLanguageOption> LanguageOptions(DinoBook book, string? savedLanguage)
     {
         var options = book.Languages().Select(ToOption).ToList();
@@ -455,7 +455,7 @@ public sealed partial class MainViewModel
         return saved.Length > 0 && !book.IsOwn(saved) && !options.Any(o => o.Code == saved && o.IsEnabled);
     }
 
-    /// <summary>The saved language, else the starting language; says so when the book's own language is right-to-left and another was chosen.</summary>
+    /// <summary>The saved language, else the starting language; says so when the book's own language is not supported and another was chosen.</summary>
     private string SelectedLanguageOf(DinoBook book, string? savedLanguage)
     {
         var saved = DinoBook.Primary(savedLanguage);
@@ -467,7 +467,7 @@ public sealed partial class MainViewModel
         var start = book.StartLanguage()!;
         if (!start.IsOwn)
         {
-            _languageNotice = string.Format(System.Globalization.CultureInfo.CurrentCulture, RightToLeftNoticeFormat, start.Name);
+            _languageNotice = string.Format(System.Globalization.CultureInfo.CurrentCulture, UnsupportedNoticeFormat, start.Name);
         }
 
         return start.Code;
@@ -475,8 +475,8 @@ public sealed partial class MainViewModel
 
     private static DinoLanguageOption ToOption(DinoLanguage language)
     {
-        var label = language.Name + (language.IsOwn ? OwnLanguageSuffix : language.IsRightToLeft ? RightToLeftSuffix : string.Empty);
-        return new DinoLanguageOption(language.Code, label, !language.IsRightToLeft);
+        var label = language.Name + (language.IsOwn ? OwnLanguageSuffix : language.IsSupported ? string.Empty : UnsupportedSuffix);
+        return new DinoLanguageOption(language.Code, label, language.IsSupported);
     }
 
     partial void OnSelectedDinoLanguageChanged(string oldValue, string newValue)
@@ -492,10 +492,11 @@ public sealed partial class MainViewModel
             return;
         }
 
+        _direction.LanguageChanged();
         _ = ApplyLanguageAsync(oldValue, newValue);
     }
 
-    /// <summary>The arrow keys can land on a disabled (right-to-left) language; put the select back on the one in use.</summary>
+    /// <summary>The arrow keys can land on a disabled (unsupported) language; put the select back on the one in use.</summary>
     private void RevertLanguage(string code)
     {
         _syncingLanguage = true;

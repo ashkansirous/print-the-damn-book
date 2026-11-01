@@ -32,6 +32,10 @@ public sealed partial class MainViewModel
     private const string SubheadingDone = "Three steps and it's a book.";
     private const string SubheadingReading = "This is how the book reads. Drag a page to move it, or focus it and press Alt+Left or Alt+Right; the covers stay at the ends.";
     private const string SubheadingSheets = "This is what comes out of the printer. Each sheet prints both sides; fold the stack and it reads in order.";
+    private const string SubheadingReadingRtl = "Reads right to left: the book opens from the right, so each spread starts on its right page.";
+    private const string SubheadingSheetsRtl = "What comes out of the printer, mirrored: the cover sits on the left of sheet 1's front, so the fold opens from the right.";
+    private const string TailLanguage = " Set by the language.";
+    private const string TailGuessed = " Guessed from the first story text.";
     private const string LeadManual = "Two passes, fronts then backs.";
     private const string LeadAutomatic = "One job, double-sided.";
     private const string NextOpenLabel = "Next: check the order";
@@ -391,6 +395,11 @@ public sealed partial class MainViewModel
 
     private string CheckSubheading()
     {
+        if (IsRightToLeftBook)
+        {
+            return IsReadingView ? SubheadingReadingRtl + (_direction.Picked is not null ? string.Empty : IsDinoBook ? TailLanguage : TailGuessed) : SubheadingSheetsRtl;
+        }
+
         return IsReadingView ? (IsDinoBook ? SubheadingCheckDino : SubheadingReading) : SubheadingSheets;
     }
 

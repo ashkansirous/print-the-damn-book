@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using PrintTheDamnBook.App.Printing;
 using PrintTheDamnBook.App.Services;
 using PrintTheDamnBook.Core;
 using PrintTheDamnBook.Core.Layout;
@@ -29,8 +30,17 @@ public sealed partial class MainViewModel
     private const string TextForPrefix = "Text for ";
     private const string SpacerLabel = "spacer";
     private const string PlacementOnPicture = "A soft panel over the picture, never more than 30% of it.";
-    private const string PlacementOwnPage = "Text on the left, picture on the right, facing each other when the book is open.";
-    private const string PlacementOwnPageSpacer = "Text on the left, picture on the right. I put a spacer page in front so they face each other.";
+    private const string PlacementTextLeft = "Text on the left, picture on the right";
+    private const string PlacementTextRight = "Text on the right, picture on the left";
+    private const string PlacementFacingTail = ", facing each other when the book is open.";
+    private const string PlacementSpacerTail = ". I put a spacer page in front so they face each other.";
+    private const string DirectionTipPrefix = "Reading direction · ";
+    private const string DirectionPicked = "your pick";
+    private const string DirectionFromLanguage = "set by the language";
+    private const string DirectionGuessed = "guessed from the first story text";
+    private const string OpensFromTheRightText = " Opens from the right.";
+    private const string PageNumbersPrintAsFormat = " Page numbers print as {0}.";
+    private static readonly int[] SampleNumbers = [1, 2, 3];
     private const string PlacementCover = "Covers keep their words on the picture.";
     private const string BandPickedHint = "Your pick. I'll never suggest over it.";
     private const string BandSuggestedHintPrefix = "Suggested: the ";
@@ -105,7 +115,108 @@ public sealed partial class MainViewModel
 
     /// <summary>The Story text box; every change is applied to the page at once and the tiles follow a moment later.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StoryFlowDirection))]
+    [NotifyPropertyChangedFor(nameof(StoryFontFamily))]
     public partial string StoryInput { get; set; } = string.Empty;
+
+    /// <summary>Which side the book opens from (Slice 17): the reader's pick, else the Dino language, else a guess from the first story text.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRightToLeftBook))]
+    [NotifyPropertyChangedFor(nameof(StoryFlowDirection))]
+    [NotifyPropertyChangedFor(nameof(StoryFontFamily))]
+    public partial ReadingDirection BookDirection { get; set; } = ReadingDirection.LeftToRight;
+
+    /// <summary>The tooltip of the Reading direction switch: why the book reads the way it does.</summary>
+    [ObservableProperty]
+    public partial string DirectionTooltip { get; set; } = string.Empty;
+
+    public bool IsRightToLeftBook => BookDirection == ReadingDirection.RightToLeft;
+
+    /// <summary>The Story text box runs the way its own first strong letter does; while empty it follows the book.</summary>
+    public FlowDirection StoryFlowDirection => (!string.IsNullOrWhiteSpace(StoryInput) ? TextDirection.Of(StoryInput) : BookDirection) == ReadingDirection.RightToLeft ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
+
+    public FontFamily StoryFontFamily => StoryPainter.FamilyOf(!string.IsNullOrWhiteSpace(StoryInput) ? StoryFont.For(StoryInput) : IsRightToLeftBook ? StoryFont.Vazirmatn : StoryFont.Andika);
+
+    /// <summary>The digits the page numbers are written in: a Dino book's language decides; a folder book's digits follow its script (Core).</summary>
+    public PageNumberDigits PageDigits { get; private set; } = PageNumberDigits.Latin;
+
+    /// <summary>True when the page numbers are written in Persian or Arabic-Indic digits, which Inter has no glyphs for.</summary>
+    public bool UsesNativeDigits => PageDigits != PageNumberDigits.Latin;
+
+    public FontFamily DigitsFontFamily => StoryPainter.FamilyOf(StoryFont.Vazirmatn);
+
+    /// <summary>The reader's own pick of the direction, saved in <c>book.json</c>; none until they pick, and again after a language change.</summary>
+    private readonly BookDirectionChoice _direction = new();
+    private bool _syncingDirection;
+
+    /// <summary>The language of a Dino book (its own included); null for a folder, which has no language.</summary>
+    private string? BookLanguage => _dino is null ? null : SelectedDinoLanguage;
+
+    partial void OnBookDirectionChanged(ReadingDirection value)
+    {
+        if (!_syncingDirection)
+        {
+            PickBookDirection(value);
+        }
+    }
+
+    /// <summary>A click on either option of the switch (checked or not) is a pick: it is saved and the book stops following the language or the guess.</summary>
+    public void PickBookDirection(ReadingDirection value)
+    {
+        if (_direction.Picked == value && BookDirection == value)
+        {
+            return;
+        }
+
+        _direction.Pick(value);
+        BookDirection = value;
+        ScheduleBookTextSave();
+        Refresh();
+    }
+
+    /// <summary>Puts the switch on the direction the book reads in now (a pick, a Dino language or the guess), without counting it as a pick.</summary>
+    private void SyncBookDirection()
+    {
+        var direction = _direction.Resolve(BookLanguage, _pageList.Pages.Select(p => p.Story?.Text));
+        _syncingDirection = true;
+        try
+        {
+            BookDirection = direction;
+        }
+        finally
+        {
+            _syncingDirection = false;
+        }
+
+        DirectionTooltip = DirectionTipPrefix + DirectionWhy();
+        PageDigits = PageNumbering.DigitsFor(BookLanguage, BookDirection, _pageList.Pages.Select(p => p.Story?.Text));
+        OnPropertyChanged(nameof(PageDigits));
+        OnPropertyChanged(nameof(UsesNativeDigits));
+    }
+
+    private string DirectionWhy()
+    {
+        return _direction.Source(_dino is not null) switch
+        {
+            DirectionSource.Picked => DirectionPicked,
+            DirectionSource.Language => DirectionFromLanguage,
+            _ => DirectionGuessed,
+        };
+    }
+
+    /// <summary>What the footer adds for a right-to-left book: where it opens, and the digits when they are not Latin.</summary>
+    private string DirectionStatusTail()
+    {
+        var tail = IsRightToLeftBook ? OpensFromTheRightText : string.Empty;
+        var digits = PageDigits;
+        if (digits == PageNumberDigits.Latin)
+        {
+            return tail;
+        }
+
+        var sample = string.Join(", ", SampleNumbers.Select(n => PageNumbering.Format(n, digits)));
+        return tail + string.Format(System.Globalization.CultureInfo.CurrentCulture, PageNumbersPrintAsFormat, sample);
+    }
 
     [ObservableProperty]
     public partial TextPlacement SelectedPlacement { get; set; } = TextPlacement.OnPicture;
@@ -343,7 +454,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        _bookText.Schedule(new BookText { TextPages = Print.TextPages, Language = SavedLanguage, Pages = new Dictionary<string, PageTextEntry>(_textEntries, StringComparer.OrdinalIgnoreCase) });
+        _bookText.Schedule(new BookText { TextPages = Print.TextPages, Language = SavedLanguage, ReadingDirection = _direction.Picked, Pages = new Dictionary<string, PageTextEntry>(_textEntries, StringComparer.OrdinalIgnoreCase) });
         UpdateSaveStatus();
     }
 
@@ -384,6 +495,7 @@ public sealed partial class MainViewModel
             }
 
             Print.TextPages = load.Book.TextPages;
+            _direction.Restore(load.Book.ReadingDirection);
         }
         finally
         {
@@ -558,6 +670,7 @@ public sealed partial class MainViewModel
         _sampleTimer.Stop();
         _bookText?.Dispose();
         _bookText = null;
+        _direction.Restore(null);
         _textEntries = new Dictionary<string, PageTextEntry>(StringComparer.OrdinalIgnoreCase);
         _samples.Clear();
         _plainness.Clear();
@@ -782,7 +895,8 @@ public sealed partial class MainViewModel
 
         var expanded = _pageList.Expanded();
         var at = expanded.ToList().FindIndex(p => ReferenceEquals(p, page));
-        return at >= 2 && expanded[at - 2].Kind == PageKind.Spacer ? PlacementOwnPageSpacer : PlacementOwnPage;
+        var sides = IsRightToLeftBook ? PlacementTextRight : PlacementTextLeft;
+        return sides + (at >= 2 && expanded[at - 2].Kind == PageKind.Spacer ? PlacementSpacerTail : PlacementFacingTail);
     }
 
     private static string TitleOf(BookPage page) => page.Kind switch

@@ -26,8 +26,8 @@ public enum DuplexMode
     Manual,
 }
 
-/// <summary>Where the page numbers go and which number each page gets (see <see cref="PageNumbering.Compute"/>). The two always travel together.</summary>
-public sealed record PageNumberSetup(PageNumberPosition Position, IReadOnlyDictionary<BookPage, int> Numbers);
+/// <summary>Where the page numbers go and which number each page gets (see <see cref="PageNumbering.Compute"/>). The two always travel together, with the digits the numbers are written in.</summary>
+public sealed record PageNumberSetup(PageNumberPosition Position, IReadOnlyDictionary<BookPage, int> Numbers, PageNumberDigits Digits = PageNumberDigits.Latin);
 
 /// <summary>
 /// The layout choices that apply to a whole print job. A null <paramref name="PageNumbers"/> prints no numbers; a null
