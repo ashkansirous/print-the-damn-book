@@ -224,7 +224,7 @@ public sealed partial class MainViewModel : ObservableObject
         SourcePath = loaded.Dino?.SourcePath ?? folder;
         LoadProblem = _pageList.Pages.Count == 0 ? NoImagesStatus : null;
         OpenFailure = null;
-        BookNotice = DinoNotice();
+        BookNotice = NoticeOf(_dino, _languageNotice);
         Refresh();
         if (BookNotice is not null && LoadProblem is null)
         {
@@ -423,10 +423,11 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     /// <summary>Forgets the folder and returns to the Open step.</summary>
-    private void StartOver()
+    internal void StartOver()
     {
         _loadVersion++;
         _loadCancel?.Cancel();
+        _stashedHandoverProblem = null;
         IsLoading = false;
         IsLoadingSlow = false;
         LoadingText = ReadingImagesText;

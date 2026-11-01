@@ -64,7 +64,14 @@ public partial class OpenStepView : UserControl
         }
         finally
         {
-            button.SetBinding(IsEnabledProperty, enabledBinding);
+            if (enabledBinding is not null)
+            {
+                button.SetBinding(IsEnabledProperty, enabledBinding);
+            }
+            else
+            {
+                button.ClearValue(IsEnabledProperty);
+            }
             _storeOpen = false;
         }
     }

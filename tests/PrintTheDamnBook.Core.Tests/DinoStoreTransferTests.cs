@@ -109,11 +109,22 @@ public class DinoStoreTransferTests : IDisposable
     }
 
     [Fact]
+    public async Task CopyNamesAReadFailureOfTheResponseANetworkProblem()
+    {
+        using var target = new MemoryStream();
+
+        var ex = await Assert.ThrowsAsync<DinoNetworkException>(
+            () => DinoStreamCopier.CopyAsync(new ThrowingSource(), target, Limits(100), NoProgress(), CancellationToken.None));
+
+        Assert.IsType<IOException>(ex.InnerException);
+    }
+
+    [Fact]
     public async Task AWholeWriteIsRenamedIntoPlaceAndLeavesNoPartFile()
     {
         var final = Path.Combine(_dir, "a1-v1.dino");
 
-        await DinoStoreFiles.WriteAtomicallyAsync(final, s => s.WriteAsync(new byte[] { 1, 2, 3 }).AsTask());
+        await DinoStoreFiles.WriteAtomicallyAsync(final, s => s.WriteAsync(new byte[] { 1, 2, 3 }).AsTask(), TestContext.Current.CancellationToken);
 
         Assert.Equal(new byte[] { 1, 2, 3 }, await File.ReadAllBytesAsync(final, TestContext.Current.CancellationToken));
         Assert.Equal([final], Directory.GetFiles(_dir));
@@ -128,7 +139,7 @@ public class DinoStoreTransferTests : IDisposable
         {
             await s.WriteAsync(new byte[] { 9 });
             throw new InvalidOperationException();
-        }));
+        }, TestContext.Current.CancellationToken));
 
         Assert.Empty(Directory.GetFiles(_dir));
     }
@@ -142,9 +153,9 @@ public class DinoStoreTransferTests : IDisposable
         await DinoStoreFiles.WriteAtomicallyAsync(final, async s =>
         {
             await s.WriteAsync(new byte[] { 1 });
-            second = DinoStoreFiles.WriteAtomicallyAsync(final, t => t.WriteAsync(new byte[] { 2 }).AsTask());
+            second = DinoStoreFiles.WriteAtomicallyAsync(final, t => t.WriteAsync(new byte[] { 2 }).AsTask(), TestContext.Current.CancellationToken);
             await second;
-        });
+        }, TestContext.Current.CancellationToken);
 
         Assert.Equal([final], Directory.GetFiles(_dir));
     }
@@ -160,7 +171,7 @@ public class DinoStoreTransferTests : IDisposable
             await s.WriteAsync(new byte[] { 9 });
             await cancel.CancelAsync();
             cancel.Token.ThrowIfCancellationRequested();
-        }));
+        }, TestContext.Current.CancellationToken));
 
         Assert.Empty(Directory.GetFiles(_dir));
     }
@@ -169,9 +180,9 @@ public class DinoStoreTransferTests : IDisposable
     public async Task AFailedWriteKeepsAnEarlierFinalFile()
     {
         var final = Path.Combine(_dir, "a1-v1.dino");
-        await DinoStoreFiles.WriteAtomicallyAsync(final, s => s.WriteAsync(new byte[] { 1 }).AsTask());
+        await DinoStoreFiles.WriteAtomicallyAsync(final, s => s.WriteAsync(new byte[] { 1 }).AsTask(), TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => DinoStoreFiles.WriteAtomicallyAsync(final, _ => throw new InvalidOperationException()));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => DinoStoreFiles.WriteAtomicallyAsync(final, _ => throw new InvalidOperationException(), TestContext.Current.CancellationToken));
 
         Assert.Equal(new byte[] { 1 }, await File.ReadAllBytesAsync(final, TestContext.Current.CancellationToken));
     }
@@ -184,7 +195,7 @@ public class DinoStoreTransferTests : IDisposable
         await File.WriteAllTextAsync(blocker, "a file where a folder should be", TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<DinoDiskException>(
-            () => DinoStoreFiles.WriteAtomicallyAsync(Path.Combine(blocker, "a1-v1.dino"), s => s.WriteAsync(new byte[] { 1 }).AsTask()));
+            () => DinoStoreFiles.WriteAtomicallyAsync(Path.Combine(blocker, "a1-v1.dino"), s => s.WriteAsync(new byte[] { 1 }).AsTask(), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -228,7 +239,7 @@ public class DinoStoreTransferTests : IDisposable
     {
         var final = Path.Combine(_dir, "covers", "a1-v1.jpg");
 
-        await DinoStoreFiles.WriteAtomicallyAsync(final, s => s.WriteAsync(new byte[] { 1 }).AsTask());
+        await DinoStoreFiles.WriteAtomicallyAsync(final, s => s.WriteAsync(new byte[] { 1 }).AsTask(), TestContext.Current.CancellationToken);
 
         Assert.Equal([final], Directory.GetFiles(Path.GetDirectoryName(final)!));
     }
@@ -254,6 +265,14 @@ public class DinoStoreTransferTests : IDisposable
         {
             await Task.Delay(Timeout.Infinite, cancellationToken);
             return 0;
+        }
+    }
+
+    private sealed class ThrowingSource : MemoryStream
+    {
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            throw new IOException("connection reset");
         }
     }
 
