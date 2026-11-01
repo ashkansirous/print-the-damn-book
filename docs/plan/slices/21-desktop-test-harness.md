@@ -1,9 +1,9 @@
 ### Slice 21 — Scripted desktop checks (test harness)
 
-*parked: feedback loop, waits for the user.* Found by the round-1 feedback loop on 2026-11-01
+*Planned.* The user said build it, with a Hyper-V VM (2026-11-01). Found by the round-1 feedback loop on 2026-11-01
 ([note](../notes/2026-11-01-1141-feedback-loop-w1.md)).
 
-**Touches:** `tools/desktop-test/**` (new), `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`, `src/PrintTheDamnBook.App/**/*.xaml` (AutomationIds only), `CLAUDE.md`, `.github/workflows/**` (only if a check runs in CI)
+**Touches:** `tools/desktop-test/**` (new), `tools/desktop-vm/**` (new), `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`, `src/PrintTheDamnBook.App/**/*.xaml` (AutomationIds only), `CLAUDE.md`, `.github/workflows/**` (only if a check runs in CI)
 
 **Why.** The repo has no repeatable desktop checks. `tools/` holds only `store-assets`, plus one
 committed script, `tests/PrintTheDamnBook.Core.Tests/handover-check.ps1`. On 2026-11-01, the three
@@ -27,12 +27,17 @@ pipeline from an app's first UI slice; this repo never got one.
 - [ ] AutomationIds on the controls the scripts drive, so they don't depend on text or position.
 - [ ] A README and a folder `CLAUDE.md` that says device-test agents run these scripts first and
   add a missing check as a new script, never as a throw-away.
-- [ ] Decide with the user whether a headless VM (`tools/desktop-vm`, as in other repos) is wanted.
-  Until then the scripts run on the host desktop.
+- [ ] A headless Hyper-V VM harness in `tools/desktop-vm/` (user's choice, 2026-11-01), modelled on
+  ReadTheStupidText's `D:\ReadTheStupidText\tools\desktop-vm` (`New-TestVm.ps1`, `Reset-TestVm.ps1`,
+  `Build-TestPackage.ps1`, `Invoke-DesktopTest.ps1`, `checks/`): build a package, copy it into the VM,
+  run the `tools/desktop-test` scripts there, collect the report. Its own VM name (for example
+  `ptdb-desktop-test`); never start, change or reuse the `rtst-desktop-test` VM. Cheapest path first:
+  if RTST's base image or VHD can be copied, copy it rather than install Windows from scratch.
+  Snapshot after setup and reset from the snapshot before each run.
 
-Verify: each script passes on the host against a Release build, and the unverified lines it covers
+Verify: each script passes in the VM against a Release build, and the unverified lines it covers
 are removed from `docs/plan/unverified.md`.
 
-## Waiting on the user
+## User's answer
 
-Whether to build this slice, and whether to use the host desktop or a Hyper-V VM.
+2026-11-01: build it; the checks run in a Hyper-V VM, not on the host desktop.

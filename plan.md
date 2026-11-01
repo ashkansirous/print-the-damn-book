@@ -26,8 +26,8 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | --- | --- | --- | --- | --- | --- |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
-| 20 | Dino open and store hardening (review leftovers) | parked: feedback loop, waits for the user | | | [20](docs/plan/slices/20-dino-open-hardening.md) |
-| 21 | Scripted desktop checks (test harness) | parked: feedback loop, waits for the user | | | [21](docs/plan/slices/21-desktop-test-harness.md) |
+| 20 | Dino open and store hardening (review leftovers) | planned | | | [20](docs/plan/slices/20-dino-open-hardening.md) |
+| 21 | Scripted desktop checks (test harness) | planned | | | [21](docs/plan/slices/21-desktop-test-harness.md) |
 
 Notes:
 
