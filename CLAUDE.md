@@ -25,6 +25,7 @@ dotnet run --project src/PrintTheDamnBook.App
   `PageViewModel`), `Themes/` (`Nocturne.xaml` tokens, `Controls.xaml`, `Icons.xaml`), `Views/` (wizard step views `OpenStepView`, `CheckStepView`, `PrintStepView`, `DoneStepView`; `NocturneDialog`), `Services/` (`FolderImages`, `ThumbnailLoader`, `ImageDecoder`, `FontLicences`),
   `Printing/` (System.Printing, on `StaThread`), `Settings/` (`SettingsStore`).
 - `tests/PrintTheDamnBook.Core.Tests/` — xUnit v3, covers everything in Core.
+- `tests/PrintTheDamnBook.App.Tests/` — xUnit v3, net10.0-windows, App view-model tests (`InternalsVisibleTo`).
 - `tools/store-assets/` — generates the Store/MSIX images from `docs/design`.
 - `site/` — Cloudflare Workers static landing site (`wrangler.jsonc`, `public/`).
 - `Book sample/` — the user's 12 sample pages, git-ignored; use it for hands-on checks.
@@ -79,3 +80,4 @@ dotnet run --project src/PrintTheDamnBook.App
 - Band rectangles, `BandSuggestion` scoring and panel opacity live in Core (`Text/`, `Layout/`); the App only decodes via `Services/ImageDecoder` and hands over pixels off the UI thread. A user's band pick is never re-suggested over. (Slice 16: docs/plan/slices/16-text-band-suggestion.md)
 - .dino files are untrusted: parse only through `Core/Dino` (`DinoBookReader`) with its caps and name checks; extracted books live in the per-hash cache (`DinoBookCache`), never next to the .dino. (Slice 15: docs/plan/slices/15-open-dino-books.md)
 - Store network access goes only through `Services/DinoStoreClient` with the `DinoStoreCatalog` allow-list: plain GETs, no identifiers. Downloaded files go through `DinoBookReader` like any .dino. The site's privacy text (`site/public/privacy.html`) and the dialog footer must stay in step. (Slice 18: docs/plan/slices/18-dino-store.md)
+- Store failure kinds are typed (`DinoDiskException`, `DinoNetworkException`); never classify a failure from a bare `IOException` or message text. (Slice 20: docs/plan/slices/20-dino-open-hardening.md)
