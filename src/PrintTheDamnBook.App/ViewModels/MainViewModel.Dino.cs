@@ -102,10 +102,14 @@ public sealed partial class MainViewModel
         }
     }
 
-    /// <summary>Opens a <c>.dino</c> file; if called again before it finishes, only the newest call updates the view.</summary>
-    public async Task LoadDinoAsync(string path)
+    /// <summary>
+    /// Opens a <c>.dino</c> file; if called again before it finishes, only the newest call updates the view. <see cref="DinoLoadResult.Opened"/>
+    /// only when this call's book is now the open one; <see cref="DinoLoadResult.Rejected"/> only when the reader refused the file as not a usable Dino book.
+    /// </summary>
+    public async Task<DinoLoadResult> LoadDinoAsync(string path)
     {
         var (version, cancel, slow) = BeginLoad(ReadingBookText);
+        var result = DinoLoadResult.Skipped;
         try
         {
             // No token on Task.Run: a cancelled open waits for the extraction to notice and stop, so a re-open never races it on the folder.
@@ -113,6 +117,7 @@ public sealed partial class MainViewModel
             if (IsCurrentLoad(version, cancel))
             {
                 Show(loaded.Dino!.Folder, loaded);
+                result = DinoLoadResult.Opened;
             }
             else
             {
@@ -128,12 +133,21 @@ public sealed partial class MainViewModel
             if (version == _loadVersion)
             {
                 ShowFailure(FailureMessage(ex));
+                result = ex is DinoBookException ? DinoLoadResult.Rejected : DinoLoadResult.Failed;
             }
         }
         finally
         {
             EndLoad(version, cancel, slow);
         }
+
+        return result;
+    }
+
+    /// <summary>Shows a failure from outside the open itself (the store dialog) in the Open step's normal failure status.</summary>
+    public void ReportOpenFailure(Exception ex)
+    {
+        ShowFailure(FailureMessage(ex));
     }
 
     /// <summary>The reason shown for a book that could not be opened: the file's own message when it is meant for the user, else a plain sentence.</summary>

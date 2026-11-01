@@ -38,8 +38,8 @@ Built for printers at home
 - Fit the whole page or fill and crop, set the margin and the flip edge. Your printer and options are remembered on this PC.
 - Blank pages are added before the back cover when the page count doesn't fill a sheet.
 
-Private and offline
-- Your pictures stay on your PC. The app only reads your page images, needs no account and makes no network connections.
+Private
+- Your pictures stay on your PC. The app only reads your page images and needs no account. It goes online only if you open Dino's story store, to fetch the list, covers and the one book you pick; it sends no identifiers, cookies or analytics (like any web request, the store sees your PC's internet address).
 
 ## Features (one per line, at most 20)
 
@@ -50,7 +50,7 @@ Private and offline
 - Test sheet to check the flip edge before the whole book
 - A4 or Letter, fit or fill, adjustable margin
 - Remembers your printer and options on this PC
-- Works offline: no account, no network, files never leave your PC
+- No account; files never leave your PC (the app goes online only if you open Dino's story store)
 
 ## Keywords (at most 7 terms)
 
@@ -86,7 +86,7 @@ The MSIX tile and logo images (Square44/71/150/310, Wide310x150, StoreLogo, spla
 
 ## Age rating (IARC questionnaire)
 
-Answer every question "No" or "None": no violence, sexual content, language, controlled substances or gambling. The app does not share user-generated content, does not let users interact, shares no location, makes no purchases and uses no network. Expected rating: 3+ / Everyone. Category for the questionnaire: Utility, productivity, collaboration or other.
+Answer every question "No" or "None": no violence, sexual content, language, controlled substances or gambling. The app does not share user-generated content, does not let users interact, shares no location, makes no purchases. It uses the network only when the user opens Dino's story store, with plain downloads and no identifiers, cookies or analytics sent (the store sees the PC's internet address, as with any web request). Expected rating: 3+ / Everyone. Category for the questionnaire: Utility, productivity, collaboration or other.
 
 ## Package properties for the submission form
 

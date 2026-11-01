@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "stories": [
+    {
+      "id": "a02c0731b7ac475a896e9184f3575e7b",
+      "title": "X Marks the Treasure!",
+      "language": "en",
+      "schemaVersion": 1,
+      "version": 7,
+      "pageCount": 17,
+      "minutes": 7,
+      "credits": "A Dino Reader picture book · free to share",
+      "ageMin": 3,
+      "ageMax": 6,
+      "author": "Ashkan Sirous",
+      "coverUrl": "/api/stories/a02c0731b7ac475a896e9184f3575e7b/cover?v=7",
+      "downloadUrl": "/api/stories/a02c0731b7ac475a896e9184f3575e7b/download?v=7"
+    },
+    {
+      "id": "61bb25b8f132413c82a4208827c7563b",
+      "title": "Good Enough",
+      "language": "en",
+      "schemaVersion": 1,
+      "version": 6,
+      "pageCount": 10,
+      "minutes": 2,
+      "credits": "A Dino Reader picture book · free to share",
+      "ageMin": 5,
+      "ageMax": 8,
+      "author": "Ashkan Sirous",
+      "coverUrl": "/api/stories/61bb25b8f132413c82a4208827c7563b/cover?v=6",
+      "downloadUrl": "/api/stories/61bb25b8f132413c82a4208827c7563b/download?v=6"
+    },
+    {
+      "id": "bee62232085d4c1ab50cdf574530f473",
+      "title": "The Gingerbread Man",
+      "language": "en",
+      "schemaVersion": 1,
+      "version": 10,
+      "pageCount": 14,
+      "minutes": 6,
+      "credits": "Retold traditional tale · free to share",
+      "ageMin": 3,
+      "ageMax": 6,
+      "author": "Traditional",
+      "coverUrl": "/api/stories/bee62232085d4c1ab50cdf574530f473/cover?v=10",
+      "downloadUrl": "/api/stories/bee62232085d4c1ab50cdf574530f473/download?v=10"
+    }
+  ]
+}
