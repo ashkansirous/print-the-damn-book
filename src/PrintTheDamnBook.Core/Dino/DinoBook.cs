@@ -1,13 +1,18 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using PrintTheDamnBook.Core.Text;
 
 namespace PrintTheDamnBook.Core.Dino;
 
 /// <summary>One page of a Dino Reader book: its words in the book's own language and the name of its picture inside the package.</summary>
 public sealed record DinoPage(string Text, string ImageFile);
 
-/// <summary>A language a Dino book can be read in. Right-to-left ones are listed but cannot be printed yet.</summary>
-public sealed record DinoLanguage(string Code, string Name, bool IsRightToLeft, bool IsOwn);
+/// <summary>A language a Dino book can be read in. A right-to-left one can be printed only when the app can set it in type (Farsi and Arabic).</summary>
+public sealed record DinoLanguage(string Code, string Name, bool IsRightToLeft, bool IsOwn)
+{
+    /// <summary>False for a right-to-left language the app has no font for yet (Hebrew ...): listed, but not selectable.</summary>
+    public bool IsSupported => !IsRightToLeft || TextDirection.IsSupportedRightToLeftLanguage(Code);
+}
 
 /// <summary>
 /// What this app reads of a <c>.dino</c> book (Slice 15): title, language, cover picture, pages with words, and the translation tables
@@ -34,12 +39,12 @@ public sealed record DinoBook(
     }
 
     /// <summary>
-    /// The language the words start in: the book's own, or, when that one is right-to-left (not printable yet), the first translation that is not.
-    /// Null when every language in the book is right-to-left.
+    /// The language the words start in: the book's own, or, when that one is right-to-left and not supported (Hebrew ...), the first supported translation.
+    /// Null when no language in the book is supported.
     /// </summary>
     public DinoLanguage? StartLanguage()
     {
-        return Languages().FirstOrDefault(l => !l.IsRightToLeft);
+        return Languages().FirstOrDefault(l => l.IsSupported);
     }
 
     /// <summary>A language by its code, as the language select names it.</summary>

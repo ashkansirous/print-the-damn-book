@@ -19,6 +19,9 @@ public sealed record BookText
     /// <summary>For a Dino book, the language its words are in (null for the book's own); unused for a folder.</summary>
     public string? Language { get; init; }
 
+    /// <summary>The reader's own pick of which side the book opens from; null until they pick (the direction then follows the language or the first story text, see <see cref="TextDirection.Resolve"/>). Absent in older files.</summary>
+    public ReadingDirection? ReadingDirection { get; init; }
+
     public Dictionary<string, PageTextEntry> Pages { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
@@ -147,6 +150,7 @@ public static class BookTextJson
         {
             Pages = pages,
             TextPages = Enum.IsDefined(book.TextPages) ? book.TextPages : TextPageBackground.White,
+            ReadingDirection = book.ReadingDirection is { } direction && Enum.IsDefined(direction) ? direction : null,
         };
     }
 }
