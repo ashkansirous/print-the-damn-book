@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27 (wave done). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked.
+Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17 and 19 merged 2026-11-01. The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked.
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -26,17 +26,16 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | --- | --- | --- | --- | --- | --- |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
-| 17 | Right-to-left books (Farsi and Arabic) | planned | | | [17](docs/plan/slices/17-right-to-left-books.md) |
-| 18 | Get a story from Dino's store | planned | | | [18](docs/plan/slices/18-dino-store.md) |
-| 19 | Open a book handed over by Dino Reader | planned | | | [19](docs/plan/slices/19-open-from-dino-reader.md) |
+| 18 | Get a story from Dino's store | in progress | #34 | | [18](docs/plan/slices/18-dino-store.md) |
 
 Notes:
 
-- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14 to 16).
+- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14 to 17, 19).
 
 ## Outstanding work
 
-- Slice 19 follow-up: add a "Print this book" slice to Dino Reader's plan (`D:\ReadTheStupidText`) once Slice 19 merges ([slice 19](docs/plan/slices/19-open-from-dino-reader.md)).
+- **Not yet tried on a device:** 8 checks across 2 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- Slice 19: sweeping older versions of a book also deletes that version's `book.json` (Slice 15 behaviour, found in check 2); Dino Reader follow-up: add a "Print this book" slice to its plan (`D:\ReadTheStupidText`) now that Slice 19 has merged ([slice 19](docs/plan/slices/19-open-from-dino-reader.md)).
 - Slice 15: memory not returned after a very large book (about 1.6 GB held after a 420-page stress book is replaced, also on main for folder opens; needs a profiler); about 3 in 18 cancelled opens leave a cache folder behind (cleaned on reopen); drop-zone drag checked with a real Explorer drag only once ([slice 15](docs/plan/slices/15-open-dino-books.md)).
 - Slice 16: pre-print status and Cancel on a large folder (wait over 500 ms); suggestion quality on real noisy photos, thresholds tuned only on synthetic images ([slice 16](docs/plan/slices/16-text-band-suggestion.md)).
 - Slice 14: a real paper print and fold; performance with many story pages (re-layout on the UI thread on each typing pause) ([slice 14](docs/plan/slices/14-typed-text-pages.md)).

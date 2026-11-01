@@ -18,3 +18,5 @@ Rows moved out of `plan.md` once built. Status `built` until the user confirms o
 | 14 | Story text: typed, on the picture or on its own page (design done) | built | #26 | | [14](../slices/14-typed-text-pages.md) |
 | 15 | Open a Dino Reader book (`.dino`) (after 14) | built | #29 | | [15](../slices/15-open-dino-books.md) |
 | 16 | Top and middle bands, empty-space suggestion (after 14) | built | #27 | | [16](../slices/16-text-band-suggestion.md) |
+| 17 | Right-to-left books (Farsi and Arabic) | built | #36 | | [17](../slices/17-right-to-left-books.md) |
+| 19 | Open a book handed over by Dino Reader | built | #35 | | [19](../slices/19-open-from-dino-reader.md) |
