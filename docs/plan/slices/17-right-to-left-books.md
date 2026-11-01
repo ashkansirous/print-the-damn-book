@@ -1,0 +1,89 @@
+### Slice 17 — Right-to-left books (Farsi and Arabic)
+
+*Planned 2026-11-01.*
+
+**Touches:** `src/PrintTheDamnBook.Core/Imposition.cs`, `src/PrintTheDamnBook.Core/Spreads.cs`,
+`src/PrintTheDamnBook.Core/Sheet.cs`, `src/PrintTheDamnBook.Core/Layout/**`, `src/PrintTheDamnBook.Core/Text/**`,
+`src/PrintTheDamnBook.Core/Dino/DinoBook.cs`, `src/PrintTheDamnBook.Core/Dino/DinoTranslator.cs`,
+`tests/PrintTheDamnBook.Core.Tests/**`, `src/PrintTheDamnBook.App/Printing/StoryPainter.cs`,
+`src/PrintTheDamnBook.App/Printing/FaceRenderer.cs`, `src/PrintTheDamnBook.App/Printing/ManualDuplexRunner.cs`,
+`src/PrintTheDamnBook.App/Views/CheckStepView.xaml*`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`,
+`src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/Services/BookTextStore.cs`,
+`src/PrintTheDamnBook.App/Services/FontLicences.cs`, `src/PrintTheDamnBook.App/Fonts/Vazirmatn*`,
+`src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj`, `CLAUDE.md` (index pass only)
+
+**Why.** The user asked to "add right to left languages" (2026-11-01). Their Dino books exist in Farsi, and Slice 15
+disabled every right-to-left language with "right-to-left books are not supported yet".
+
+**What the code does today (grounded 2026-11-01).**
+
+- Story text is wrapped and drawn by WPF `FormattedText` in `Printing/StoryPainter.cs:91-98`, with `FlowDirection`
+  hard-coded to `LeftToRight`, `InvariantCulture` and Andika. The editor `TextBox` (`CheckStepView.xaml:413`) has no
+  `FlowDirection`. Core only computes rectangles and font size (`Layout/StoryTextLayout.cs`).
+- Only `Fonts/Andika-Regular.ttf` is bundled; there is no font fallback. (Andika's lack of Arabic glyphs is from memory,
+  not checked against its glyph table.)
+- Left/right slots are fixed in `Core/Imposition.cs:37-41`. The text-page side (`StoryTextLayout.cs:148`, `rightHalf`),
+  the spread-alignment spacers and `ManualDuplexPlan` all assume a left-bound book.
+- `Dino/DinoBook.cs:10` has `DinoLanguage(Code, Name, IsRightToLeft, IsOwn)` from `CultureInfo.TextInfo.IsRightToLeft`;
+  `StartLanguage()` (`:40-42`) skips RTL languages and a book whose languages are all RTL is refused.
+- Page numbers are drawn with `number.ToString(InvariantCulture)` in `FaceRenderer.cs:262`.
+- Dino Reader solved the text side already (`D:\ReadTheStupidText\docs/plan/slices/96-dino-layout-never-mirrors.md`):
+  each text picks its direction from its first strong letter, and Arabic-script text uses Vazirmatn.
+
+**Decisions** (locked with the user via RefineScope, 2026-11-01):
+
+1. **A right-to-left book opens from the right.** Cover on the right, pages turn leftward. Every left/right choice in
+   imposition, spread-alignment spacers, the text-page side, the "As printed" preview and manual duplex is mirrored.
+2. **Languages and font:** Farsi and Arabic, in Vazirmatn (OFL; licence added to `Services/FontLicences`). Hebrew and
+   other non-Arabic-script RTL languages stay disabled ("this language is not supported yet").
+3. **How a book becomes RTL:** a *Reading direction* switch (Left to right / Right to left) on the Check step, saved in
+   `book.json`. A `.dino` book sets it from the chosen language (changing the language re-sets it). A folder book
+   sets it from the first strong letter of its first non-empty story text until the user picks; the user's pick is
+   saved and never re-guessed over.
+4. **The app's own screens are not translated and never mirror.** Only the book changes.
+5. **Each story text picks its own direction and alignment** from its first strong letter (Core), in print and in the
+   typing box.
+6. **Page number digits:** Persian digits (۱۲۳) in Farsi books, Arabic-Indic (١٢٣) in Arabic books, Latin otherwise,
+   chosen in Core `PageNumbering`.
+7. **.dino:** Farsi and Arabic become selectable; the "not supported yet" message stays only for other RTL languages.
+8. **Landing site** stays as is.
+
+**Imposition (the rule change).** For a right-to-left book each face swaps sides:
+front `left = p[2k]`, `right = p[N-1-2k]`; back `left = p[N-2-2k]`, `right = p[2k+1]`. Left-to-right stays exactly as
+in `CLAUDE.md`. Blanks still go before the back cover.
+
+**Work.** The first item is the smallest end-to-end path: a folder book with the switch set to Right to left prints
+mirrored sheets.
+
+- [ ] Core: `ReadingDirection` enum (`LeftToRight`, `RightToLeft`), carried by the book text model (`Text/BookText.cs`)
+      and read/written by `BookTextStore` (`readingDirection`, absent = left to right, so old `book.json` files load).
+      Tests for the round trip and the missing field.
+- [ ] Core: `Imposition` takes the direction and mirrors faces as above. Tests: 4, 8, 12 and padded page counts in
+      both directions; RTL sheet `k` equals the LTR sheet with each face's sides swapped.
+- [ ] Core: spread-alignment spacers (`Spreads.cs`), text-page side (`StoryTextLayout.cs`, `rightHalf`), and
+      `ManualDuplexPlan` (order and rotation) follow the direction. Tests for each in both directions.
+- [ ] App: *Reading direction* switch on the Check step next to the language select, using the existing segmented
+      switch style from `Controls.xaml` (no mock exists; labels "Left to right" / "Right to left",
+      `AutomationProperties.Name` "Reading direction"). The "As printed" preview shows the mirrored sheets.
+- [ ] Core: `TextDirection.StartsRightToLeft(text)` (first strong character; empty or neutral-only = left to right) and
+      `StoryFont.For(text)` (Vazirmatn when the text has Arabic-script letters, else Andika). Tests including mixed
+      text, digits only, and leading punctuation.
+- [ ] Core: default direction for a folder book from the first non-empty story text, applied only while the user has
+      not picked; tests that a saved pick is never replaced.
+- [ ] App: bundle `Vazirmatn-Regular.ttf` with its OFL licence, list it in `FontLicences`; `StoryPainter` uses
+      `StoryFont.For` and sets `FlowDirection` and alignment per text; the Check step's text box does the same as you
+      type. Shrink-to-fit still comes from Core.
+- [ ] Core: page-number digits by book language (`fa` → U+06F0..U+06F9, `ar` → U+0660..U+0669, else Latin), in
+      `PageNumbering`; `FaceRenderer` draws the string Core gives it. Tests.
+- [ ] Core/App: `.dino` — Farsi and Arabic enabled in `DinoTranslator`/`DinoBook` (`StartLanguage` no longer skips
+      them; a book is refused only if no language is supported); choosing one sets the reading direction. Tests.
+- [ ] Docs (index pass after merge): replace the imposition rule in `CLAUDE.md` with both directions
+      (`plan.md` *Out of Scope* was already updated by the plan PR).
+
+**Verification.**
+
+- `dotnet test PrintTheDamnBook.slnx`: the imposition, spacer, text-side, manual-duplex, direction, font and digit tests.
+- Desktop (device-test, scripted): open a Farsi `.dino` from `Book sample/` or a fixture, check the language select
+  offers Farsi, the switch reads Right to left, the "As printed" preview shows the cover on the right, Farsi text is
+  right-aligned in Vazirmatn; Print to PDF and compare page order with the RTL formula; page numbers in Persian digits.
+- Paper (user): print and fold one Farsi book; it opens from the right and reads in order.

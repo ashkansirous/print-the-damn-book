@@ -26,6 +26,9 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | --- | --- | --- | --- | --- | --- |
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
+| 17 | Right-to-left books (Farsi and Arabic) | planned | | | [17](docs/plan/slices/17-right-to-left-books.md) |
+| 18 | Get a story from Dino's store | planned | | | [18](docs/plan/slices/18-dino-store.md) |
+| 19 | Open a book handed over by Dino Reader | planned | | | [19](docs/plan/slices/19-open-from-dino-reader.md) |
 
 Notes:
 
@@ -33,6 +36,7 @@ Notes:
 
 ## Outstanding work
 
+- Slice 19 follow-up: add a "Print this book" slice to Dino Reader's plan (`D:\ReadTheStupidText`) once Slice 19 merges ([slice 19](docs/plan/slices/19-open-from-dino-reader.md)).
 - Slice 15: memory not returned after a very large book (about 1.6 GB held after a 420-page stress book is replaced, also on main for folder opens; needs a profiler); about 3 in 18 cancelled opens leave a cache folder behind (cleaned on reopen); drop-zone drag checked with a real Explorer drag only once ([slice 15](docs/plan/slices/15-open-dino-books.md)).
 - Slice 16: pre-print status and Cancel on a large folder (wait over 500 ms); suggestion quality on real noisy photos, thresholds tuned only on synthetic images ([slice 16](docs/plan/slices/16-text-band-suggestion.md)).
 - Slice 14: a real paper print and fold; performance with many story pages (re-layout on the UI thread on each typing pause) ([slice 14](docs/plan/slices/14-typed-text-pages.md)).
@@ -61,4 +65,5 @@ Notes:
 - Printing through another app's dialog, or a Dockerfile / GHCR image (desktop app, no backend).
 - macOS or Linux builds. (Android and iOS are parked slices 12–13, not out of scope.)
 - A light theme for the redesign (Nocturne is dark only for now).
-- Right-to-left books (the imposition would mirror left and right; not needed for the sample). Farsi Dino books stay out too (Slice 15).
+- Translating or mirroring the app's own screens (Slice 17 changes only the book). Hebrew and other non-Arabic-script right-to-left languages.
+- The Dino Reader side of the hand-over (its "Print this book" action); Slice 19 builds only this app's side.
