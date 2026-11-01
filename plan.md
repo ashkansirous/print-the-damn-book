@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Every slice except 12, 13 and 21 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 was built on draft PR #44 by night 2026-11-01-2024 and parked because the auto-mode permission check denied its VM run. 20 merged 2026-11-01 (PR #45).
+Every slice except 12, 13, 21 and 22 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 was built on draft PR #44 by night 2026-11-01-2024 and parked because the auto-mode permission check denied its VM run. 20 merged 2026-11-01 (PR #45).
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -27,18 +27,22 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
 | 21 | Scripted desktop checks (test harness) | parked: waits for the user to allow the VM run | #44 (draft) | | [21](docs/plan/slices/21-desktop-test-harness.md) |
+| 22 | Dino follow-ups from Slice 20's reviews and tests | parked: feedback loop, waits for the user | | | [22](docs/plan/slices/22-dino-review-followups.md) |
 
 Notes:
 
 - [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14 to 20).
 - [2026-11-01-1141-feedback-loop-w1.md](docs/plan/notes/2026-11-01-1141-feedback-loop-w1.md): feedback loop after night round 1 (Slices 17-19).
 - [2026-11-01-1141-feedback-loop-final.md](docs/plan/notes/2026-11-01-1141-feedback-loop-final.md): final feedback loop of that night (worktree locks traced to check timers and same-call removals).
+- [2026-11-01-2024-feedback-loop-w1.md](docs/plan/notes/2026-11-01-2024-feedback-loop-w1.md): feedback loop after night 2026-11-01-2024 round 1 (Slice 20 merged, Slice 21 parked on the shared-VM permission).
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 5 checks across 3 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 6 checks across 3 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
 - Slice 21, waiting on the user: built and reviewed on draft PR #44, but the first in-VM run (`tools/desktop-vm/Invoke-DesktopTest.ps1` on the shared rtst-desktop-test VM) was denied by the auto-mode permission check, so nothing in the harness has run. Allow that run (or run it from an interactive session); then a check pass on PR #44 is due, since review fixes landed after the last pass ([slice 21](docs/plan/slices/21-desktop-test-harness.md)).
 - Slice 20, waiting on the user: words typed into a book opened in an `.alt-<guid>` folder (another window held the cache) are saved only there and go when the lone-instance sweep runs (Slice 19 behaviour on main, kept); decide whether to warn or merge them back ([slice 20](docs/plan/slices/20-dino-open-hardening.md)).
+- Slice 21, stale text on `main` (feedback loop 2026-11-01-2024): its slice file still says "own VM, never reuse `rtst-desktop-test`", and its row says the VM run waits for permission. The user gave the permission at 21:43, and PR #44's copy of the file holds the reuse contract. Merging #44 fixes both; if it doesn't merge, the next index pass corrects them.
+- Slice 22, waiting on the user (parked by the feedback loop): Slice 20's App tests likely use the real `%LOCALAPPDATA%` cache, failures are still classified by message text in one place, ten low review notes, and the store dialog's failed states were written without a design. Decide whether to build it, and whether to send the failed states to Claude Design first ([slice 22](docs/plan/slices/22-dino-review-followups.md)).
 - Slice 19: sweeping older versions of a book also deletes that version's `book.json` (Slice 15 behaviour, found in check 2); Dino Reader follow-up: add a "Print this book" slice to its plan (`D:\ReadTheStupidText`) now that Slice 19 has merged ([slice 19](docs/plan/slices/19-open-from-dino-reader.md)).
 - Slice 15: memory not returned after a very large book (about 1.6 GB held after a 420-page stress book is replaced, also on main for folder opens; needs a profiler); about 3 in 18 cancelled opens leave a cache folder behind (cleaned on reopen); drop-zone drag checked with a real Explorer drag only once ([slice 15](docs/plan/slices/15-open-dino-books.md)).
 - Slice 16: pre-print status and Cancel on a large folder (wait over 500 ms); suggestion quality on real noisy photos, thresholds tuned only on synthetic images ([slice 16](docs/plan/slices/16-text-band-suggestion.md)).

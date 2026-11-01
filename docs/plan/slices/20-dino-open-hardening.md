@@ -89,7 +89,7 @@ Find the others by the member they name (`DeleteOtherVersions` / `OtherVersions`
 - `slice-20-check3-medium.md`: applied 1 (any reader failure but cancel means "not usable") and 2 (a locked or different file in the way says "in use by another window", new `DinoFileInUseException`). 7 needed no change: `TryCopySavedWords` only copies `book.json`, it never parses it. Skipped 3-6 and 8 as low (8: an unprintable-language book stays in the store folder by design of item 4).
 - `slice-20-check4-medium.md` (final pass on the merged code): no medium or high finding; ten low notes left as they are.
 
-*Desktop run 2026-11-01* on the host (live store, Release exe): the list showed 16 cards with no "0 pages"; a download opened; an existing download was reused without re-download; Cancel showed "Download cancelled."; a truncated file was re-downloaded. Evidence: `D:/print-the-damn-book-worktrees/reviews/slice-20-desktop-run/`.
+*Desktop run 2026-11-01* on the host (live store, Release exe): the list showed 16 cards with no "0 pages"; a download opened; an existing download was reused without re-download; Cancel showed "Download cancelled."; a truncated file was re-downloaded. Evidence: `D:/print-the-damn-book-worktrees/reviews/slice-20-desktop-run/` (deleted by the night's housekeeping on 2026-11-01; the results above and in `wave-1.md` of night 2026-11-01-2024 are what is left).
 
 *Known behaviours:* an existing download that another window holds open is fetched again into a `.part`; a cancelled list load closes silently as before.
 
@@ -104,4 +104,4 @@ Find the others by the member they name (`DeleteOtherVersions` / `OtherVersions`
 
 - The failed state with Back to list on a real download failure (cannot be forced without changing live state).
 - The hand-over alert for an `IOException` hand-over (unit-tested only).
-- The "in use by another window" message when two windows download the same book (unit-tested only). Reuse, Cancel and the truncated-file re-download were re-run on the final build on 2026-11-01 and pass (`reviews/slice-20-desktop-run/rerun.md`, outside the repo).
+- The "in use by another window" message when two windows download the same book (unit-tested only). Reuse, Cancel and the truncated-file re-download were re-run on the final build on 2026-11-01 and pass (`reviews/slice-20-desktop-run/rerun.md`, outside the repo, deleted 2026-11-01).

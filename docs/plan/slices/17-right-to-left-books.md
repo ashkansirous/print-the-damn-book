@@ -176,3 +176,4 @@ Evidence: `D:\print-the-damn-book-worktrees\reviews\verify-checks-2026-11-01.md`
 #### Not yet verified
 
 - Paper print and fold of one Farsi book (user).
+- The font the Farsi text is drawn in (Vazirmatn): the 2026-11-01 run saw Arabic-script glyphs but did not read the font name from the UI tree (feedback loop 2026-11-01-2024).
