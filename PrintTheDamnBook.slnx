@@ -4,6 +4,7 @@
     <Project Path="src/PrintTheDamnBook.Core/PrintTheDamnBook.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/PrintTheDamnBook.App.Tests/PrintTheDamnBook.App.Tests.csproj" />
     <Project Path="tests/PrintTheDamnBook.Core.Tests/PrintTheDamnBook.Core.Tests.csproj" />
   </Folder>
 </Solution>

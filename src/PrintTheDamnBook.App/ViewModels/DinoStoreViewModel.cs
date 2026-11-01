@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
+using System.Net.Http;
 using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -92,7 +94,7 @@ public sealed record DinoStoreLanguageOption(string Code, string Label);
 
 /// <summary>
 /// The "Stories from Dino" dialog (Slice 18): loads the list, filters it by language, downloads the chosen book and hands back the
-/// <c>.dino</c> path. Each wait is a state of its own; Cancel stops the work and, for a download, keeps nothing.
+/// <c>.dino</c> path. Each wait is a state of its own; Cancel stops the work and, for a download, returns to the list.
 /// </summary>
 public sealed partial class DinoStoreViewModel : ObservableObject
 {
@@ -100,8 +102,13 @@ public sealed partial class DinoStoreViewModel : ObservableObject
     private const string LanguageFormat = "{0} · {1}";
     private const string ProgressFormat = "{0} of {1} MB";
     private const string ProgressUnknownFormat = "{0} MB";
+    private const string ConnectionHeading = "I couldn't reach Dino's store";
+    private const string ConnectionHint = "Check the internet connection and try again. Folders and .dino files on this PC still open as usual.";
+    private const string OtherHeading = "That didn't work";
+    private const string OtherHint = "Try again, or go back to the list and pick another book.";
+    private const string OtherHintNoList = "Try again in a moment.";
     private const string UnexpectedFailure = "Something went wrong with Dino's store.";
-    private const string CancelledNote = "Download cancelled. Nothing was kept.";
+    private const string CancelledNote = "Download cancelled.";
     private const double BytesPerMb = 1024 * 1024;
     private const int CoverWidth = 240;
     private const int NoDownloadPercent = 0;
@@ -113,7 +120,9 @@ public sealed partial class DinoStoreViewModel : ObservableObject
     private readonly List<Task> _running = [];
     private readonly Queue<DinoStoreCardViewModel> _coverQueue = new();
     private readonly HashSet<DinoStoreCardViewModel> _coverTaken = [];
+    private readonly HashSet<DinoStoreCardViewModel> _coverRetried = [];
     private List<DinoStoreCardViewModel> _all = [];
+    private Dictionary<DinoStoreEntry, DinoStoreCardViewModel> _cardOf = [];
     private DinoStoreCatalog? _catalog;
     private CancellationTokenSource? _work;
     private CancellationTokenSource? _covers;
@@ -172,6 +181,18 @@ public sealed partial class DinoStoreViewModel : ObservableObject
     [ObservableProperty]
     public partial string FailureReason { get; set; } = string.Empty;
 
+    /// <summary>The failed state's heading: the connection one only when the failure was about reaching the store.</summary>
+    [ObservableProperty]
+    public partial string FailureHeading { get; set; } = ConnectionHeading;
+
+    /// <summary>What to do next, matching <see cref="FailureHeading"/>.</summary>
+    [ObservableProperty]
+    public partial string FailureHint { get; set; } = ConnectionHint;
+
+    /// <summary>True when a download failed and the list is still there to go back to (a failed list has none).</summary>
+    [ObservableProperty]
+    public partial bool CanGoBack { get; set; }
+
     partial void OnStateChanged(DinoStoreState value)
     {
         OnPropertyChanged(nameof(IsLoading));
@@ -196,6 +217,7 @@ public sealed partial class DinoStoreViewModel : ObservableObject
         var cancel = BeginWork();
         ResetCovers();
         _retryCard = null;
+        ResetFailure();
         State = DinoStoreState.Loading;
         Note = string.Empty;
         return Track(LoadListAsync(cancel));
@@ -219,7 +241,7 @@ public sealed partial class DinoStoreViewModel : ObservableObject
         {
             if (IsCurrent(work))
             {
-                Fail(ReasonOf(ex));
+                Fail(ex, canGoBack: false);
             }
 
             DinoStoreLog.Write("list failed: " + ex.Message);
@@ -270,9 +292,15 @@ public sealed partial class DinoStoreViewModel : ObservableObject
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            if (IsCurrent(cancel))
+            // A Cancel that raced an abort can come up as a network or IO error; it is still a cancel.
+            if (IsCurrent(cancel) && cancel.IsCancellationRequested)
             {
-                Fail(ReasonOf(ex));
+                DinoStoreLog.Write("download error after cancel treated as cancelled: " + ex.GetType().Name);
+                BackToList(CancelledNote);
+            }
+            else if (IsCurrent(cancel))
+            {
+                Fail(ex, canGoBack: true);
             }
 
             DinoStoreLog.Write("download failed: " + ex.Message);
@@ -345,10 +373,55 @@ public sealed partial class DinoStoreViewModel : ObservableObject
         _covers?.Cancel();
     }
 
-    private void Fail(string reason)
+    /// <summary>Puts the failed state's texts back to their defaults, so none of them is left over from an earlier failure.</summary>
+    private void ResetFailure()
     {
-        FailureReason = reason;
+        FailureReason = string.Empty;
+        FailureHeading = ConnectionHeading;
+        FailureHint = ConnectionHint;
+        CanGoBack = false;
+    }
+
+    private void Fail(Exception ex, bool canGoBack)
+    {
+        if (!canGoBack)
+        {
+            _retryCard = null;
+        }
+
+        FailureReason = ReasonOf(ex);
+        var aboutConnection = IsAboutConnection(ex);
+        FailureHeading = aboutConnection ? ConnectionHeading : OtherHeading;
+        CanGoBack = canGoBack && _catalog is not null;
+        FailureHint = aboutConnection ? ConnectionHint : CanGoBack ? OtherHint : OtherHintNoList;
         State = DinoStoreState.Failed;
+    }
+
+    /// <summary>
+    /// True only for a failure of the network itself: an <see cref="HttpRequestException"/> with no status, a <see cref="DinoNetworkException"/> (the response stream
+    /// dropped), a timeout (an <see cref="OperationCanceledException"/>; Fail is only reached when the user did not cancel) or a stalled or cut-short transfer. Everything
+    /// else, including a bare <see cref="IOException"/> (never guessed at: the disk raises <see cref="DinoDiskException"/> and the network its own type where each is touched),
+    /// a store refusal (404, 403, a redirect) and a damaged book, is not, where "check your connection" would mislead.
+    /// </summary>
+    private static bool IsAboutConnection(Exception ex)
+    {
+        return ex switch
+        {
+            DinoBookException book => book.Message is DinoStreamCopier.TimedOut or DinoStreamCopier.CutShort,
+            DinoStoreException store => store.InnerException is not null && IsAboutConnection(store.InnerException),
+            DinoNetworkException => true,
+            HttpRequestException http => http.StatusCode is null,
+            OperationCanceledException => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>Back to list on a failed download: the list is shown again, with no note.</summary>
+    [RelayCommand]
+    public void BackToLastList()
+    {
+        _retryCard = null;
+        BackToList(string.Empty);
     }
 
     private Task Track(Task task)
@@ -372,6 +445,8 @@ public sealed partial class DinoStoreViewModel : ObservableObject
     {
         _catalog = catalog;
         _all = catalog.Entries.Select(e => new DinoStoreCardViewModel(e)).ToList();
+        IEqualityComparer<DinoStoreEntry> byReference = ReferenceEqualityComparer.Instance;
+        _cardOf = _all.ToDictionary(c => c.Entry, byReference);
         _syncingLanguage = true;
         try
         {
@@ -396,7 +471,7 @@ public sealed partial class DinoStoreViewModel : ObservableObject
 
     private void ShowCards()
     {
-        var shown = _catalog!.InLanguage(SelectedLanguage).Select(e => _all.First(c => ReferenceEquals(c.Entry, e))).ToList();
+        var shown = _catalog!.InLanguage(SelectedLanguage).Select(e => _cardOf[e]).ToList();
         Cards = shown;
         QueueVisibleCovers();
     }
@@ -409,6 +484,7 @@ public sealed partial class DinoStoreViewModel : ObservableObject
         _sources.Add(_covers);
         _coverQueue.Clear();
         _coverTaken.Clear();
+        _coverRetried.Clear();
         _coverWorkers = 0;
     }
 
@@ -438,7 +514,12 @@ public sealed partial class DinoStoreViewModel : ObservableObject
                 run.Token.ThrowIfCancellationRequested();
                 var card = _coverQueue.Dequeue();
                 _coverTaken.Add(card);
-                await LoadCoverAsync(card, run.Token);
+                if (!await LoadCoverAsync(card, run.Token) && card.Entry.CoverUrl is not null && _coverRetried.Add(card))
+                {
+                    // One more go at the end of the queue, so a hiccup does not leave a placeholder until Try again.
+                    DinoStoreLog.Write("cover queued for one retry");
+                    _coverQueue.Enqueue(card);
+                }
             }
         }
         catch (OperationCanceledException)
@@ -454,7 +535,8 @@ public sealed partial class DinoStoreViewModel : ObservableObject
         }
     }
 
-    private async Task LoadCoverAsync(DinoStoreCardViewModel card, CancellationToken cancel)
+    /// <summary>True when the card now has its cover; a failure leaves the placeholder (the caller may try once more).</summary>
+    private async Task<bool> LoadCoverAsync(DinoStoreCardViewModel card, CancellationToken cancel)
     {
         try
         {
@@ -467,16 +549,20 @@ public sealed partial class DinoStoreViewModel : ObservableObject
                     _source.DiscardCover(card.Entry);
                 }
             }
+
+            return card.Cover is not null;
         }
         catch (Exception ex) when (ex is not (OperationCanceledException or OutOfMemoryException))
         {
             // One bad cover stays a placeholder; the other covers and the dialog carry on.
             DinoStoreLog.Write("cover failed: " + ex.GetType().Name);
+            return false;
         }
     }
 
     private void StartDownload(DinoStoreCardViewModel card)
     {
+        ResetFailure();
         Downloading = card;
         DownloadTitle = card.Title;
         DownloadPercent = NoDownloadPercent;
@@ -509,6 +595,7 @@ public sealed partial class DinoStoreViewModel : ObservableObject
     {
         Downloading = null;
         Note = note;
+        ResetFailure();
         State = DinoStoreState.List;
     }
 }

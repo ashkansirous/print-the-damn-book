@@ -23,6 +23,7 @@ public sealed partial class MainViewModel
     private const string UnsupportedSuffix = " · this language is not supported yet";
     private const string DinoUnknownFailure = "Could not open this Dino book.";
     private const string NoPrintableLanguageText = "This book is in a language I can't print yet.";
+    private const string SavedWordsLostText = "Another window is using this book's folder, so your saved words could not be carried over.";
     private const string UnsupportedNoticeFormat = "This book's own language is not supported yet. Showing it in {0}.";
     private const string SavedLanguageSuffix = " (as saved with this book)";
     private const string SavedLanguageNotice = "The language this book was saved in is no longer offered, so its words stay as they were.";
@@ -49,6 +50,9 @@ public sealed partial class MainViewModel
 
     /// <summary>The alert of an unusable hand-over that the start of a load dismissed; put back if that load is cancelled.</summary>
     private string? _stashedHandoverProblem;
+
+    /// <summary>The hand-over alert a cancelled load set aside (see <see cref="RestoreHandoverProblem"/>); null when none waits.</summary>
+    internal string? StashedHandoverProblem => _stashedHandoverProblem;
 
     /// <summary>True once a load has run past the slow-wait mark: the Open step then says what it waits for and offers Cancel.</summary>
     [ObservableProperty]
@@ -235,7 +239,7 @@ public sealed partial class MainViewModel
     /// <summary>A hand-over that cannot be read shows the alert; a book picked by hand keeps its normal message.</summary>
     private void ShowDinoFailure(Exception ex, HandoverRequest? handover)
     {
-        if (handover is null || ex is DinoBookException)
+        if (handover is null || ex is DinoBookException or NoPrintableLanguageException)
         {
             ShowFailure(FailureMessage(ex));
             return;
@@ -296,7 +300,8 @@ public sealed partial class MainViewModel
     /// <summary>The reason shown for a book that could not be opened: the file's own message when it is meant for the user, else a plain sentence.</summary>
     private static string FailureMessage(Exception ex)
     {
-        return ex is DinoBookException or IOException or UnauthorizedAccessException ? DinoFailurePrefix + ex.Message : DinoUnknownFailure;
+        var explained = ex is DinoBookException or NoPrintableLanguageException or IOException or UnauthorizedAccessException;
+        return explained ? DinoFailurePrefix + ex.Message : DinoUnknownFailure;
     }
 
     /// <summary>Starts a load: the newest one wins, an older one is cancelled, and the spinner shows only if the wait passes the slow-wait mark.</summary>
@@ -381,7 +386,7 @@ public sealed partial class MainViewModel
         var dino = DinoBookCache.Open(path, cancel);
         try
         {
-            var start = dino.Book.StartLanguage() ?? throw new DinoBookException(NoPrintableLanguageText);
+            var start = dino.Book.StartLanguage() ?? throw new NoPrintableLanguageException(NoPrintableLanguageText);
             var pages = PageOrdering.FromFolder(dino.Files);
             cancel.ThrowIfCancellationRequested();
             var thumbnails = new ThumbnailLoader();
@@ -640,13 +645,15 @@ public sealed partial class MainViewModel
 
     private sealed record TranslationResult(BookPage Page, string FromText, string ToText);
 
-    /// <summary>Tells the user when pages of the file were left out for want of a picture; null when none were.</summary>
-    private string? SkippedNotice() => _dino is { Book.SkippedPages: > 0 and var skipped } ? (skipped == 1 ? SkippedOneText : skipped + SkippedManyText) : null;
-
-    /// <summary>What to tell the user on opening a Dino book: pages left out, and a language that was chosen for them.</summary>
-    private string? DinoNotice()
+    /// <summary>The notice for an opened book: pages left out, a language chosen for them, and saved words that could not be carried over (an alternate folder without them).</summary>
+    internal static string? NoticeOf(OpenedDino? dino, string? languageNotice)
     {
-        var notice = string.Join(' ', new[] { SkippedNotice(), _languageNotice }.OfType<string>());
+        var skipped = dino is { Book.SkippedPages: > 0 and var count } ? (count == 1 ? SkippedOneText : count + SkippedManyText) : null;
+        var lost = dino is { SavedWordsKept: false } ? SavedWordsLostText : null;
+        var notice = string.Join(' ', new[] { skipped, languageNotice, lost }.OfType<string>());
         return notice.Length > 0 ? notice : null;
     }
 }
+
+/// <summary>A valid Dino book none of whose languages the app can print; not a damaged file, so it is never deleted as one.</summary>
+internal sealed class NoPrintableLanguageException(string message) : Exception(message);

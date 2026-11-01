@@ -14,6 +14,9 @@ public sealed record OpenedDino(string SourcePath, string Folder, DinoBook Book,
 {
     /// <summary>True when this open created the cache folder (it did not exist before), so discarding the open may remove it.</summary>
     public bool CreatedFolder { get; init; }
+
+    /// <summary>False when the book had to be placed beside a folder another window holds and that folder's saved words could not be copied across.</summary>
+    public bool SavedWordsKept { get; init; } = true;
 }
 
 /// <summary>
@@ -96,15 +99,22 @@ public static class DinoBookCache
         return placed;
     }
 
-    private static OpenedDino Opened(string path, DinoBook book, string folder, List<string> names, DinoPictures pictures, bool created)
+    private static OpenedDino Opened(string path, DinoBook book, List<string> names, DinoPictures pictures, Placement placement)
     {
-        return new OpenedDino(path, folder, book, names.Select(f => Path.Combine(folder, f)).ToList(), pictures) { CreatedFolder = created };
+        return new OpenedDino(path, placement.Folder, book, names.Select(f => Path.Combine(placement.Folder, f)).ToList(), pictures)
+        {
+            CreatedFolder = placement.Created,
+            SavedWordsKept = placement.SavedWordsKept,
+        };
     }
+
+    /// <summary>Where a book was put: whether that folder is new, and whether the earlier saved words came with it.</summary>
+    internal readonly record struct Placement(string Folder, bool Created, bool SavedWordsKept = true);
 
     /// <summary>The finished folder already there (its pictures may be open in another window, so nothing is written); null when it is missing or does not verify.</summary>
     private static OpenedDino? Reuse(string path, DinoBook book, string folder, List<string> names, DinoPictures pictures)
     {
-        return DinoCacheLayout.Verify(folder, names) ? Opened(path, book, folder, names, pictures, false) : null;
+        return DinoCacheLayout.Verify(folder, names) ? Opened(path, book, names, pictures, new Placement(folder, false)) : null;
     }
 
     private static List<string> FileNamesOf(DinoPictures pictures)
@@ -208,8 +218,7 @@ public static class DinoBookCache
             WriteBlankPicture(Path.Combine(temp, BackCoverFile));
             DinoCacheLayout.WriteManifest(temp, names);
             cancel.ThrowIfCancellationRequested();
-            var (placed, created) = PlaceUnderMutex(temp, folder, names);
-            return Opened(path, book, placed, names, pictures, created);
+            return Opened(path, book, names, pictures, PlaceUnderMutex(temp, folder, names));
         }
         finally
         {
@@ -222,7 +231,7 @@ public static class DinoBookCache
     /// finished it first, ours is dropped and theirs is used. If a damaged folder cannot be moved aside (another window holds its files), the temp is
     /// placed at <c>&lt;folder&gt;.alt-&lt;guid&gt;</c> instead; the lone-instance clean-up removes it later.
     /// </summary>
-    private static (string Folder, bool Created) PlaceUnderMutex(string temp, string folder, List<string> names)
+    private static Placement PlaceUnderMutex(string temp, string folder, List<string> names)
     {
         EnterCache();
         try
@@ -230,15 +239,15 @@ public static class DinoBookCache
             if (!Directory.Exists(folder))
             {
                 Directory.Move(temp, folder);
-                return (folder, true);
+                return new Placement(folder, true);
             }
 
             if (DinoCacheLayout.Verify(folder, names))
             {
-                return (folder, false);
+                return new Placement(folder, false);
             }
 
-            return TryReplaceDamaged(temp, folder) ? (folder, false) : (PlaceAlternate(temp, folder), true);
+            return TryReplaceDamaged(temp, folder) ? new Placement(folder, false) : PlaceAlternate(temp, folder);
         }
         finally
         {
@@ -259,12 +268,28 @@ public static class DinoBookCache
         }
     }
 
-    private static string PlaceAlternate(string temp, string folder)
+    /// <summary>Places the book beside the folder another window holds. Carrying the saved words over is best effort: if <c>book.json</c> is locked too, the book still opens, without them.</summary>
+    internal static Placement PlaceAlternate(string temp, string folder)
     {
         var alternate = folder + AltMarker + Guid.NewGuid().ToString("N");
-        CopySavedWords(folder, temp);
+        var kept = TryCopySavedWords(folder, temp);
         Directory.Move(temp, alternate);
-        return alternate;
+        return new Placement(alternate, true, kept);
+    }
+
+    private static bool TryCopySavedWords(string folder, string temp)
+    {
+        try
+        {
+            CopySavedWords(folder, temp);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Debug.WriteLine($"[dino-cache] saved words not copied to the alternate folder ({ex.GetType().Name})");
+            DinoStoreFiles.TryDelete(BookTextStore.PathIn(temp));
+            return false;
+        }
     }
 
     private static void CopySavedWords(string folder, string temp)

@@ -42,8 +42,11 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
     private static readonly TimeSpan StalePartAge = TimeSpan.FromHours(1);
 
     private const string Unreachable = "Could not reach Dino's store.";
+    private const string Unfinished = "Dino's store download did not finish.";
     private const string Refused = "Dino's store did not give that book.";
+    private const string CoverTooLarge = "That cover is too large.";
     private const string Redirected = "Dino's store sent me somewhere else, so I stopped.";
+    private const string DamagedAndHeld = "A damaged copy of this book is in use by another window. Close that window and try again.";
 
     private readonly HttpClient _http;
     private readonly string _root;
@@ -52,7 +55,7 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
     public DinoStoreClient(string? root = null, HttpMessageHandler? handler = null)
     {
         _root = root ?? DefaultRoot;
-        _http = new HttpClient(handler ?? NewHandler(), disposeHandler: true) { Timeout = Timeout.InfiniteTimeSpan };
+        _http = new HttpClient(handler ?? new SocketsHttpHandler { UseCookies = false, AllowAutoRedirect = false, ConnectTimeout = HeaderTimeout }, disposeHandler: true) { Timeout = Timeout.InfiniteTimeSpan };
     }
 
     public static string DefaultRoot => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), AppFolder, StoreFolder);
@@ -68,7 +71,7 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
         try
         {
             using var response = await SendAsync(url, cancel);
-            var bytes = await ReadAllAsync(response, DinoStoreCatalog.MaxCatalogBytes, cancel);
+            var bytes = await ReadAllAsync(response, DinoStoreCatalog.MaxCatalogBytes, DinoStoreCatalog.TooLarge, cancel);
             return DinoStoreCatalog.Parse(Encoding.UTF8.GetString(bytes));
         }
         catch (Exception ex) when (IsStoreFailure(ex, cancel))
@@ -93,8 +96,8 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
         try
         {
             using var response = await SendAsync(entry.CoverUrl, cancel);
-            var bytes = await ReadAllAsync(response, MaxCoverBytes, cancel);
-            await DinoStoreFiles.WriteAtomicallyAsync(path, target => target.WriteAsync(bytes, cancel).AsTask());
+            var bytes = await ReadAllAsync(response, MaxCoverBytes, CoverTooLarge, cancel);
+            await DinoStoreFiles.WriteAtomicallyAsync(path, target => target.WriteAsync(bytes, cancel).AsTask(), cancel);
             DeleteOtherCovers(path);
             return path;
         }
@@ -130,7 +133,7 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
     public async Task<string> DownloadAsync(DinoStoreEntry entry, IProgress<DownloadProgress> progress, CancellationToken cancel)
     {
         var final = DinoStoreFiles.FinalPath(_root, entry);
-        if (File.Exists(final))
+        if (await Task.Run(() => IsUsableDownload(final, cancel), cancel))
         {
             DinoStoreLog.Write($"download reused {Path.GetFileName(final)}");
             return final;
@@ -138,7 +141,7 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
 
         try
         {
-            await DinoStoreFiles.WriteAtomicallyAsync(final, target => FetchToAsync(entry.DownloadUrl, target, progress, cancel));
+            await DinoStoreFiles.WriteAtomicallyAsync(final, target => FetchToAsync(entry.DownloadUrl, target, progress, cancel), cancel);
             DinoStoreLog.Write($"download finished {Path.GetFileName(final)}");
             return final;
         }
@@ -152,6 +155,53 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
 
             throw Translate(ex);
         }
+    }
+
+    /// <summary>
+    /// True when a finished download is already there and its package reads (a truncated or damaged one is deleted, so it is downloaded again);
+    /// a file that cannot be read (another window holds it) is left alone and downloaded again into a .part. A damaged one that cannot be deleted (another window holds it) is a
+    /// <see cref="DinoStoreException"/> saying so, before anything is downloaded. It runs off the caller's thread (the package is parsed) and stops on cancel.
+    /// </summary>
+    private static bool IsUsableDownload(string final, CancellationToken cancel)
+    {
+        cancel.ThrowIfCancellationRequested();
+        if (!File.Exists(final))
+        {
+            return false;
+        }
+
+        try
+        {
+            using var file = File.OpenRead(final);
+            DinoBookReader.Read(file);
+            return true;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Could not be read (locked or unreadable): not deleted, and not trusted; it is downloaded again into a .part and MoveIntoPlaceAsync settles it.
+            return false;
+        }
+        catch (Exception ex)
+        {
+            // Any other failure of the reader (DinoBookException, JsonException, InvalidDataException...) means the package is damaged.
+            DinoStoreLog.Write($"download not reused ({ex.GetType().Name}), fetching again");
+            return RemoveDamaged(final);
+        }
+    }
+
+    private static bool RemoveDamaged(string final)
+    {
+        DinoStoreFiles.TryDelete(final);
+        if (File.Exists(final))
+        {
+            throw new DinoStoreException(DamagedAndHeld);
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -178,7 +228,7 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
             try
             {
                 var files = Directory.Exists(folder) ? Directory.EnumerateFiles(folder).ToList() : [];
-                foreach (var file in DinoStoreFiles.StalePartFiles(files).Where(IsOldPart))
+                foreach (var file in DinoStoreFiles.StalePartFiles(files).Where(f => DateTime.UtcNow - File.GetLastWriteTimeUtc(f) > StalePartAge))
                 {
                     DinoStoreFiles.TryDelete(file);
                 }
@@ -190,21 +240,11 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
         }
     }
 
-    /// <summary>A part file untouched for an hour is a leftover; a younger one may belong to a download in another window.</summary>
-    private static bool IsOldPart(string file)
-    {
-        return DateTime.UtcNow - File.GetLastWriteTimeUtc(file) > StalePartAge;
-    }
-
-    private static SocketsHttpHandler NewHandler()
-    {
-        return new SocketsHttpHandler { UseCookies = false, AllowAutoRedirect = false, ConnectTimeout = HeaderTimeout };
-    }
-
     /// <summary>One plain GET; headers only, so the body streams. Refuses a URL off the allow-list, a redirect and any non-2xx answer.</summary>
     private async Task<HttpResponseMessage> SendAsync(Uri url, CancellationToken cancel)
     {
-        if (!IsStoreUrl(url))
+        var onList = string.Equals(url.GetLeftPart(UriPartial.Path), DinoStoreCatalog.BaseAddress + DinoStoreCatalog.ListPath, StringComparison.OrdinalIgnoreCase);
+        if (!DinoStoreCatalog.IsAllowedUrl(url) && !onList)
         {
             throw new DinoStoreException(Refused);
         }
@@ -223,11 +263,6 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
         throw new DinoStoreException(redirected ? Redirected : Refused);
     }
 
-    private static bool IsStoreUrl(Uri url)
-    {
-        return DinoStoreCatalog.IsAllowedUrl(url) || string.Equals(url.GetLeftPart(UriPartial.Path), DinoStoreCatalog.BaseAddress + DinoStoreCatalog.ListPath, StringComparison.OrdinalIgnoreCase);
-    }
-
     private async Task FetchToAsync(Uri url, Stream target, IProgress<DownloadProgress> progress, CancellationToken cancel)
     {
         using var response = await SendAsync(url, cancel);
@@ -237,20 +272,20 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
         await DinoStreamCopier.CopyAsync(source, target, new CopyLimits(MaxDownloadBytes, total, StallTimeout), progress, cancel);
     }
 
-    private static async Task<byte[]> ReadAllAsync(HttpResponseMessage response, long cap, CancellationToken cancel)
+    private static async Task<byte[]> ReadAllAsync(HttpResponseMessage response, long cap, string tooLarge, CancellationToken cancel)
     {
         var total = response.Content.Headers.ContentLength;
-        DinoStreamCopier.CheckLength(total, cap);
+        DinoStreamCopier.CheckLength(total, cap, tooLarge);
         await using var source = await response.Content.ReadAsStreamAsync(cancel);
         using var memory = new MemoryStream();
-        await DinoStreamCopier.CopyAsync(source, memory, new CopyLimits(cap, total, StallTimeout), new Progress<DownloadProgress>(), cancel);
+        await DinoStreamCopier.CopyAsync(source, memory, new CopyLimits(cap, total, StallTimeout, tooLarge), new Progress<DownloadProgress>(), cancel);
         return memory.ToArray();
     }
 
-    /// <summary>A problem we can word for the user: network, timeout, refusal or this PC's disk (not the caller's own cancel).</summary>
+    /// <summary>A problem we can word for the user: network, timeout, refusal or this PC's disk (not the caller's own cancel). A bare IOException is neither: the disk and the network each raise their own type where they are touched.</summary>
     private static bool IsStoreFailure(Exception ex, CancellationToken cancel)
     {
-        return ex is HttpRequestException or IOException or UnauthorizedAccessException or DinoStoreException or DinoBookException or DinoDiskException
+        return ex is HttpRequestException or DinoNetworkException or DinoStoreException or DinoBookException or DinoDiskException or DinoFileInUseException
             || ex is OperationCanceledException && !cancel.IsCancellationRequested;
     }
 
@@ -260,9 +295,11 @@ public sealed class DinoStoreClient : IDinoStoreSource, IDisposable
         {
             DinoStoreException known => known,
             DinoBookException book => new DinoStoreException(book.Message, book),
-            DinoDiskException or UnauthorizedAccessException => new DinoStoreException(DinoStreamCopier.DiskMessage, ex),
+            DinoFileInUseException => new DinoStoreException(DinoStreamCopier.InUseMessage, ex),
+            DinoDiskException => new DinoStoreException(DinoStreamCopier.DiskMessage, ex),
             OperationCanceledException => new DinoStoreException(DinoStreamCopier.TimedOut, ex),
-            _ => new DinoStoreException(Unreachable, ex),
+            HttpRequestException or DinoNetworkException => new DinoStoreException(Unreachable, ex),
+            _ => new DinoStoreException(Unfinished, ex),
         };
     }
 

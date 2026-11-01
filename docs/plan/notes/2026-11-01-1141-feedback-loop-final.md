@@ -104,13 +104,20 @@ Checked and holding (from round 1):
 - The `CLOUDFLARE_API_TOKEN` repo secret (or a local wrangler deploy) before the first release
   that contains Slice 18. Until then the live privacy page still says the app makes no network
   connections. Re-checked: `gh secret list` shows only `CLOUDFLARE_ACCOUNT_ID`.
+  **Correction (feedback loop 2026-11-01-2024):** this was never a blocker. The site always deployed
+  with the logged-in local wrangler and no token is needed; the user deployed the privacy text that
+  way on 2026-11-01 (PR #42 records it).
 - Whether to delete the two October folders under `D:/print-the-damn-book-worktrees`
   (`icon-and-store-assets`, `landing-site`). Both still hold files; neither is a registered worktree.
+  **Answered 2026-11-01 ~20:18: delete them.** Both were deleted that evening.
 - Your `~/.claude/settings.json` has the allow rule `Bash(git -C D:/ReadTheStupidText-worktrees/*:*)`.
   Claude Code warns that it "mixes * with the trailing :* prefix syntax, so it is matched as a
   literal prefix (the * is not expanded) and matches only commands containing a literal * at that
   position. Replace that * with the exact value you mean." Changing your permission rules is your call.
+  **Answered 2026-11-01 ~20:18: update the rule.** It now reads `Bash(git -C D:/ReadTheStupidText-worktrees/* *)`.
 - Which model the `Co-Authored-By` line should name when a Haiku `ship-branch` agent commits on a
   brief written by the Opus main thread. Today it names the brief's model. ship-branch's own
   reminder asks for Haiku.
+  **Answered 2026-11-01 ~20:18: no co-author line at all unless the user asks.** `attribution.commit` is `""`
+  (ClaudeSkills #142).
 - No `after-merges.md` exists in the night folder, so nothing was started after the merge.

@@ -140,9 +140,13 @@ The "Open from Dino Reader" section is already added on this branch.
 - Sweeping older versions of a book also deletes that version's `book.json` (Slice 15 behaviour, found in check 2).
 - Dino Reader "Print this book" follow-up (the open Work item above).
 
-#### Not yet verified
+#### Verified 2026-11-01 (host desktop, Release build of main 96cbf2f)
 
-- That `--language fa` shows the Farsi text on the Check step (only the step was checked).
-- That Explorer's Open with menu lists the app.
-- The fixed `handover-check.ps1` end to end.
-- The `.alt-` fallback (needs a locked legacy folder).
+All four open checks passed: `--language fa` shows Farsi on the Check step, right to left; Explorer's
+handler list for `.dino` (`SHAssocEnumHandlers`) includes PrintTheDamnBook and the HKCU keys point at the
+exe; `handover-check.ps1` end to end; the `.alt-` fallback opened the book from `<folder>.alt-<guid>` with
+a file in the old folder held open. Evidence: `D:\print-the-damn-book-worktrees\reviews\verify-checks-2026-11-01.md`.
+
+Found: `handover-check.ps1` does not resolve a relative `-Dino` path, so a relative path gives a false
+FAIL ("good dino lands on Check step"); `HandoverArguments` needs a full path. Fix when Slice 21 moves
+the script into `tools/desktop-test/` (resolve the path with `Resolve-Path` first).

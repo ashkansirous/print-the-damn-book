@@ -162,9 +162,18 @@ Settled by the mock: icons and tooltip wording of the switch; the sub-heading an
 - Vazirmatn joins Andika as a story font (Arabic-script text); its licence is listed in `Services/FontLicences`. (Slice 17: docs/plan/slices/17-right-to-left-books.md)
 - Reading direction and page-number digits are decided only in Core (`TextDirection`, `StoryFont`, `BookDirectionChoice`, `PageNumbering`); the App never derives them. (Slice 17: docs/plan/slices/17-right-to-left-books.md)
 
+#### Verified 2026-11-01 (host desktop, Release build of main 96cbf2f)
+
+- Farsi .dino (built for the test from an English one, opened by command line): the language select offers
+  Farsi, the switch reads Right to left, the cover sits alone on the right, the typing box is right-aligned.
+  Band text is centred, as for every language (`StoryPainter` bands use `TextAlignment.Center`).
+- Print to PDF page order matches the RTL formula (sheet 1 back p1 | p14, sheet 2 front p2 | p13, sheet 4
+  front p6 | p9).
+- Persian digits on the printed pages (۲ ۱۳ ۶ ۹).
+
+Evidence: `D:\print-the-damn-book-worktrees\reviews\verify-checks-2026-11-01.md`.
+
 #### Not yet verified
 
-- Farsi .dino: the language select offers Farsi, the switch reads Right to left, the cover is on the right, text is right-aligned in Vazirmatn. (Next run: the native Open dialog's file-name box has no AutomationId 1148; after Slice 19 a .dino can be opened by command line instead.)
-- Print to PDF page order matches the RTL formula.
-- Persian digits on a printed page.
 - Paper print and fold of one Farsi book (user).
+- The font the Farsi text is drawn in (Vazirmatn): the 2026-11-01 run saw Arabic-script glyphs but did not read the font name from the UI tree (feedback loop 2026-11-01-2024).
