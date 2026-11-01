@@ -33,6 +33,7 @@ Notes:
 
 - [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14 to 19).
 - [2026-11-01-1141-feedback-loop-w1.md](docs/plan/notes/2026-11-01-1141-feedback-loop-w1.md): feedback loop after night round 1 (Slices 17-19).
+- [2026-11-01-1141-feedback-loop-final.md](docs/plan/notes/2026-11-01-1141-feedback-loop-final.md): final feedback loop of that night (worktree locks traced to check timers and same-call removals).
 
 ## Outstanding work
 
