@@ -14,3 +14,6 @@ Book sample/
 
 # Reviews written by agents
 reviews/
+
+# Per-worktree scratch (desktop test package, results, screenshots)
+/tmp/

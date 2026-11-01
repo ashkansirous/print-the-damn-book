@@ -160,11 +160,11 @@
                   <Border Style="{StaticResource SegBorder}" Margin="0,0,8,0">
                     <StackPanel Orientation="Horizontal">
                       <RadioButton Style="{StaticResource SegOption}" Content="Reading order" views:Ui.Icon="{StaticResource IconBookOpen}" GroupName="BookView"
-                                   AutomationProperties.Name="Reading order"
+                                   AutomationProperties.Name="Reading order" AutomationProperties.AutomationId="ViewReadingOrder"
                                    IsChecked="{Binding View, Converter={StaticResource EnumBool}, ConverterParameter={x:Static vm:BookView.Reading}}" />
                       <Rectangle Style="{StaticResource SegDivider}" />
                       <RadioButton Style="{StaticResource SegOption}" Content="As printed" views:Ui.Icon="{StaticResource IconFiles}" GroupName="BookView"
-                                   AutomationProperties.Name="As printed"
+                                   AutomationProperties.Name="As printed" AutomationProperties.AutomationId="ViewAsPrinted"
                                    IsChecked="{Binding View, Converter={StaticResource EnumBool}, ConverterParameter={x:Static vm:BookView.Sheets}}" />
                     </StackPanel>
                   </Border>
@@ -201,7 +201,7 @@
               <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                 <TextBlock Style="{StaticResource Spinner}" Text="{StaticResource IconCircleNotch}" Margin="0,0,8,0" Foreground="{StaticResource Neutral400Brush}"
                            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
-                <TextBlock Text="{Binding FooterText}" TextWrapping="Wrap" VerticalAlignment="Center" AutomationProperties.Name="Status">
+                <TextBlock Text="{Binding FooterText}" TextWrapping="Wrap" VerticalAlignment="Center" AutomationProperties.Name="Status" AutomationProperties.AutomationId="StatusText">
                   <TextBlock.Style>
                     <Style TargetType="TextBlock">
                       <Setter Property="Foreground" Value="{StaticResource Neutral400Brush}" />
@@ -218,9 +218,9 @@
                 </TextBlock>
               </StackPanel>
               <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="Back" views:Ui.Icon="{StaticResource IconArrowLeft}"
-                      Command="{Binding BackCommand}" Margin="0,0,12,0" AutomationProperties.Name="Back"
+                      Command="{Binding BackCommand}" Margin="0,0,12,0" AutomationProperties.Name="Back" AutomationProperties.AutomationId="BackButton"
                       Visibility="{Binding HasBack, Converter={StaticResource BoolToVisibility}}" />
-              <Button Grid.Column="2" Content="{Binding NextLabel}" Command="{Binding NextCommand}" AutomationProperties.Name="{Binding NextLabel}"
+              <Button Grid.Column="2" Content="{Binding NextLabel}" Command="{Binding NextCommand}" AutomationProperties.Name="{Binding NextLabel}" AutomationProperties.AutomationId="NextButton"
                       Visibility="{Binding HasNext, Converter={StaticResource BoolToVisibility}}">
                 <Button.Style>
                   <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
