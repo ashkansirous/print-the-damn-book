@@ -14,6 +14,47 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap">
 <style>html,body{margin:0;background:var(--color-neutral-900)}a{color:var(--color-accent-300)}a:hover{color:var(--color-accent-200)}</style>
 </helmet>
+<section style="display:flex;flex-direction:column;gap:28px;padding:56px 56px 0;font-family:var(--font-body);color:var(--color-text)">
+  <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
+    <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent)">Slices 17–19 · design pass</span>
+    <h1 style="margin:0;font-weight:500;font-size:30px;letter-spacing:-0.01em">Right-to-left books, Dino's store, and hand-over from Dino Reader</h1>
+    <p style="margin:0;color:var(--color-neutral-400);font-size:15px;line-height:1.5;text-wrap:pretty">The app's own screens never mirror; only the book does. A Reading direction switch sits beside the language select; spreads, text-page sides and the As printed sheets flip with it, and each text picks its own direction and font (Vazirmatn for Arabic script). The store is a dialog off the Open step; a hand-over from Dino Reader lands on the same loading state as any open.</p>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:56px 48px;align-items:flex-start">
+    <div id="2a" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">2a</span><span style="font-weight:500">A Farsi Dino book, right to left</span><span style="color:var(--color-neutral-500)">Slice 17. The language set the direction; spreads start on the right.</span></div>
+      <dc-import name="StoryCheck" source="dino" lang="fa" selected="p3" bands="{{ true }}" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="2b" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">2b</span><span style="font-weight:500">As printed, mirrored</span><span style="color:var(--color-neutral-500)">Slice 17. Cover on the left of sheet 1’s front; Persian page digits.</span></div>
+      <dc-import name="StoryCheck" source="dino" lang="fa" view="sheets" selected="none" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="2c" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">2c</span><span style="font-weight:500">Folder book, direction guessed</span><span style="color:var(--color-neutral-500)">Slice 17. Guessed from the first story text; own page sits on the right.</span></div>
+      <dc-import name="StoryCheck" source="folder" lang="fa" selected="p2" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="2d" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">2d</span><span style="font-weight:500">Get a story from Dino</span><span style="color:var(--color-neutral-500)">Slice 18. Covers load lazily; Hebrew listed but not supported. Pick one to download.</span></div>
+      <dc-import name="StoryCheck" store="list" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="2e" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">2e</span><span style="font-weight:500">Downloading a store book</span><span style="color:var(--color-neutral-500)">Slice 18. Progress with Cancel; then the Check step.</span></div>
+      <dc-import name="StoryCheck" store="downloading" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="2f" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">2f</span><span style="font-weight:500">Store offline</span><span style="color:var(--color-neutral-500)">Slice 18. Failed state with Try again.</span></div>
+      <dc-import name="StoryCheck" store="failed" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="2g" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">2g</span><span style="font-weight:500">Handed over by Dino Reader</span><span style="color:var(--color-neutral-500)">Slice 19. Launched with a .dino path and --language fa.</span></div>
+      <dc-import name="StoryCheck" handover="loading" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+    <div id="2h" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">2h</span><span style="font-weight:500">Hand-over that can’t be opened</span><span style="color:var(--color-neutral-500)">Slice 19. Missing file or wrong extension: Open step with the message.</span></div>
+      <dc-import name="StoryCheck" handover="bad" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
+    </div>
+  </div>
+</section>
 <section style="display:flex;flex-direction:column;gap:28px;padding:56px;font-family:var(--font-body);color:var(--color-text)">
   <div style="display:flex;flex-direction:column;gap:6px;max-width:900px">
     <span style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-accent)">Slices 14–16 · design pass</span>
@@ -42,7 +83,7 @@
       <dc-import name="StoryCheck" mode="open" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
     </div>
     <div id="1f" style="display:flex;flex-direction:column;gap:12px;width:1280px;flex:none">
-      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">1f</span><span style="font-weight:500">A Dino book, title on the cover</span><span style="color:var(--color-neutral-500)">Slice 15 + 16. Language picker; Farsi listed but disabled.</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span class="tag tag-accent">1f</span><span style="font-weight:500">A Dino book, title on the cover</span><span style="color:var(--color-neutral-500)">Slice 15 + 16. Language picker (Farsi enabled since Slice 17).</span></div>
       <dc-import name="StoryCheck" source="dino" selected="cover" bands="{{ true }}" height="800px" framed="{{ true }}" hint-size="1280px,800px"></dc-import>
     </div>
   </div>

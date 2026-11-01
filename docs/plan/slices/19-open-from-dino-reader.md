@@ -54,6 +54,33 @@ plan (`D:\ReadTheStupidText`), not built here.
       writes the `.dino` and opens it with `PrintTheDamnBook.exe` (and how it finds the exe, or points to the download
       page when it isn't there).
 
+#### Design (Story Text mock, sections 2g-2h, added 2026-11-01)
+
+Two frames, live renders of `docs/design/StoryCheck.dc.html`: 2g the hand-over loading state (`Story Text.dc.html:48`,
+launched with a `.dino` path and `--language fa`) and 2h a hand-over that can't be opened (`:52`). Markup
+`StoryCheck.dc.html:91-124`, copy `:625-628`. The mock agrees with the plan, and adds the points below.
+
+- **2g, loading.** The Open step's drop card with the folder icon swapped for a spinner (`ph circle-notch` 40 px,
+  `--color-accent`, 0.9 s). Title (17 px, 500): "Opening a book from Dino Reader...". Text: "Dino Reader handed me
+  Good Enough.dino in Farsi. I'm copying it into my own cache first, so Dino can tidy up its copy." (file name in
+  `--color-neutral-200`). The three buttons are disabled and a ghost "Cancel" appears (the Slice 15 loading state).
+  When it finishes the app goes to the Check step.
+- **2h, can't be opened.** The Open step in its normal state, with an alert above the card: `role="alert"`, max 620 px,
+  `--color-surface`, `--radius-md`, `--shadow-sm`, 12/14 px padding; `ph-fill warning` 18 px, `oklch(0.82 0.12 78)`; title
+  (500) "I couldn't open what Dino Reader sent"; body "<file> is missing or isn't a .dino book. Open a folder or a Dino
+  book here instead." with the file name in a monospace face (`ui-monospace, Consolas`, `--color-neutral-300`); dismiss
+  `btn-ghost btn-icon`, `ph x`, title and label "Dismiss". No crash, no dialog.
+- **Simplified in the mock:** the file name ("notes.txt") and the book name ("Good Enough.dino") are placeholders.
+
+**New strings:** every quoted string above (English only).
+
+**Open point: error copy.** Plan: "the normal 'couldn't open' message on the Open step". Mock: a dismissible alert with its
+own text. **Default:** use the mock for hand-overs; the picker keeps its existing message.
+**Open point: language in the loading text.** Mock names the language ("in Farsi"). Plan: a language not in the book falls
+back to the book's own. **Default:** name the language actually used; drop "in <language>" when none was passed.
+**Open point: Cancel.** Plan does not mention it for hand-overs. Mock shows Cancel. **Default:** keep it (same loader as Slice 15).
+Settled by the mock: the loading text tells the user the book is copied into the cache.
+
 **Verification.**
 
 - `dotnet test`: argument parser tests.

@@ -80,6 +80,48 @@ mirrored sheets.
 - [ ] Docs (index pass after merge): replace the imposition rule in `CLAUDE.md` with both directions
       (`plan.md` *Out of Scope* was already updated by the plan PR).
 
+#### Design (Story Text mock, sections 2a-2c and 1f, added 2026-11-01)
+
+Four frames, live renders of `docs/design/StoryCheck.dc.html`: 2a a Farsi Dino book (`Story Text.dc.html:24`), 2b its
+"As printed" view (`:28`), 2c a folder book with the direction guessed (`:32`), and 1f (`:85`), whose caption now reads
+"Farsi enabled since Slice 17" (the language select offers Farsi). The mock agrees with the Decisions above except where
+an Open point is marked. The script holds the logic: `dirOf`/`guessDir`/`bookDir` (`StoryCheck.dc.html:445-452`),
+`impose(list, rtl)` (`:517-523`), `digits` (`:524`), copy in `renderVals()` (`:559` on).
+
+- **Reading direction switch (Check step).** A `.seg` radiogroup, `aria-label="Reading direction"`
+  (`StoryCheck.dc.html:77-80`), two options: `ph arrow-line-right` "Left to right", `ph arrow-line-left`
+  "Right to left". It sits after the language select and before the Reading order / As printed switch, and is shown for
+  folder and Dino books alike. Its tooltip is "Reading direction · your pick", "... · set by the language" (Dino) or
+  "... · guessed from the first story text" (folder). A click is a pick: it is saved and the book stops following
+  the language or the guess. Changing the language clears the pick (`onLang`, `:635`).
+- **Language select (Dino books only).** Options: "English (the book's own)", "Deutsch", "فارسی" (enabled),
+  "עברית · this language is not supported yet" (disabled). Arabic is not in the mock's list.
+- **2a, Reading order, Farsi.** Direction is rtl from the language. Sub-heading: "Reads right to left: the book opens
+  from the right, so each spread starts on its right page. Set by the language." (folder: "... Guessed from the first
+  story text."; after a pick the last sentence is dropped). Spreads are drawn right page first: the front cover sits
+  on the right with an empty left slot, the back cover on the left. Footer ends "Opens from the right. Page numbers
+  print as ۱, ۲, ۳." (`:659`). Story text in Vazirmatn, `direction: rtl`, per text from its first strong letter;
+  the editor text box takes the same `dir` and font.
+- **2b, As printed, mirrored.** Sub-heading: "What comes out of the printer, mirrored: the cover sits on the left of sheet 1's
+  front, so the fold opens from the right." Sheet `k` follows `front = [p[2k], p[N-1-2k]]`, `back = [p[N-2-2k], p[2k+1]]`
+  (left, right), the plan's formula exactly.
+- **2c, folder book, own page.** For a right-to-left book the words page sits on the right, its picture on the left.
+  Placement note: "Text on the right, picture on the left" (LTR: "Text on the left, picture on the right"), then
+  ". I put a spacer page in front so they face each other." or ", facing each other when the book is open." (`:588`).
+- **Tokens and sizes.** No new ones: the switch is the existing `.seg` / `.seg-opt` from `nocturne/styles.css:189-199`.
+- **Simplified in the mock:** page digits appear only in the footer line, not on the tiles; the Persian/Arabic digit
+  tables are real; the guess regex stands in for Core `TextDirection`.
+
+**New strings** (app screens stay English, never mirrored): "Reading direction", "Left to right", "Right to left", the
+three tooltip forms, the two sub-heading tails above, "Text on the right, picture on the left", "Opens from the right.",
+"Page numbers print as ...". No second locale (Decision 4).
+
+**Open point: switch shown for every book.** Plan: switch next to the language select (Dino only). Mock: the select is
+Dino-only, the switch is shown for folder books too. **Default:** show the switch for folder and Dino books.
+**Open point: Arabic in the Dino language select.** Plan enables Farsi and Arabic. Mock's select lists English, Deutsch,
+Farsi and Hebrew only. **Default:** list the book's own languages; Farsi and Arabic enabled, other RTL ones disabled.
+Settled by the mock: icons and tooltip wording of the switch; the sub-heading and footer copy.
+
 **Verification.**
 
 - `dotnet test PrintTheDamnBook.slnx`: the imposition, spacer, text-side, manual-duplex, direction, font and digit tests.
