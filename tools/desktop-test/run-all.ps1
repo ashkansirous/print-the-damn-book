@@ -17,9 +17,11 @@ param(
     [string] $Dino,
     [string] $Only,
     [switch] $SkipStore,
-    [switch] $AllowSkip
+    [switch] $AllowSkip,
+    [int] $StepTimeoutSec = 60
 )
 $ErrorActionPreference = 'Stop'
+$env:PTDB_STEP_TIMEOUT_SEC = "$StepTimeoutSec"   # read by _lib.ps1 in each check's process
 $ShellExe = 'powershell.exe'
 $SkippedExitCode = 3
 

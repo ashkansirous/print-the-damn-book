@@ -25,6 +25,14 @@ They are meant to run in the headless test VM (`tools/desktop-vm`), not on the d
 
 ## Known limits
 
-- Never run on the host desktop (user's choice, 2026-11-01); the VM runs them.
-- No script here has been run yet (the VM is not built); the first in-VM run is listed in `docs/plan/unverified.md`.
-- The native dialogs are found under the app window or on the desktop (whichever UIA lists), and the name box by id 1001, then 1152, then the first Edit; each run reports which matched, so the first VM run settles it. The store check is host-only (the VM has no network).
+- Run in the VM (user's choice, 2026-11-01). The one exception is `store-dialog`: the VM has no network, so it runs on the host only with `-HostStore -AcknowledgeHostDesktop`, and a VM run skips it.
+- Verified 2026-11-01 in the VM: open-dino, open-folder, direction-and-sheet-order, print-to-pdf and handover-check PASS; store-dialog SKIP.
+- The order checks open a generated 8-page sample book (a folder), not a .dino: a .dino adds a white back cover, so 8 pages become 9.
+- Win32 file dialogs in the VM expose no UIA Value pattern. Paths are set with `WM_SETTEXT` on the Edit (ids 1152, 1148, 1001) and OK is `BM_CLICK` on `IDOK`.
+- Page tiles expose only their label text ("page-3") to UIA; read them and sort by position.
+- Tooltips are not prompts; don't treat one as an alert.
+
+## How to run
+
+In the VM (the normal way): `tools/desktop-vm/Invoke-DesktopTest.ps1 -Dino <file>` (see `tools/desktop-vm/README.md`).
+On the host, store check only, at the machine: `tools/desktop-vm/Invoke-DesktopTest.ps1 -HostStore -AcknowledgeHostDesktop`, or `store-dialog.ps1 -Exe <exe>` directly.

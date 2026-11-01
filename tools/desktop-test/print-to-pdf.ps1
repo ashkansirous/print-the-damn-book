@@ -12,7 +12,8 @@ $script:PdfPrinterName = 'Print to PDF'
 $script:SaveDialogName = $SaveDialogName
 $script:ReloadPromptTitle = 'Put the stack back'
 $script:ReloadPromptButton = 'Print the backs'
-$script:ReverseToggleName = 'Reverse order of backs'
+$script:MoreOptionsName = 'More options'
+$script:ReverseToggleName ='Reverse order of backs'
 $script:RotateToggleName = 'Rotate backs 180 degrees'
 $script:PrintTimeoutSec = 120
 $script:ColourTolerance = 60
@@ -44,9 +45,18 @@ function Save-OnePdf {
     $dialog = $found.Element
     Add-Report "save dialog '$($dialog.Current.Name)' found as: $($found.Where)"
     $path = Join-Path $OutDir "run-$Index.pdf"
-    Set-ElementText -Element (Find-DialogEdit -Dialog $dialog) -Text $path
-    Invoke-Control (Find-DialogButton -Dialog $dialog)
+    [void](Set-DialogPath -Dialog $dialog -Path $path)
     return $path
+}
+
+function Test-IsTooltipWindow {
+    # A hover tooltip of the app is a nameless child window of class tooltips_class32 or a WPF ToolTip with no button in it (the cursor
+    # rests over the app); it is not a prompt. Any other nameless window is not skipped.
+    param($Window)
+    if ($Window.Current.Name) { return $false }
+    if ($Window.Current.ClassName -notmatch '^(tooltips_class32|ToolTip)') { return $false }
+    $buttonCond = New-Object System.Windows.Automation.PropertyCondition($script:Uia::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
+    return -not $Window.FindFirst($script:Scope::Descendants, $buttonCond)
 }
 
 function Confirm-AppPrompt {
@@ -54,9 +64,9 @@ function Confirm-AppPrompt {
     # dialog, say) fails the check with its name and text instead of being clicked away.
     param($Window)
     $cond = New-Object System.Windows.Automation.PropertyCondition($script:Uia::ControlTypeProperty, [System.Windows.Automation.ControlType]::Window)
-    $prompt = $Window.FindFirst($script:Scope::Children, $cond)
+    # Look at every child window: a Save dialog still closing must not hide the reload prompt behind it.
+    $prompt = $Window.FindAll($script:Scope::Children, $cond) | Where-Object { $_.Current.Name -ne $script:SaveDialogName -and -not (Test-IsTooltipWindow $_) } | Select-Object -First 1
     if (-not $prompt) { return $false }
-    if ($prompt.Current.Name -eq $script:SaveDialogName) { return $false }   # the Save dialog still closing after Save-OnePdf
     $buttonCond = New-Object System.Windows.Automation.PropertyCondition($script:Uia::ControlTypeProperty, [System.Windows.Automation.ControlType]::Button)
     $title = $prompt.Current.Name
     if ($title -ne $script:ReloadPromptTitle) {
@@ -72,6 +82,14 @@ function Confirm-AppPrompt {
 function Set-BackOptions {
     # Manual mode shows two switches. Set both explicitly (reverse off, rotate on) so the expected order below never depends on a saved setting.
     param($Window)
+    # The switches live under the collapsed "More options" section: open it first (its header is a ToggleButton named "More options").
+    $header = Wait-Until -Failure 'The "More options" header did not appear' -Condition {
+        foreach ($e in $Window.FindAll($script:Scope::Descendants, (New-Object System.Windows.Automation.PropertyCondition($script:Uia::NameProperty, $script:MoreOptionsName)))) {
+            $p = $null
+            if ($e.TryGetCurrentPattern([System.Windows.Automation.TogglePattern]::Pattern, [ref]$p)) { return $e }
+        }
+    }
+    Set-ToggleState -Element $header -On $true
     Set-ToggleState -Element (Wait-Until -Failure 'The reverse-backs switch did not appear' -Condition { Find-ByName -Root $Window -Name $script:ReverseToggleName }) -On $false
     Set-ToggleState -Element (Wait-Until -Failure 'The rotate-backs switch did not appear' -Condition { Find-ByName -Root $Window -Name $script:RotateToggleName }) -On $true
 }
@@ -171,6 +189,8 @@ Complete-Check -Name 'print-to-pdf' -Body {
         Open-FolderThroughDialog -Window $window -Folder $folder
         Wait-ForCheckStep -Window $window
         Invoke-Control (Wait-ById -Root $window -Id 'NextButton')
+        Start-Sleep -Seconds 1
+        Save-Screenshot -Name 'print-step'
         Select-PdfPrinter -Window $window
         Set-BackOptions -Window $window
         Invoke-Control (Wait-ById -Root $window -Id 'NextButton')

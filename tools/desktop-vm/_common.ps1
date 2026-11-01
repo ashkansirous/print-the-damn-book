@@ -10,12 +10,14 @@ $script:SecretsFile = 'D:/secrets/readthestupidtext/secrets.env'
 $script:SecretKey = 'DESKTOP_VM_PASSWORD'
 $script:GuestWorkDir = 'C:/desktop-test'
 $script:SessionTimeoutSec = 600
-# Worst case for one check script (launch 30 s + steps + print 120 s + slow-VM margin); the whole run's limit is this times the number of checks.
-$script:CheckBudgetSec = 300
+# Worst case for one check script (launch 30 s + several 60 s steps + print 120 s + slow-VM margin); the whole run's limit is this times the number of checks.
+$script:CheckBudgetSec = 600
 # RTST's lock name, so a PTDB run never overlaps an RTST or Dino run.
 $script:LockName = 'Global\rtst-desktop-test-vm'
 $script:StallMin = 10
-$script:ScratchRoot = Join-Path ([IO.Path]::GetTempPath()) 'ptdb-desktop-test'
+# Per worktree (git-ignored tmp/), so concurrent sessions never share scratch; each run writes into its own stamped subfolder, so old logs and screens never read as this run's.
+$script:ScratchRoot = Join-Path (Resolve-Path "$PSScriptRoot/../..").Path 'tmp/ptdb-desktop-test'
+$script:RunStamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $script:ScreenshotWidth = 1024
 $script:ScreenshotHeight = 768
 $script:ScreenshotCimClass = 'Msvm_VirtualSystemManagementService'
@@ -77,7 +79,7 @@ function Save-VmScreenshot {
     # Saves the VM screen under the scratch folder (never inside RTST's VM folder) and returns the path; $null (with a warning) when it cannot.
     param([string] $Reason = 'screen')
     try {
-        $dir = Join-Path $script:ScratchRoot 'screens'
+        $dir = Join-Path (Join-Path $script:ScratchRoot 'screens') $script:RunStamp
         New-Item -ItemType Directory -Force -Path $dir | Out-Null
         $path = Join-Path $dir ("{0}-{1}.png" -f (Get-Date -Format 'yyyyMMdd-HHmmss'), ($Reason -replace '[^A-Za-z0-9_-]', '-'))
         ConvertTo-Png -Rgb565 (Get-VmThumbnail) -Path $path

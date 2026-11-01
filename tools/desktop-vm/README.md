@@ -19,9 +19,9 @@ Build the self-contained exe (`Build-TestPackage.ps1`, the same `dotnet publish`
 (mutex `Global\rtst-desktop-test-vm`, shared with RTST and Dino runs) -> restore `clean`, start -> wait for the guest desktop
 (a cold boot: PowerShell Direct answers before the autologon desktop exists) -> copy the exe and the checks into `C:/desktop-test`
 -> run `run-all.ps1` in the desktop session as a one-shot scheduled task (UI Automation needs it) -> copy `results` out to
-`-ResultsDir` (default `%TEMP%/ptdb-desktop-test/results`) -> restore `clean` -> release the lock.
+`-ResultsDir` (default `tmp/ptdb-desktop-test/results` in this worktree, one stamped subfolder per run) -> restore `clean` -> release the lock.
 
-A wait with no progress for `-StallMin` minutes (default 10) saves the VM screen under `%TEMP%/ptdb-desktop-test/screens` and
+A wait with no progress for `-StallMin` minutes (default 10) saves the VM screen under `tmp/ptdb-desktop-test/screens/<run stamp>` and
 throws `stalled: <what>; screen: <png>`. A check script that throws still writes its exit code, so the run reports it at once.
 
 ## Password
@@ -30,7 +30,9 @@ throws `stalled: <what>; screen: <png>`. A check script that throws still writes
 
 ## Limits
 
-- The VM has no network adapter: the `store-dialog` check never runs there. `-HostStore` runs it on the host desktop (the user allowed this one check on the host); without it the run prints a `SKIP` line.
+- The VM has no network adapter: the `store-dialog` check never runs there. `-HostStore` runs it on the **real host desktop**: it launches the app, takes focus and may move the real cursor and click, so it is refused unless you also pass `-AcknowledgeHostDesktop` and are at the machine. Without it the run prints a `SKIP` line.
+- `-StepTimeoutSec` (default 60) is how long each check step waits for a control in the VM. `Build-TestPackage.ps1` builds into `tmp/ptdb-test-package` in this worktree and deletes an existing `-OutDir` only if it is empty or carries its `.ptdb-test-package` marker file.
+- `-Only <check>` for a check that would be skipped (no `-Dino`) exits 3 at once without touching the VM.
 - No sample .dino is in the repo; without `-Dino` the two Dino launch checks are skipped and said so.
 - Exit codes: 0 all passed and none skipped; 1 a check or the harness failed; 3 nothing failed but a check was skipped (`-AllowSkip` makes it 0); 2 the final restore of `clean` failed, so the shared VM may be dirty or running (run `Reset-TestVm.ps1`).
-- Nothing here has run yet; see `docs/plan/unverified.md`.
+- Verified 2026-11-01 in the VM: open-dino, open-folder, direction-and-sheet-order, print-to-pdf and handover-check PASS; store-dialog SKIP (VM offline).

@@ -4,10 +4,11 @@ param([Parameter(Mandatory)] [string] $Exe)
 . "$PSScriptRoot/_lib.ps1"
 
 function Read-FaceOrder {
-    # The page numbers on the printed faces in document order (page-N labels), from the As printed view.
+    # The page numbers on the printed faces in document order, from the label text under each tile in the As printed view ("page-3").
     param($Window)
-    $names = Get-PageTileNames -Window $Window
-    return @($names | ForEach-Object { if ($_ -match '^page-(\d+),') { [int]$Matches[1] } })
+    $names = Get-SheetTileNames -Window $Window
+    Add-Report ("as printed tile names: " + ($names -join ' | '))
+    return @($names | ForEach-Object { if ($_ -match '^page-(\d+)$') { [int]$Matches[1] } })
 }
 
 Complete-Check -Name 'direction-and-sheet-order' -Body {
@@ -19,6 +20,7 @@ Complete-Check -Name 'direction-and-sheet-order' -Body {
         Wait-ForCheckStep -Window $window
         Invoke-Control (Wait-ById -Root $window -Id 'ViewAsPrinted')
         Start-Sleep -Seconds 1
+        Save-Screenshot -Name 'as-printed-ltr'
         $ltr = Read-FaceOrder -Window $window
         Invoke-Control (Wait-ById -Root $window -Id 'DirectionRightToLeft')
         Wait-Until -Failure 'The Right to left switch did not stick' -Condition { Select-IsOn (Find-ById -Root $window -Id 'DirectionRightToLeft') } | Out-Null

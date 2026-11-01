@@ -10,12 +10,17 @@ Complete-Check -Name 'open-folder' -Body {
         $window = Get-MainWindow -Process (Start-App -Exe $Exe)
         Open-FolderThroughDialog -Window $window -Folder $folder
         Wait-ForCheckStep -Window $window
-        $tiles = Wait-Until -Failure "Fewer than $script:SamplePageCount page tiles appeared" -Condition {
-            $names = Get-PageTileNames -Window $window
-            if ($names.Count -ge $script:SamplePageCount) { $names }
+        try {
+            $tiles = Wait-Until -Failure "Fewer than $script:SamplePageCount page tiles appeared" -Condition {
+                $names = Get-PageTileNames -Window $window
+                if ($names.Count -ge $script:SamplePageCount) { $names }
+            }
+        } catch {
+            Add-Report ('every name in the window: ' + ((Get-AllNames -Root $window | Where-Object { $_ }) -join ' | '))
+            throw
         }
     } finally { Remove-Item $folder -Recurse -Force -ErrorAction SilentlyContinue }
-    $expected = 1..$script:SamplePageCount | ForEach-Object { "page-$_, page $_ of $script:SamplePageCount" }
+    $expected = 1..$script:SamplePageCount | ForEach-Object { "page-$_" }
     $got = @($tiles | Select-Object -First $script:SamplePageCount)
     Add-Report ("tiles: " + ($got -join ' | '))
     if (($got -join '|') -ne ($expected -join '|')) { throw "Tiles are not page-1 .. page-$script:SamplePageCount in order." }
