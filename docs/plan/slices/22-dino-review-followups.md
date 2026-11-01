@@ -37,5 +37,11 @@ user decides whether to build it, and the failed-state design (item 4) needs the
   docs/design", night report). `docs/design` has only "I couldn't reach Dino's store" with Try again
   and Close. The user decides: keep the wave's copy, or send the failed variants to Claude Design and
   bring them in through `import-claude-design`.
+- [ ] **Page tile's accessible name, possibly lost.** `Views/CheckStepView.xaml:103` binds
+  `AutomationProperties.Name` to `AutomationName` ("Label, page N of M"). But Slice 21's VM run
+  on 2026-11-01 read a tile named only "page-3", and the session concluded "no app bug" without
+  finding why. The test script may read the image's name instead, or the binding may not reach the
+  UI tree. From the final feedback loop of night 2026-11-01-2024 (audit pass 3, item 5). Verify:
+  Inspect.exe or a UI Automation dump of the Check step shows "…, page 3 of N" on the tile.
 
 Verify: fast checks green; one host desktop run of the store dialog's failed state against the design.
