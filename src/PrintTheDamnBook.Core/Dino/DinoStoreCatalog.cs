@@ -33,7 +33,7 @@ public sealed class DinoStoreCatalog
     private const int MaxVersion = 1_000_000;
     private const int MaxPageCount = DinoBookReader.MaxPages;
     private const string NotAList = "Dino's store sent something that is not a list of stories.";
-    private const string TooLarge = "Dino's store sent a list that is too large.";
+    public const string TooLarge = "Dino's store sent a list that is too large.";
 
     private static readonly Regex SafeId = new(@"\A[A-Za-z0-9_-]{1,64}\z", RegexOptions.Compiled);
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
@@ -110,7 +110,7 @@ public sealed class DinoStoreCatalog
     public static string MetaText(DinoStoreEntry entry)
     {
         var parts = new List<string>();
-        if (entry.PageCount is { } pages)
+        if (entry.PageCount is { } pages and > 0)
         {
             parts.Add(pages == 1 ? "1 page" : $"{pages} pages");
         }

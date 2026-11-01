@@ -6,10 +6,16 @@ namespace PrintTheDamnBook.Core.Dino;
 public readonly record struct DownloadProgress(long Received, long? Total);
 
 /// <summary>The limits of one capped copy: the most bytes to take, the length the server claimed, and how long to wait for the next byte.</summary>
-public readonly record struct CopyLimits(long Cap, long? Total, TimeSpan Stall);
+public readonly record struct CopyLimits(long Cap, long? Total, TimeSpan Stall, string TooLargeMessage = DinoStreamCopier.TooLarge);
 
 /// <summary>A failure on this PC's own disk (full, read-only, locked) while saving store files, as opposed to a network failure.</summary>
 public sealed class DinoDiskException(string message, Exception? inner = null) : Exception(message, inner);
+
+/// <summary>The finished file for this book is there with different bytes (or locked) because another window holds it; not a disk problem.</summary>
+public sealed class DinoFileInUseException(string message, Exception? inner = null) : Exception(message, inner);
+
+/// <summary>A failure while reading the store's response stream (a reset or dropped connection). Raised where the stream is read, so nothing downstream has to guess whether a bare <see cref="IOException"/> came from the network or the disk.</summary>
+public sealed class DinoNetworkException(string message, Exception? inner = null) : Exception(message, inner);
 
 /// <summary>
 /// The size and stall rules for a store transfer (Slice 18). The server's <c>Content-Length</c> is only a hint, so bytes are counted too, and a
@@ -21,15 +27,16 @@ public static class DinoStreamCopier
     public const string CutShort = "The download was cut short.";
     public const string TimedOut = "Dino's store took too long to answer.";
     public const string DiskMessage = "Could not save the book on this PC.";
+    public const string InUseMessage = "A copy of this book is in use by another window. Close that window and try again.";
 
     private const int CopyChunk = 81920;
 
     /// <summary>Throws <see cref="DinoBookException"/> when the server already says the body is over <paramref name="cap"/>.</summary>
-    public static void CheckLength(long? contentLength, long cap)
+    public static void CheckLength(long? contentLength, long cap, string message = TooLarge)
     {
         if (contentLength > cap)
         {
-            throw new DinoBookException(TooLarge);
+            throw new DinoBookException(message);
         }
     }
 
@@ -58,7 +65,7 @@ public static class DinoStreamCopier
             received += read;
             if (received > limits.Cap)
             {
-                throw new DinoBookException(TooLarge);
+                throw new DinoBookException(limits.TooLargeMessage);
             }
 
             await OnDiskAsync(() => target.WriteAsync(buffer.AsMemory(0, read), cancel).AsTask());
@@ -77,6 +84,10 @@ public static class DinoStreamCopier
         catch (OperationCanceledException) when (!cancel.IsCancellationRequested)
         {
             throw new DinoBookException(TimedOut);
+        }
+        catch (IOException ex)
+        {
+            throw new DinoNetworkException(CutShort, ex);
         }
     }
 
@@ -106,9 +117,9 @@ public static class DinoStoreFiles
     private const string CoverExtension = ".jpg";
     private const int FileBuffer = 81920;
 
-    private static readonly Regex NameOfCoverVersion = new(@"\A(?<id>.+)-v[0-9]+" + Regex.Escape(CoverExtension) + @"\z", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex NameOfCoverVersion = new(@"\A(?<id>.+)-v(?<version>[0-9]+)" + Regex.Escape(CoverExtension) + @"\z", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    private static readonly Regex NameOfVersion = new(@"\A(?<id>.+)-v[0-9]+\.dino\z", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private static readonly Regex NameOfVersion = new(@"\A(?<id>.+)-v(?<version>[0-9]+)\.dino\z", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>The finished download of one version of a book: <c>&lt;root&gt;\&lt;id&gt;-v&lt;version&gt;.dino</c>.</summary>
     public static string FinalPath(string root, DinoStoreEntry entry)
@@ -128,24 +139,33 @@ public static class DinoStoreFiles
         return finalPath + PartSuffix;
     }
 
-    /// <summary>The other versions of the same book as <paramref name="keepPath"/>, among <paramref name="files"/>; the file to keep is never listed.</summary>
+    /// <summary>The older versions of the same book as <paramref name="keepPath"/>, among <paramref name="files"/>; the file to keep and any newer version are never listed.</summary>
     public static IReadOnlyList<string> OtherVersions(IEnumerable<string> files, string keepPath)
     {
-        var match = NameOfVersion.Match(Path.GetFileName(keepPath));
-        if (!match.Success)
+        var keep = NameOfVersion.Match(Path.GetFileName(keepPath));
+        if (!keep.Success || !long.TryParse(keep.Groups["version"].Value, out var keepVersion))
         {
             return [];
         }
 
-        var same = new Regex(@"\A" + Regex.Escape(match.Groups["id"].Value) + @"-v[0-9]+\.dino\z", RegexOptions.IgnoreCase);
-        return files.Where(f => same.IsMatch(Path.GetFileName(f)) && !string.Equals(f, keepPath, StringComparison.OrdinalIgnoreCase)).ToList();
+        var id = keep.Groups["id"].Value;
+        return files.Where(f => !string.Equals(f, keepPath, StringComparison.OrdinalIgnoreCase) && IsOlderVersionOf(Path.GetFileName(f), id, keepVersion)).ToList();
+    }
+
+    private static bool IsOlderVersionOf(string fileName, string id, long keepVersion)
+    {
+        var match = NameOfVersion.Match(fileName);
+        return match.Success
+            && string.Equals(match.Groups["id"].Value, id, StringComparison.OrdinalIgnoreCase)
+            && long.TryParse(match.Groups["version"].Value, out var version)
+            && version < keepVersion;
     }
 
     /// <summary>
     /// Runs <paramref name="write"/> against a uniquely named <c>.part</c> file (so two windows never share one), then renames it to <paramref name="finalPath"/>. On any failure or cancel the
-    /// part file is removed and the final file is untouched. A disk problem is a <see cref="DinoDiskException"/>.
+    /// part file is removed and the final file is untouched. A disk problem is a <see cref="DinoDiskException"/>; <paramref name="cancel"/> stops the final comparison.
     /// </summary>
-    public static async Task WriteAtomicallyAsync(string finalPath, Func<Stream, Task> write)
+    public static async Task WriteAtomicallyAsync(string finalPath, Func<Stream, Task> write, CancellationToken cancel = default)
     {
         var part = PartPath(finalPath + "." + Guid.NewGuid().ToString("N"));
         FileStream? target = null;
@@ -154,7 +174,7 @@ public static class DinoStoreFiles
             target = OpenPart(part);
             await write(target);
             await CloseOnDiskAsync(target);
-            MoveIntoPlace(part, finalPath);
+            await MoveIntoPlaceAsync(part, finalPath, cancel);
         }
         catch
         {
@@ -164,7 +184,7 @@ public static class DinoStoreFiles
         }
     }
 
-    /// <summary>The cached covers of the other versions of the same book as <paramref name="keepPath"/>, among <paramref name="files"/>.</summary>
+    /// <summary>The cached covers of the older versions of the same book as <paramref name="keepPath"/>, among <paramref name="files"/>; a newer version (another window's) is never listed.</summary>
     public static IReadOnlyList<string> OtherCoverVersions(IEnumerable<string> files, string keepPath)
     {
         var match = NameOfCoverVersion.Match(Path.GetFileName(keepPath));
@@ -173,8 +193,22 @@ public static class DinoStoreFiles
             return [];
         }
 
-        var same = new Regex(@"\A" + Regex.Escape(match.Groups["id"].Value) + @"-v[0-9]+" + Regex.Escape(CoverExtension) + @"\z", RegexOptions.IgnoreCase);
-        return files.Where(f => same.IsMatch(Path.GetFileName(f)) && !string.Equals(f, keepPath, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (!long.TryParse(match.Groups["version"].Value, out var keepVersion))
+        {
+            return [];
+        }
+
+        var id = match.Groups["id"].Value;
+        return files.Where(f => !string.Equals(f, keepPath, StringComparison.OrdinalIgnoreCase) && IsOlderCoverOf(Path.GetFileName(f), id, keepVersion)).ToList();
+    }
+
+    private static bool IsOlderCoverOf(string fileName, string id, long keepVersion)
+    {
+        var match = NameOfCoverVersion.Match(fileName);
+        return match.Success
+            && string.Equals(match.Groups["id"].Value, id, StringComparison.OrdinalIgnoreCase)
+            && long.TryParse(match.Groups["version"].Value, out var version)
+            && version < keepVersion;
     }
 
     /// <summary>The leftover <c>.part</c> files among <paramref name="files"/> (a crashed or killed write), for sweeping when nothing is writing.</summary>
@@ -213,6 +247,37 @@ public static class DinoStoreFiles
         }
     }
 
+    private static bool SameBytes(string first, string second, CancellationToken cancel)
+    {
+        try
+        {
+            using var a = new FileStream(first, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var b = new FileStream(second, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            return a.Length == b.Length && StreamsEqual(a, b, cancel);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private static bool StreamsEqual(Stream a, Stream b, CancellationToken cancel)
+    {
+        var left = new byte[FileBuffer];
+        var right = new byte[FileBuffer];
+        int read;
+        while (!cancel.IsCancellationRequested && (read = a.ReadAtLeast(left, left.Length, throwOnEndOfStream: false)) > 0)
+        {
+            if (b.ReadAtLeast(right, read, throwOnEndOfStream: false) != read || !left.AsSpan(0, read).SequenceEqual(right.AsSpan(0, read)))
+            {
+                return false;
+            }
+        }
+
+        cancel.ThrowIfCancellationRequested();
+        return true;
+    }
+
     /// <summary>Deletes a file, ignoring a lock or a missing permission: a leftover file is only wasted space.</summary>
     public static void TryDelete(string path)
     {
@@ -239,7 +304,8 @@ public static class DinoStoreFiles
         }
     }
 
-    private static void MoveIntoPlace(string part, string finalPath)
+    /// <summary>Renames the whole part file into place. A window that finished the same book first leaves the file there (and maybe open); if it holds the same bytes it is as good as our own: the part is dropped and it counts as success (compared off the caller's thread, length first, and it stops on cancel). A different file in the way (damaged, stale) is a failure.</summary>
+    private static async Task MoveIntoPlaceAsync(string part, string finalPath, CancellationToken cancel)
     {
         try
         {
@@ -247,7 +313,12 @@ public static class DinoStoreFiles
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            throw new DinoDiskException(DinoStreamCopier.DiskMessage, ex);
+            if (!await Task.Run(() => SameBytes(part, finalPath, cancel), cancel))
+            {
+                throw new DinoFileInUseException(DinoStreamCopier.InUseMessage, ex);
+            }
+
+            TryDelete(part);
         }
     }
 }
