@@ -256,6 +256,7 @@ public sealed partial class MainViewModel : ObservableObject
     private void RefreshBook()
     {
         var pages = _pageList.Pages;
+        ApplyAutomaticPlacement(CurrentStoryContext());
         var padded = MarkWarnedBlank(_pageList.Padded, pages);
         SyncBookDirection();
         var sheets = Imposition.Impose(padded, BookDirection);
@@ -265,6 +266,7 @@ public sealed partial class MainViewModel : ObservableObject
         ApplyPlainnessToAll(_storyContext);
 
         _printedNumbers = PageNumbering.Compute(padded);
+        MovedTextNotice = MovedTextNoticeOf();
         _positions = PositionsOf(pages);
         Spreads = PrintTheDamnBook.Core.Spreads.Of(padded, BookDirection).Select(s => ToViewModel(s, cache)).ToList();
         Sheets = sheets.Select(s => ToViewModel(s, cache)).ToList();
@@ -303,7 +305,7 @@ public sealed partial class MainViewModel : ObservableObject
     private List<string> FailedImages(IReadOnlyList<BookPage> pages) =>
         pages.Select(p => p.Path)
             .OfType<string>()
-            .Where(path => _thumbnails.Load(path) is null)
+            .Where(path => LoadNotingSize(path) is null)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 

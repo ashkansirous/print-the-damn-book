@@ -25,7 +25,8 @@ public sealed record DinoBook(
     string? CoverFile,
     IReadOnlyList<DinoPage> Pages,
     IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Translations,
-    int SkippedPages = 0)
+    int SkippedPages = 0,
+    DinoBackCover? BackCover = null)
 {
     private readonly ConcurrentDictionary<string, DinoTranslator> _translators = new();
 

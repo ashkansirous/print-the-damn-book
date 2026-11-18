@@ -4,7 +4,21 @@ using System.Text.Json.Serialization;
 namespace PrintTheDamnBook.Core.Text;
 
 /// <summary>The words of one picture as saved in <c>book.json</c>.</summary>
-public sealed record PageTextEntry(string Text = "", TextPlacement Placement = TextPlacement.OnPicture, TextBand? Band = null);
+/// <remarks>
+/// <paramref name="ChosenByUser"/> is true when the user flipped the placement switch. It is always written by this version; an entry
+/// without it comes from before Slice 23, when only the user could pick Own page, so <see cref="IsChosenByUser"/> reads Own page as
+/// chosen and On the picture as not chosen (the old default, which the fit may move).
+/// </remarks>
+public sealed record PageTextEntry(
+    string Text = "",
+    TextPlacement Placement = TextPlacement.OnPicture,
+    TextBand? Band = null,
+    bool? ChosenByUser = null)
+{
+    /// <summary>Whether the user chose this placement, reading an entry saved before the field existed as described on the type.</summary>
+    [JsonIgnore]
+    public bool IsChosenByUser => ChosenByUser ?? Placement == TextPlacement.OwnPage;
+}
 
 /// <summary>What <c>book.json</c> holds: the story text of each picture (keyed by image file name) and the book's text-page paper.</summary>
 public sealed record BookText
@@ -21,6 +35,10 @@ public sealed record BookText
 
     /// <summary>The reader's own pick of which side the book opens from; null until they pick (the direction then follows the language or the first story text, see <see cref="TextDirection.Resolve"/>). Absent in older files.</summary>
     public ReadingDirection? ReadingDirection { get; init; }
+
+    /// <summary>For a Dino book: true when the user took the words off the back cover, so the credits are not added again on the next open. Absent (false) in older files.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool BackCoverCleared { get; init; }
 
     public Dictionary<string, PageTextEntry> Pages { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }
@@ -140,6 +158,7 @@ public static class BookTextJson
             {
                 pages[name] = entry with
                 {
+                    ChosenByUser = entry.IsChosenByUser,
                     Placement = Enum.IsDefined(entry.Placement) ? entry.Placement : TextPlacement.OnPicture,
                     Band = entry.Band is { } band && Enum.IsDefined(band) ? band : null,
                 };

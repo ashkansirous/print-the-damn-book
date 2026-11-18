@@ -71,6 +71,23 @@ public class DinoCacheLayoutTests
         }
     }
 
+    [Fact]
+    public void Verify_rejects_a_folder_written_before_the_layout_version()
+    {
+        var folder = NewFolder();
+        try
+        {
+            File.WriteAllText(Path.Combine(folder, "a.png"), "12345");
+            File.WriteAllLines(Path.Combine(folder, DinoCacheLayout.ManifestFile), DinoCacheLayout.FormatManifest([("a.png", 5)]));
+
+            Assert.False(DinoCacheLayout.Verify(folder, ["a.png"]));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
     [Theory]
     [InlineData("book-0123456789abcdef.tmp-" + Guid32, true)]
     [InlineData("book-0123456789abcdef.OLD-" + Guid32, true)]

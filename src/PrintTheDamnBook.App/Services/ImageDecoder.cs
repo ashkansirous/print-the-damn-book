@@ -6,6 +6,9 @@ using PrintTheDamnBook.Core.Layout;
 
 namespace PrintTheDamnBook.App.Services;
 
+/// <summary>A decoded picture and its real pixel size (upright, before any decode scaling).</summary>
+public sealed record DecodedImage(BitmapSource Image, SizeD PixelSize);
+
 /// <summary>Reads page images for the preview and for printing, without locking the file. Unreadable files give null.</summary>
 public static class ImageDecoder
 {
@@ -15,10 +18,20 @@ public static class ImageDecoder
     /// <summary>Decodes a frozen bitmap; a positive <paramref name="decodePixelWidth"/> decodes it scaled to that width.</summary>
     public static BitmapSource? Decode(string path, int decodePixelWidth = 0)
     {
+        return DecodeWithSize(path, decodePixelWidth)?.Image;
+    }
+
+    /// <summary>
+    /// Like <see cref="Decode"/>, and also returns the picture's real (upright) pixel size, all from one open of the file: the header is read
+    /// first, then the same stream is rewound and decoded.
+    /// </summary>
+    public static DecodedImage? DecodeWithSize(string path, int decodePixelWidth = 0)
+    {
         try
         {
-            var orientation = ReadHeader(path).Orientation;
             using var stream = OpenRead(path);
+            var (width, height, orientation) = ReadHeader(stream);
+            stream.Position = 0;
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
             bitmap.StreamSource = stream;
@@ -26,7 +39,7 @@ public static class ImageDecoder
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.EndInit();
             bitmap.Freeze();
-            return Orient(bitmap, orientation);
+            return new DecodedImage(Orient(bitmap, orientation), UprightSize(width, height, orientation));
         }
         catch (Exception ex) when (IsReadFailure(ex))
         {
@@ -39,8 +52,9 @@ public static class ImageDecoder
     {
         try
         {
-            var (width, height, orientation) = ReadHeader(path);
-            return SwapsAxes(orientation) ? new SizeD(height, width) : new SizeD(width, height);
+            using var stream = OpenRead(path);
+            var (width, height, orientation) = ReadHeader(stream);
+            return UprightSize(width, height, orientation);
         }
         catch (Exception ex) when (IsReadFailure(ex))
         {
@@ -48,9 +62,13 @@ public static class ImageDecoder
         }
     }
 
-    private static (int Width, int Height, int Orientation) ReadHeader(string path)
+    private static SizeD UprightSize(int width, int height, int orientation)
     {
-        using var stream = OpenRead(path);
+        return SwapsAxes(orientation) ? new SizeD(height, width) : new SizeD(width, height);
+    }
+
+    private static (int Width, int Height, int Orientation) ReadHeader(Stream stream)
+    {
         var frame = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None).Frames[0];
         return (frame.PixelWidth, frame.PixelHeight, ReadOrientation(frame));
     }

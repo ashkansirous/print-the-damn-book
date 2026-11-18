@@ -12,7 +12,11 @@ public static class DinoCacheLayout
     public const string ManifestFile = ".complete";
     public const int HashLength = 16;
 
+    /// <summary>Bumped when what a folder holds for the same names changes (2: the back cover picture replaces the generated blank), so an older folder is extracted again.</summary>
+    public const int LayoutVersion = 2;
+
     private const char Separator = '\t';
+    private static readonly string LayoutLine = "layout" + Separator + LayoutVersion.ToString(CultureInfo.InvariantCulture);
 
     private static readonly Regex LeftoverName = new(@"\.(tmp|old|alt)-[0-9a-f]{32}\z", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
@@ -48,7 +52,14 @@ public static class DinoCacheLayout
     {
         try
         {
-            var listed = ParseManifest(File.ReadAllLines(Path.Combine(folder, ManifestFile)));
+            var lines = File.ReadAllLines(Path.Combine(folder, ManifestFile));
+            if (lines.Length == 0 || lines[0] != LayoutLine)
+            {
+                // No layout line (written before Slice 23) or another layout: the folder may hold a file the book now takes from its package.
+                return false;
+            }
+
+            var listed = ParseManifest(lines.Skip(1));
             return Matches(listed, expected, n => new FileInfo(Path.Combine(folder, n)) is { Exists: true } info ? info.Length : null);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -61,7 +72,7 @@ public static class DinoCacheLayout
     public static void WriteManifest(string folder, IReadOnlyCollection<string> names)
     {
         var files = names.Select(n => (n, new FileInfo(Path.Combine(folder, n)).Length));
-        File.WriteAllLines(Path.Combine(folder, ManifestFile), FormatManifest(files));
+        File.WriteAllLines(Path.Combine(folder, ManifestFile), FormatManifest(files).Prepend(LayoutLine));
     }
 
     /// <summary>True for a leftover of an open that died: <c>&lt;folder&gt;.tmp-&lt;guid&gt;</c> , <c>&lt;folder&gt;.old-&lt;guid&gt;</c> or <c>&lt;folder&gt;.alt-&lt;guid&gt;</c>.</summary>

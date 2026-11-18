@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace PrintTheDamnBook.Core.Dino;
 
 /// <summary>The picture files <see cref="DinoBookReader.ExtractPictures"/> wrote: the cover (if any) and one per page, in page order.</summary>
-public sealed record DinoPictures(string? CoverFile, IReadOnlyList<string> PageFiles);
+public sealed record DinoPictures(string? CoverFile, IReadOnlyList<string> PageFiles, string? BackCoverFile = null);
 
 /// <summary>
 /// Reads a <c>.dino</c> package (a zip: <c>package.json</c>, <c>story.json</c> and the pictures). The file is untrusted: every entry name must be a
@@ -34,6 +34,9 @@ public static class DinoBookReader
     private const string TooLarge = "This Dino book is too large.";
     private const string PictureStyleName = "Picture";
     private const int PictureStyleNumber = 2;
+
+    /// <summary>The file stem the folder ordering reads as the book's back cover (<c>PageOrdering</c>).</summary>
+    private const string BackCoverStem = "back cover";
     private static readonly char[] SeparatorChars = ['/', '\\', ':'];
     private static readonly string[] PictureExtensions = [".jpg", ".jpeg", ".png"];
     private static readonly HashSet<string> DeviceNames = new(["CON", "PRN", "AUX", "NUL"], StringComparer.OrdinalIgnoreCase);
@@ -60,7 +63,8 @@ public static class DinoBookReader
     {
         var cover = book.CoverFile is { } c ? PictureFileName(c, "cover") : null;
         var pages = book.Pages.Select((page, i) => PictureFileName(page.ImageFile, (i + 1).ToString(CultureInfo.InvariantCulture))).ToList();
-        return new DinoPictures(cover, pages);
+        var backCover = book.BackCover is { } back ? PictureFileName(back.PictureFile, BackCoverStem) : null;
+        return new DinoPictures(cover, pages, backCover);
     }
 
     private static string PictureFileName(string entryName, string stem)
@@ -81,7 +85,8 @@ public static class DinoBookReader
             Directory.CreateDirectory(folder);
             var cover = book.CoverFile is { } c ? writer.Write(c, "cover") : null;
             var pages = book.Pages.Select((page, i) => writer.Write(page.ImageFile, (i + 1).ToString(CultureInfo.InvariantCulture))).ToList();
-            return new DinoPictures(cover, pages);
+            var backCover = book.BackCover is { } back ? writer.Write(back.PictureFile, BackCoverStem) : null;
+            return new DinoPictures(cover, pages, backCover);
         }
         catch (InvalidDataException ex)
         {
@@ -102,7 +107,8 @@ public static class DinoBookReader
             throw new DinoBookException("This Dino book has too many pages.");
         }
 
-        foreach (var page in story.Pages ?? [])
+        var (storyPages, backCover) = SplitBackCover(story.Pages ?? [], entries);
+        foreach (var page in storyPages)
         {
             if (page is not null && IsPicture(page.ImageFile, entries))
             {
@@ -122,7 +128,26 @@ public static class DinoBookReader
         var title = FirstText(story.Title, manifest.Title) ?? string.Empty;
         var cover = CoverOf(story, entries);
         var id = FirstText(manifest.Id, story.Id) ?? string.Empty;
-        return new DinoBook(id, title, FirstText(story.Language, manifest.Language) ?? "en", cover, pages, ReadTranslations(story.Translations), skipped);
+        return new DinoBook(id, title, FirstText(story.Language, manifest.Language) ?? "en", cover, pages, ReadTranslations(story.Translations), skipped, backCover);
+    }
+
+    /// <summary>
+    /// Dino Reader keeps the back cover as the book's last page, carrying a <c>backCover</c> object. That page is taken out of the story pages;
+    /// the back cover is null when it names no usable picture (the book then keeps the generated blank). In that case the page stays among the
+    /// story pages, so it is kept when its own picture is usable and counted as skipped when not, never dropped silently.
+    /// </summary>
+    private static (IReadOnlyList<PageFile?> Pages, DinoBackCover? BackCover) SplitBackCover(List<PageFile?> pages, Dictionary<string, ZipArchiveEntry> entries)
+    {
+        var last = pages.Count - 1;
+        if (last < 0 || pages[last]?.BackCover is not { ValueKind: JsonValueKind.Object } element)
+        {
+            return (pages, null);
+        }
+
+        var backCover = DinoBackCoverReader.Read(element, pages[last]!.ImageFile, name => IsPicture(name, entries));
+        // The page is the back cover only when its own picture is the back cover's; one with a different picture is a story page (kept, or counted as skipped).
+        var isBackCoverPage = backCover is not null && string.Equals(backCover.PictureFile, pages[last]!.ImageFile, StringComparison.Ordinal);
+        return (isBackCoverPage ? pages.Take(last).ToList() : pages, backCover);
     }
 
     private static string CheckedText(string? text)
@@ -417,5 +442,8 @@ public static class DinoBookReader
         public string? Text { get; set; }
 
         public string? ImageFile { get; set; }
+
+        /// <summary>Only on the last page of a book that has a back cover; read by <see cref="DinoBackCoverReader"/>.</summary>
+        public JsonElement? BackCover { get; set; }
     }
 }

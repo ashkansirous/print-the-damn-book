@@ -29,6 +29,7 @@ $SkippedExitCode = 3
 $Checks = @(
     @{ Name = 'open-dino'; Arguments = @('-Exe', $Exe, '-Dino', $Dino) }
     @{ Name = 'open-folder'; Arguments = @('-Exe', $Exe) }
+    @{ Name = 'back-cover-and-fit'; Arguments = @('-Exe', $Exe) }
     @{ Name = 'direction-and-sheet-order'; Arguments = @('-Exe', $Exe) }
     @{ Name = 'print-to-pdf'; Arguments = @('-Exe', $Exe) }
     @{ Name = 'store-dialog'; Arguments = @('-Exe', $Exe) }

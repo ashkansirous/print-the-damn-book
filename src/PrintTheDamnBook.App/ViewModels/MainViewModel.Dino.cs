@@ -423,8 +423,32 @@ public sealed partial class MainViewModel
     /// <summary>The words saved for this book on an earlier visit, or the ones that came in the file.</summary>
     private static BookTextLoad DinoText(OpenedDino dino, DinoLanguage start)
     {
-        return File.Exists(BookTextStore.PathIn(dino.Folder)) ? BookTextStore.Read(dino.Folder) : new BookTextLoad(SeedText(dino, start), true);
+        return File.Exists(BookTextStore.PathIn(dino.Folder)) ? WithBackCover(BookTextStore.Read(dino.Folder), dino) : new BookTextLoad(SeedText(dino, start), true);
     }
+
+    /// <summary>
+    /// Words saved before the book's back cover was read have no credits for it: add them (in the language the words were saved in) so the
+    /// back cover prints its credits; an entry already saved (the user's own, or the credits) is never replaced.
+    /// </summary>
+    private static BookTextLoad WithBackCover(BookTextLoad load, OpenedDino dino)
+    {
+        if (BackCoverKey(dino) is not { } key || load.Book.Pages.ContainsKey(key) || load.Book.BackCoverCleared)
+        {
+            return load;
+        }
+
+        var language = ShownLanguage(dino.Book, load.Book.Language);
+        var pages = new Dictionary<string, PageTextEntry>(load.Book.Pages, StringComparer.OrdinalIgnoreCase) { [key] = BackCoverEntry(dino.Book.BackCover!.Credits!, language) };
+        return load with { Book = load.Book with { Pages = pages } };
+    }
+
+    /// <summary>The <c>book.json</c> key of the back cover's picture when the book has one with credits; null otherwise.</summary>
+    private static string? BackCoverKey(OpenedDino dino) =>
+        dino.Pictures.BackCoverFile is { } file && dino.Book.BackCover?.Credits is not null ? file : null;
+
+    /// <summary>The back cover's credits in <paramref name="language"/>, in the middle band (the images mostly have their characters at the bottom).</summary>
+    private static PageTextEntry BackCoverEntry(DinoCredits credits, string? language) =>
+        new(BackCoverWording.Text(credits, language), TextPlacement.OnPicture, TextBand.Middle);
 
     /// <summary>The words as the book came, in its starting language (its own, unless that is not supported yet).</summary>
     private static BookText SeedText(OpenedDino dino, DinoLanguage start)
@@ -437,6 +461,11 @@ public sealed partial class MainViewModel
                 var band = key == dino.Pictures.CoverFile ? TextBand.Top : TextBand.Bottom;
                 entries[key] = new PageTextEntry(dino.Book.In(text, start.Code), TextPlacement.OnPicture, band);
             }
+        }
+
+        if (BackCoverKey(dino) is { } backKey)
+        {
+            entries[backKey] = BackCoverEntry(dino.Book.BackCover!.Credits!, start.Code);
         }
 
         return new BookText { Pages = entries, Language = start.IsOwn ? null : start.Code };
@@ -455,6 +484,10 @@ public sealed partial class MainViewModel
             yield return new(dino.Pictures.PageFiles[i], dino.Book.Pages[i].Text);
         }
     }
+
+    /// <summary>The words that are made from the book's own file in a language, not translated from the page's words: the back cover's credits.</summary>
+    private static bool IsBackCoverKey(OpenedDino dino, string key) =>
+        BackCoverKey(dino) is { } backKey && string.Equals(backKey, key, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Fills the language select for the book just shown (empty for a folder) and puts back the language it was last saved in.</summary>
     private void OpenDinoLanguages(BookTextLoad load)
@@ -500,7 +533,7 @@ public sealed partial class MainViewModel
     private string SelectedLanguageOf(DinoBook book, string? savedLanguage)
     {
         var saved = DinoBook.Primary(savedLanguage);
-        if (saved.Length > 0 && !book.IsOwn(saved) && book.Languages().Any(l => l.Code == saved))
+        if (BookHasSaved(book, saved))
         {
             return saved;
         }
@@ -512,6 +545,18 @@ public sealed partial class MainViewModel
         }
 
         return start.Code;
+    }
+
+    private static bool BookHasSaved(DinoBook book, string saved)
+    {
+        return saved.Length > 0 && !book.IsOwn(saved) && book.Languages().Any(l => l.Code == saved);
+    }
+
+    /// <summary>The code the language select shows for a saved language: the saved one when the book has it, else the starting language (the same fallback as <see cref="SelectedLanguageOf"/>, without its notice).</summary>
+    private static string? ShownLanguage(DinoBook book, string? savedLanguage)
+    {
+        var saved = DinoBook.Primary(savedLanguage);
+        return BookHasSaved(book, saved) ? saved : book.StartLanguage()?.Code ?? book.Language;
     }
 
     private static DinoLanguageOption ToOption(DinoLanguage language)
@@ -649,7 +694,16 @@ public sealed partial class MainViewModel
         var work = new List<TranslationJob>();
         foreach (var page in _pageList.Pages)
         {
-            if (KeyOf(page) is { } key && _dinoSource.TryGetValue(key, out var source) && page.Story is not null)
+            if (KeyOf(page) is not { } key || page.Story is null)
+            {
+                continue;
+            }
+
+            if (_dino is { } dino && IsBackCoverKey(dino, key))
+            {
+                work.Add(new TranslationJob(page, string.Empty, dino.Book.BackCover!.Credits));
+            }
+            else if (_dinoSource.TryGetValue(key, out var source))
             {
                 work.Add(new TranslationJob(page, source));
             }
@@ -666,8 +720,8 @@ public sealed partial class MainViewModel
         foreach (var job in work)
         {
             cancel.ThrowIfCancellationRequested();
-            var forms = codes.Select(code => book.In(job.Source, code)).ToList();
-            done.Add(new TranslationResult(job.Page, forms, target >= 0 ? forms[target] : book.In(job.Source, to)));
+            var forms = codes.Select(code => WordsIn(book, job, code)).ToList();
+            done.Add(new TranslationResult(job.Page, forms, target >= 0 ? forms[target] : WordsIn(book, job, to)));
         }
 
         return done;
@@ -746,7 +800,12 @@ public sealed partial class MainViewModel
         return string.Join(", ", parts) + KeptTextTail;
     }
 
-    private sealed record TranslationJob(BookPage Page, string Source);
+    /// <summary>The page's words in <paramref name="code"/>: the book's translation of its sentence, or for the back cover the credit lines in that language.</summary>
+    private static string WordsIn(DinoBook book, TranslationJob job, string code) =>
+        job.Credits is { } credits ? BackCoverWording.Text(credits, code) : book.In(job.Source, code);
+
+    /// <summary><paramref name="Credits"/> is set only for the back cover, whose words are made from its credits rather than translated from <paramref name="Source"/>.</summary>
+    private sealed record TranslationJob(BookPage Page, string Source, DinoCredits? Credits = null);
 
     /// <summary><paramref name="Forms"/> is the page's source words in every language of the book; <paramref name="ToText"/> the one for the target.</summary>
     private sealed record TranslationResult(BookPage Page, IReadOnlyList<string> Forms, string ToText);

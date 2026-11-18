@@ -16,6 +16,9 @@ internal sealed record TextPagePainting(Geometry Words, Rect WordsClip, TextFitR
 /// <summary>How a text is set: the way it runs and its font.</summary>
 internal sealed record TextLook(FlowDirection Flow, Typeface Typeface);
 
+/// <summary>Cleaned story words and how they are set.</summary>
+internal sealed record PreparedWords(string Text, TextLook Look);
+
 /// <summary>
 /// Measures and draws story text into the rectangles Core gives it (Slice 14). The words are outlines, like the page numbers,
 /// so the print and the thumbnails draw exactly the same shapes. Which size, where and how big the panel is stays in Core.
@@ -48,23 +51,22 @@ internal static class StoryPainter
     public static TextFitResult FitBand(string text, PaperKind paper, RectD visibleMm)
     {
         var area = StoryTextLayout.Band(visibleMm).Text;
-        var look = LookOf(text);
-        return StoryTextLayout.Choose(StoryTextLayout.BandStepsPt(paper), pt => HeightMm(Format(text, look, pt, area.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center)) <= area.Height + FitSlackMm);
+        var words = Prepare(text);
+        return StoryTextLayout.Choose(StoryTextLayout.BandStepsPt(paper), pt => HeightMm(Format(words, pt, area.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center)) <= area.Height + FitSlackMm);
     }
 
     /// <summary>The size the words get on a text page.</summary>
     public static TextFitResult FitPage(string text, PaperKind paper, RectD box)
     {
-        var look = LookOf(text);
-        return StoryTextLayout.Choose(StoryTextLayout.PageStepsPt(paper), pt => HeightMm(Format(text, look, pt, box.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left)) <= box.Height + FitSlackMm);
+        var words = Prepare(text);
+        return StoryTextLayout.Choose(StoryTextLayout.PageStepsPt(paper), pt => HeightMm(Format(words, pt, box.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left)) <= box.Height + FitSlackMm);
     }
 
     public static BandPainting PaintBand(StoryText story, PaperKind paper, RectD visibleMm)
     {
-        var text = story.Text;
         var area = StoryTextLayout.Band(visibleMm, story.EffectiveBand);
-        var fit = FitBand(text, paper, visibleMm);
-        var formatted = Format(text, LookOf(text), fit.Pt, area.Text.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center);
+        var fit = FitBand(story.Text, paper, visibleMm);
+        var formatted = Format(Prepare(story.Text), fit.Pt, area.Text.Width, StoryTextLayout.BandLineHeight, TextAlignment.Center);
         var textHeight = HeightMm(formatted);
         var panel = StoryTextLayout.Panel(area, textHeight);
         var origin = new Point(ToDip(area.Text.X), ToDip(panel.Y + area.PaddingY));
@@ -76,7 +78,7 @@ internal static class StoryPainter
     public static TextPagePainting PaintTextPage(string text, PaperKind paper, TextPageArea area)
     {
         var fit = FitPage(text, paper, area.Text);
-        var formatted = Format(text, LookOf(text), fit.Pt, area.Text.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left);
+        var formatted = Format(Prepare(text), fit.Pt, area.Text.Width, StoryTextLayout.PageLineHeight, TextAlignment.Left);
         var textHeight = HeightMm(formatted);
         var top = StoryTextLayout.CentredTop(area.Text, textHeight);
         var origin = new Point(ToDip(area.Text.X), ToDip(top));
@@ -104,10 +106,10 @@ internal static class StoryPainter
     /// Each text picks its own direction and font from its letters, in print and in the thumbnails alike. In FormattedText Left means the
     /// start edge (checked: a right-to-left text with Left sits against the right edge), so a text page's words start at the right with no remapping.
     /// </summary>
-    private static FormattedText Format(string text, TextLook look, double pt, double widthMm, double lineHeight, TextAlignment alignment)
+    private static FormattedText Format(PreparedWords words, double pt, double widthMm, double lineHeight, TextAlignment alignment)
     {
         var em = ToDip(StoryTextLayout.PtToMm(pt));
-        return new FormattedText(text.Trim(), CultureInfo.InvariantCulture, look.Flow, look.Typeface, em, InkBrush, PixelsPerDip)
+        return new FormattedText(words.Text, CultureInfo.InvariantCulture, words.Look.Flow, words.Look.Typeface, em, InkBrush, PixelsPerDip)
         {
             MaxTextWidth = Math.Max(1, ToDip(widthMm)),
             LineHeight = em * lineHeight,
@@ -115,11 +117,15 @@ internal static class StoryPainter
         };
     }
 
-    /// <summary>The direction and typeface of a text, read once per text (the fit tries many sizes of the same string).</summary>
-    private static TextLook LookOf(string text)
+    /// <summary>
+    /// The one place story words are cleaned (<see cref="StoryLines.Clean"/>) for fit, preview and print, with the direction and typeface
+    /// read from them once (the fit tries many sizes of the same string).
+    /// </summary>
+    private static PreparedWords Prepare(string raw)
     {
+        var text = StoryLines.Clean(raw);
         var flow = TextDirection.StartsRightToLeft(text) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
-        return new TextLook(flow, StoryFont.For(text) == StoryFont.Vazirmatn ? VazirmatnTypeface : AndikaTypeface);
+        return new PreparedWords(text, new TextLook(flow, StoryFont.For(text) == StoryFont.Vazirmatn ? VazirmatnTypeface : AndikaTypeface));
     }
 
     private static Geometry Outline(FormattedText text, Point origin)
