@@ -26,3 +26,4 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 20 | Dino open and store hardening (review leftovers) | built | #45 | | [20](../slices/20-dino-open-hardening.md) |
 | 21 | Scripted desktop checks (test harness) | built | #44 | | [21](../slices/21-desktop-test-harness.md) |
 | 25 | Dino: switching language translates every page, not only the cover | built | #58 | | [25](../slices/25-dino-language-switch-pages.md) |
+| 23 | Text that doesn't fit gets its own page, no empty lines, Dino back cover | built | #59 | | [23](../slices/23-fit-and-back-cover.md) |

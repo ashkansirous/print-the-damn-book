@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Every slice except 12, 13 and 22 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45).
+Every slice except 12, 13 and 22 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45). 23 merged 2026-11-18 (PR #59).
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -27,7 +27,6 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 12 | Android app, .NET MAUI (parked) | parked | | | [12](docs/plan/slices/12-android-app.md) |
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
 | 22 | Dino follow-ups from Slice 20's reviews and tests | parked: feedback loop, waits for the user | | | [22](docs/plan/slices/22-dino-review-followups.md) |
-| 23 | Text that doesn't fit gets its own page, no empty lines, Dino back cover | planned | | | [23](docs/plan/slices/23-fit-and-back-cover.md) |
 | 24 | Paid Dino books must be bought before they print ($0.99 print purchase, Store errors, test-build bypass) | parked: skipped by the user 2026-11-18; comes back only when the user asks in an interactive session | | | [24](docs/plan/slices/24-buy-to-print.md) |
 
 Notes:
@@ -40,7 +39,8 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 9 checks across 5 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 12 checks across 6 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- Slice 23 follow-ups from review check2, see [slice file](docs/plan/slices/23-fit-and-back-cover.md#follow-ups).
 - Agent scratch files are not ignored on `main`: no `tmp/` and no `tmp_*` line in `.gitignore` (feedback loops of night 2026-11-01-2024, see their notes). `main` has `/tmp/` only (from PR #44); `tmp_*` is still missing. Verify: `git check-ignore tmp/x tmp_fix.py` prints both.
 - `.dino` "Open with" on this PC is empty (read 22:26 on 2026-11-01: `HKCU\Software\Classes\.dino\OpenWithProgids` has no values, and the `PrintTheDamnBook.dino` key is absent). A test agent deleted the three HKCU keys during the checks of 2026-11-01 (PR #46) without saving them first. The app re-registers only when `PrintTheDamnBook.exe` runs from outside a build output or packaged install (`Services/OpenWithRegistration.cs:33-35`, `Core/Dino/OpenWithRegistrar.cs:34`). No release exists yet (`v0.1.0` not cut), so a dev run doesn't bring it back. Dino Reader is installed as an MSIX package (`AshkanSirous.DinoReader`, read 22:50). An audit pass found no `.dino` association in its repo's manifest on `origin/main`, and the installed package's manifest couldn't be read (empty install location). So nothing of Dino Reader's is known to be lost. Slice 21's runs must restore what they change (`agents/device-test.md`, reg export).
 - Slice 20, waiting on the user: words typed into a book opened in an `.alt-<guid>` folder (another window held the cache) are saved only there and go when the lone-instance sweep runs (Slice 19 behaviour on main, kept); decide whether to warn or merge them back ([slice 20](docs/plan/slices/20-dino-open-hardening.md)).
