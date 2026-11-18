@@ -62,7 +62,7 @@ What was found (2026-11-18):
 
 #### From review
 
-Review files read in full: `reviews/pr-58-high.md`, `reviews/pr-58-medium.md`, `reviews/pr-58-check.md`, `reviews/pr-58-check2.md`.
+Review files: `reviews/pr-58-high.md` and `reviews/pr-58-check2.md` read in full by the recording agent; `reviews/pr-58-medium.md` and `reviews/pr-58-check.md` read by the wave coordinator, not re-opened by the recording agent (feedback loop 2026-11-18-1302).
 
 - Skipped #7 (`reviews/pr-58-high.md`): "`LanguageSwitch` is a single overwritten Task test seam; a second switch is not serialized with a first still running." - only a test seam; the select is disabled while busy, so no user path overlaps two switches.
 - Skipped #8 (`reviews/pr-58-high.md`): "The package is fabricated, not the user's real .dino." - the fabricated package drives the same ApplyTranslated path; the real 16-page book stays in the on-PC verification above.

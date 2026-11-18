@@ -11,11 +11,11 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 ### Slice 25: Dino language switch translates every page ([slice](slices/25-dino-language-switch-pages.md))
 
 - On the user's PC, Love from Seagull Island opened (already saved as `fa` over English) shows Farsi on all 16 pages, and switching fa, en, fa keeps that.
-- No VM run on the night run (free memory 7.0 GB, under the 8 GB VM threshold).
+- No VM run during Slice 25's own build (free memory 7.0 GB, under the 8 GB VM threshold). Slice 23's VM run at 14:23Z included Slice 25's code and passed 6 of 6, but no scripted check switches a language yet (Slice 26 item).
 
 ### Slice 21: Scripted desktop checks ([slice](slices/21-desktop-test-harness.md))
 
-- `store-dialog` (list, download, Cancel) FAILED on the host on 2026-11-18: the list loaded 16 stories, but downloading the first ('Goldilocks and the Three Bears', a paid book) showed no progress bar or result in 60 s and Cancel was not reached, because the store answers it with HTTP 402. Likely cause, not proven: the app shows nothing on a 402 and the check picks the first story whatever its price. Re-run after the Slice 24 items below; log `D:/print-the-damn-book-worktrees/reviews/s21-store-dialog.log`.
+- `store-dialog` (list, download, Cancel) FAILED on the host on 2026-11-18: the list loaded 16 stories, but downloading the first ('Goldilocks and the Three Bears', a paid book) showed no progress bar or result in 60 s and Cancel was not reached, because the store answers it with HTTP 402. Likely cause, not proven: the app shows nothing on a 402 and the check picks the first story whatever its price. The cause is unproven (`DinoStoreClient.SendAsync` throws a Refused error on any non-2xx), so reproduce it first: Slice 26 item "Store dialog" (feedback loop 2026-11-18-1302), not Slice 24, which is skipped; log `D:/print-the-damn-book-worktrees/reviews/s21-store-dialog.log`.
 
 ### Slice 20: Dino open and store hardening ([slice](slices/20-dino-open-hardening.md))
 

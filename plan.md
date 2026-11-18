@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Every slice except 12, 13 and 22 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45). 23 merged 2026-11-18 (PR #59).
+Every slice except 12, 13, 22, 24 and 26 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)); those five are parked (the table below). 25 merged 2026-11-18 (PR #58). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45). 23 merged 2026-11-18 (PR #59).
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -28,6 +28,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
 | 22 | Dino follow-ups from Slice 20's reviews and tests | parked: feedback loop, waits for the user | | | [22](docs/plan/slices/22-dino-review-followups.md) |
 | 24 | Paid Dino books must be bought before they print ($0.99 print purchase, Store errors, test-build bypass) | parked: skipped by the user 2026-11-18; comes back only when the user asks in an interactive session | | | [24](docs/plan/slices/24-buy-to-print.md) |
+| 26 | Follow-ups from Slices 23 and 25 reviews | parked: feedback loop, waits for the user | | | [26](docs/plan/slices/26-s23-s25-review-followups.md) |
 
 Notes:
 
@@ -35,12 +36,15 @@ Notes:
 - [2026-11-01-1141-feedback-loop-w1.md](docs/plan/notes/2026-11-01-1141-feedback-loop-w1.md): feedback loop after night round 1 (Slices 17-19).
 - [2026-11-01-1141-feedback-loop-final.md](docs/plan/notes/2026-11-01-1141-feedback-loop-final.md): final feedback loop of that night (worktree locks traced to check timers and same-call removals).
 - [2026-11-01-2024-feedback-loop-w1.md](docs/plan/notes/2026-11-01-2024-feedback-loop-w1.md): feedback loop after night 2026-11-01-2024 round 1 (Slice 20 merged, Slice 21 parked on the shared-VM permission).
+- [2026-11-18-1302-feedback-loop.md](docs/plan/notes/2026-11-18-1302-feedback-loop.md): feedback loop of night 2026-11-18-1302 (Slices 23 and 25 merged; their review follow-ups parked as Slice 26).
 - [2026-11-01-2024-feedback-loop-final.md](docs/plan/notes/2026-11-01-2024-feedback-loop-final.md): final feedback loop of that night (four repeated mistakes, a device-test budget guard, and the lost `.dino` Open-with entry).
 
 ## Outstanding work
 
 - **Not yet tried on a device:** 12 checks across 6 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
-- Slice 23 follow-ups from review check2, see [slice file](docs/plan/slices/23-fit-and-back-cover.md#follow-ups).
+- Slice 26, waiting on the user (parked by the feedback loop of night 2026-11-18-1302): the unfixed last-pass review findings of Slices 23 and 25 (an Own page choice lost on retype, a language select left on the wrong language after a cancelled switch, a possible `book.json` write on open), the unexplained blank-line collapse, and the `$GuestChecks` list gap. Decide whether to build it ([slice 26](docs/plan/slices/26-s23-s25-review-followups.md)).
+- Seven ClaudeSkills tooling gaps from the feedback loop of night 2026-11-18-1302 are open (user files copied into public test data, check-pass rule vs global fix rule, timer-kill clash, "read in full" claims, unchecked branch-sweep, inline Python writes, host-window approval guard): see the note's *Open findings* ([note](docs/plan/notes/2026-11-18-1302-feedback-loop.md)).
+- The Drive phone registry `_projects.md` has no print-the-damn-book entry, so every mirror skips the product step (mirror runs of 2026-11-18). The `mirror-to-drive` skill says the user adds it from the phone ([_projects.md](https://drive.google.com/file/d/1odWjsIVCAhEws99BF0kDNjAfT2EzBNhh/view)); no session added it.
 - Agent scratch files are not ignored on `main`: no `tmp/` and no `tmp_*` line in `.gitignore` (feedback loops of night 2026-11-01-2024, see their notes). `main` has `/tmp/` only (from PR #44); `tmp_*` is still missing. Verify: `git check-ignore tmp/x tmp_fix.py` prints both.
 - `.dino` "Open with" on this PC is empty (read 22:26 on 2026-11-01: `HKCU\Software\Classes\.dino\OpenWithProgids` has no values, and the `PrintTheDamnBook.dino` key is absent). A test agent deleted the three HKCU keys during the checks of 2026-11-01 (PR #46) without saving them first. The app re-registers only when `PrintTheDamnBook.exe` runs from outside a build output or packaged install (`Services/OpenWithRegistration.cs:33-35`, `Core/Dino/OpenWithRegistrar.cs:34`). No release exists yet (`v0.1.0` not cut), so a dev run doesn't bring it back. Dino Reader is installed as an MSIX package (`AshkanSirous.DinoReader`, read 22:50). An audit pass found no `.dino` association in its repo's manifest on `origin/main`, and the installed package's manifest couldn't be read (empty install location). So nothing of Dino Reader's is known to be lost. Slice 21's runs must restore what they change (`agents/device-test.md`, reg export).
 - Slice 20, waiting on the user: words typed into a book opened in an `.alt-<guid>` folder (another window held the cache) are saved only there and go when the lone-instance sweep runs (Slice 19 behaviour on main, kept); decide whether to warn or merge them back ([slice 20](docs/plan/slices/20-dino-open-hardening.md)).

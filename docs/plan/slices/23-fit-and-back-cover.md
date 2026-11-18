@@ -166,7 +166,7 @@ Four findings files read in full: `reviews/pr-59-high.md` (10 findings), `review
 
 #### Follow-ups
 
-Not fixed in this slice; each from `reviews/pr-59-check2.md`.
+Not fixed in this slice; each from `reviews/pr-59-check2.md`. Moved to [Slice 26](26-s23-s25-review-followups.md) (parked) by the feedback loop of night 2026-11-18-1302; that file is the one to update.
 
 - `reviews/pr-59-check2.md` #1: "ApplyAutomaticPlacement can change Placement while a print runs (only the timer path is guarded)." Unconfirmed.
 - `reviews/pr-59-check2.md` #2: "SplitBackCover compares raw JSON strings Ordinal" so `Back.JPG` and `back.jpg` can print the artwork twice.
