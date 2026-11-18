@@ -1,6 +1,6 @@
 ### Slice 25 — Dino: switching language translates every page, not only the cover
 
-*Built 2026-11-18 (night run, wave 1), PR #58. Not yet verified on the user's PC.*
+*Built 2026-11-18 (night run, wave 1), merged as PR #58 (46a8e2c). Not yet verified on the user's PC.*
 
 **Touches:** `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`, `src/PrintTheDamnBook.Core/Text/StoryLines.cs` (new), `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs` (clears the notice), `src/PrintTheDamnBook.App/Views/CheckStepView.xaml` (shows the notice), `tests/PrintTheDamnBook.App.Tests/**`, `tests/PrintTheDamnBook.Core.Tests/**`
 
@@ -82,7 +82,7 @@ Not fixed: after the second check pass only crash, data-loss, security, privacy 
 - `reviews/pr-58-check2.md` #1 (`MainViewModel.Dino.cs:568`, `ApplyLanguageAsync`): "keep _appliedLanguage updated only on successful ApplyRun and revert to that." The select is left on a language the pages are not in only after a switch started during the open-time reconcile and then cancelled.
 - `reviews/pr-58-check2.md` #2 (`MainViewModel.Dino.cs:593`): "separate the off-thread translate failure from the apply step, or undo applied pages." It needs an exception inside the in-memory apply.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-18)
 
 - A Dino page counts as user-edited only when its `StoryLines.Clean` text matches the book's source in none of its languages; never compare raw strings. (Slice 25: docs/plan/slices/25-dino-language-switch-pages.md)
 
