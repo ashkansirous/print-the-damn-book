@@ -28,6 +28,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 13 | iOS app, .NET MAUI (parked) | parked | | | [13](docs/plan/slices/13-ios-app.md) |
 | 22 | Dino follow-ups from Slice 20's reviews and tests | parked: feedback loop, waits for the user | | | [22](docs/plan/slices/22-dino-review-followups.md) |
 | 23 | Text that doesn't fit gets its own page, no empty lines, Dino back cover | planned | | | [23](docs/plan/slices/23-fit-and-back-cover.md) |
+| 24 | Paid Dino books must be bought before they print ($0.99 print purchase, Store errors, test-build bypass) | planned | | | [24](docs/plan/slices/24-buy-to-print.md) |
 
 Notes:
 
