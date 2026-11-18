@@ -29,11 +29,10 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 22 | Dino follow-ups from Slice 20's reviews and tests | parked: feedback loop, waits for the user | | | [22](docs/plan/slices/22-dino-review-followups.md) |
 | 23 | Text that doesn't fit gets its own page, no empty lines, Dino back cover | planned | | | [23](docs/plan/slices/23-fit-and-back-cover.md) |
 | 24 | Paid Dino books must be bought before they print ($0.99 print purchase, Store errors, test-build bypass) | parked: skipped by the user 2026-11-18; comes back only when the user asks in an interactive session | | | [24](docs/plan/slices/24-buy-to-print.md) |
-| 25 | Dino: switching language translates every page, not only the cover (saved text with a collapsed blank line counted as edited) | planned | | | [25](docs/plan/slices/25-dino-language-switch-pages.md) |
 
 Notes:
 
-- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (1 to 11, 14 to 20).
+- [slices-done.md](docs/plan/notes/slices-done.md): finished slice rows (every built slice).
 - [2026-11-01-1141-feedback-loop-w1.md](docs/plan/notes/2026-11-01-1141-feedback-loop-w1.md): feedback loop after night round 1 (Slices 17-19).
 - [2026-11-01-1141-feedback-loop-final.md](docs/plan/notes/2026-11-01-1141-feedback-loop-final.md): final feedback loop of that night (worktree locks traced to check timers and same-call removals).
 - [2026-11-01-2024-feedback-loop-w1.md](docs/plan/notes/2026-11-01-2024-feedback-loop-w1.md): feedback loop after night 2026-11-01-2024 round 1 (Slice 20 merged, Slice 21 parked on the shared-VM permission).
@@ -41,7 +40,7 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 7 checks across 4 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 9 checks across 5 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
 - Agent scratch files are not ignored on `main`: no `tmp/` and no `tmp_*` line in `.gitignore` (feedback loops of night 2026-11-01-2024, see their notes). `main` has `/tmp/` only (from PR #44); `tmp_*` is still missing. Verify: `git check-ignore tmp/x tmp_fix.py` prints both.
 - `.dino` "Open with" on this PC is empty (read 22:26 on 2026-11-01: `HKCU\Software\Classes\.dino\OpenWithProgids` has no values, and the `PrintTheDamnBook.dino` key is absent). A test agent deleted the three HKCU keys during the checks of 2026-11-01 (PR #46) without saving them first. The app re-registers only when `PrintTheDamnBook.exe` runs from outside a build output or packaged install (`Services/OpenWithRegistration.cs:33-35`, `Core/Dino/OpenWithRegistrar.cs:34`). No release exists yet (`v0.1.0` not cut), so a dev run doesn't bring it back. Dino Reader is installed as an MSIX package (`AshkanSirous.DinoReader`, read 22:50). An audit pass found no `.dino` association in its repo's manifest on `origin/main`, and the installed package's manifest couldn't be read (empty install location). So nothing of Dino Reader's is known to be lost. Slice 21's runs must restore what they change (`agents/device-test.md`, reg export).
 - Slice 20, waiting on the user: words typed into a book opened in an `.alt-<guid>` folder (another window held the cache) are saved only there and go when the lone-instance sweep runs (Slice 19 behaviour on main, kept); decide whether to warn or merge them back ([slice 20](docs/plan/slices/20-dino-open-hardening.md)).
