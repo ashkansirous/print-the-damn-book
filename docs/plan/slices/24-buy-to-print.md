@@ -1,6 +1,6 @@
 ### Slice 24 — Paid Dino books must be bought before they print ($0.99 print purchase)
 
-*Planned.*
+*Parked: the user said "skip this slice" on 2026-11-18, asked whether to run the Dino server change it needs (ReadTheStupidText Slice 408) that night. Comes back only when the user asks in an interactive session.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Net/` (new), `src/PrintTheDamnBook.Core/Dino/DinoStoreCatalog.cs`, `src/PrintTheDamnBook.Core/Dino/PrintAccess.cs` (new), `src/PrintTheDamnBook.App/Purchases/` (new), `src/PrintTheDamnBook.App/Services/DinoStoreClient.cs`, `src/PrintTheDamnBook.App/ViewModels/DinoStoreViewModel.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Wizard.cs`, `src/PrintTheDamnBook.App/Printing/PrintViewModel.cs`, `src/PrintTheDamnBook.App/Views/DinoStoreDialog.xaml`, `src/PrintTheDamnBook.App/Views/DinoStoreDialog.xaml.cs`, `src/PrintTheDamnBook.App/Views/PrintStepView.xaml`, `src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj`, `packaging/msix/**`, `.github/workflows/release.yml`, `site/public/privacy.html`, `tests/**`, `tools/desktop-test/**`
 
