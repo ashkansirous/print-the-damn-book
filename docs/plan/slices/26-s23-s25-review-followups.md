@@ -4,10 +4,10 @@
 ([note](../notes/2026-11-18-1302-feedback-loop.md)). These are the last review pass's findings that the wave
 left unfixed, plus test and harness gaps. The wave called none of them crash or data loss, but three come
 close and go first: Slice 23 #5 (a user's Own page choice is lost, against the rule Slice 23 lifted), Slice 25
-#2 (a failed apply may already have queued a save of mixed text) and the possible `book.json` write on open. The user decides whether to build it. Quotes are copied here because the review files are deleted after
-the note merges.
+#2 (a failed apply may already have queued a save of mixed text) and the possible `book.json` write on open. The user decides whether to build it. Quotes are copied here so the slice does not depend on the untracked
+`reviews/` folder (the loop deleted none of it; a later prune may).
 
-**Touches:** `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`, `src/PrintTheDamnBook.App/Services/BookTextStore.cs`, `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`, `src/PrintTheDamnBook.App/Services/ThumbnailLoader.cs`, `src/PrintTheDamnBook.Core/Dino/**`, `src/PrintTheDamnBook.Core/Text/**`, `src/PrintTheDamnBook.App/Services/DinoStoreClient.cs`, `src/PrintTheDamnBook.App/ViewModels/DinoStoreViewModel.cs`, `tools/desktop-test/store-dialog.ps1`, `tools/desktop-vm/Invoke-DesktopTest.ps1`, `tests/PrintTheDamnBook.App.Tests/**`, `tests/PrintTheDamnBook.Core.Tests/**`
+**Touches:** `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `tools/desktop-test/*.ps1`, `tools/desktop-test/run-all.ps1`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`, `src/PrintTheDamnBook.App/Services/BookTextStore.cs`, `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`, `src/PrintTheDamnBook.App/Services/ThumbnailLoader.cs`, `src/PrintTheDamnBook.Core/Dino/**`, `src/PrintTheDamnBook.Core/Text/**`, `src/PrintTheDamnBook.App/Services/DinoStoreClient.cs`, `src/PrintTheDamnBook.App/ViewModels/DinoStoreViewModel.cs`, `tools/desktop-test/store-dialog.ps1`, `tools/desktop-vm/Invoke-DesktopTest.ps1`, `tests/PrintTheDamnBook.App.Tests/**`, `tests/PrintTheDamnBook.Core.Tests/**`
 
 ## Items
 
@@ -50,7 +50,9 @@ Store dialog (independent of Slice 24's purchase work):
   book, `reviews/s21-store-dialog.log`), blamed on "the app shows nothing on a 402". But
   `DinoStoreClient.SendAsync` (about lines 256-263) throws `DinoStoreException(Refused)` on any non-2xx, so a
   message should show; the check may not recognise the failed state. Reproduce on the VM what the dialog shows
-  on a 402 first, then fix the message or the check. Slice 24 items at its lines 48-49 assume the first cause.
+  on a 402 first, then fix the message or the check. The whole log (311 bytes, host desktop run):
+  "the store listed 16 stor(ies)" / "FAIL  store-dialog: Downloading 'Goldilocks and the Three Bears' showed
+  neither a progress bar nor a result (waited 60 s)". Slice 24 items at its lines 48-49 assume the first cause.
 
 Slice 23 (`reviews/pr-59-check2.md`; #5 loses a user's Own page choice, against the rule Slice 23 lifted):
 
