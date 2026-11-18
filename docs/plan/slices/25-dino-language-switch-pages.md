@@ -1,8 +1,22 @@
 ### Slice 25 — Dino: switching language translates every page, not only the cover
 
-*Planned.*
+*In progress (wave 2026-11-18), draft PR.*
 
-**Touches:** `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`, `tests/PrintTheDamnBook.App.Tests/**`
+**Touches:** `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`, `src/PrintTheDamnBook.Core/Text/StoryLines.cs` (new), `tests/PrintTheDamnBook.App.Tests/**`, `tests/PrintTheDamnBook.Core.Tests/**`
+
+**Design (wave coordinator, 2026-11-18, night run; the slice offered two options, this takes the second):**
+
+- "Edited" is decided by comparing **cleaned** text: a page counts as user-edited only when
+  `StoryLines.Clean(saved) != StoryLines.Clean(source-in-from-language)`. No new field in `book.json`, so old saved files
+  (like the user's, which has no flag) work at once, and no file format change collides with Slice 23's `ChosenByUser`.
+  Why not the flag: a flag cannot tell, for an already-saved book, whether a past edit happened; the cleaned compare can.
+- `Core/Text/StoryLines.cs` is the function Slice 23 item A1 names (drop empty or whitespace-only lines, trim each line's
+  ends, keep single line breaks, `\r\n` as `\n`); this slice creates it with its unit tests so Slice 23 reuses it rather
+  than writing a second one. This slice does not change layout or printing (that is Slice 23 part A).
+- Where the `\n\n` became `\n` is not known (ground-in-code 2026-11-18 found no normaliser in `src/`; likely the Story
+  text TextBox round trip). The cleaned compare makes the fix independent of it; the builder records the cause if a test shows it.
+- A page that kept its own text after a switch is named in the existing language-switch notice path (`NoticeOf`,
+  `MainViewModel.Dino.cs`), e.g. "Pages 3, 7 kept your own text." No new view.
 
 Why: the user, 2026-11-18, printing Love from Seagull Island (`Love from Seagull Island.hd.dino`, store id 9b77e4f2c83247fcbb16eef03d94ffd3): with فارسی and Right to
 left picked, the cover band showed Farsi but every page's band and *Story text* stayed English. "why ... is it missing it and why ... the tests did not catch it".
