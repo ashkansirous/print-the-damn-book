@@ -11,7 +11,7 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 ### Slice 25: Dino language switch translates every page ([slice](slices/25-dino-language-switch-pages.md))
 
 - On the user's PC, Love from Seagull Island opened (already saved as `fa` over English) shows Farsi on all 16 pages, and switching fa, en, fa keeps that.
-- No VM run on the night run (free memory 7.0 GB, under the 8 GB VM threshold).
+- No VM run during Slice 25's own build (free memory 7.0 GB, under the 8 GB VM threshold). Slice 23's VM run at 14:23Z included Slice 25's code and passed 6 of 6, but no scripted check switches a language yet (Slice 26 item).
 
 ### Slice 21: Scripted desktop checks ([slice](slices/21-desktop-test-harness.md))
 
