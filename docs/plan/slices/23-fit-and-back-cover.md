@@ -1,6 +1,6 @@
 ### Slice 23 — Text that doesn't fit gets its own page, no empty lines, and the Dino back cover
 
-*Built 2026-11-18 (night run, wave 1), PR #59; not merged. Tests 629 pass (Core 552, App 77), `dotnet format` clean. Desktop VM run 2026-11-18 14:23: 6 of 6 checks PASS (store-dialog skipped, needs network). Back-cover print in its own language and Farsi, a long book and a real paper print not yet verified (see below).*
+*Built 2026-11-18 (night run, wave 1), merged as PR #59 (2768bce). Tests 629 pass (Core 552, App 77), `dotnet format` clean. Desktop VM run 2026-11-18 14:23: 6 of 6 checks PASS (store-dialog skipped, needs network). Back-cover print in its own language and Farsi, a long book and a real paper print not yet verified (see below).*
 
 *Changed while building:* Part A cleans through `StoryPainter.Prepare` (calling `StoryLines.Clean`) as the single cleaner. Part B: the move decision is Core `StoryPlacement`; `ChosenByUser` is a `bool?` on `PageTextEntry`, always written; a legacy Own page reads as chosen; the fit result is memoised per page; a page is undecided until its real picture size is loaded; the Check step shows `MovedTextNotice`. Part C: `DinoBackCover` and `BackCoverWording` (15 languages copied from Dino Reader); `DinoBookCache` uses the back-cover picture and `.complete` starts with a layout version line; the credits sit in the Middle band, are re-made on a language switch, and `BackCoverCleared` is kept. Known behaviours: the back cover cannot move to its own page (covers have had no Own page since the typed-text slice); credits that do not fit get the existing too-long warning; credits come back once on an old saved book that has no back-cover entry.
 
@@ -178,7 +178,7 @@ Not fixed in this slice; each from `reviews/pr-59-check2.md`.
 - `reviews/pr-59-check2.md` #8 (low): "WithBackCover runs on a load that could not be read (CanSave=false) and does not check Language is one the book has".
 - `tools/desktop-vm/Invoke-DesktopTest.ps1` `$GuestChecks` (line 43) lacks `back-cover-and-fit`, so `-Only back-cover-and-fit` is refused; `tools/desktop-test/run-all.ps1` has it.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-18)
 
 - Fit-to-page moves (text that doesn't fit goes to its own page) are decided only in Core `StoryPlacement`; a page the user placed by hand (`ChosenByUser`, legacy Own page counts) is never moved. (Slice 23: docs/plan/slices/23-fit-and-back-cover.md)
 - A Dino back cover's credit lines come only from Core `BackCoverWording`; names and labels are never built in the App. (Slice 23: docs/plan/slices/23-fit-and-back-cover.md)
