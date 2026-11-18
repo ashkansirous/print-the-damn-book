@@ -82,6 +82,10 @@ are removed from `docs/plan/unverified.md`.
 
 2026-11-01, in the VM: `open-dino`, `open-folder`, `direction-and-sheet-order`, `print-to-pdf`, `handover-check` PASS; `store-dialog` SKIP (VM offline).
 
+2026-11-18, shared VM, `Invoke-DesktopTest.ps1 -Dino` with a .dino fetched by plain GET from the live store: `open-dino` PASS ("good book opens the Check step; missing and wrong files show the alert") and `handover-check` PASS ("launch cases passed"). The Slice 21 line "ran with the `-Dino` file given at the run" is closed.
+
+2026-11-18, host, `-Only store-dialog -HostStore -AcknowledgeHostDesktop`: FAIL. The list loaded 16 stories; downloading the first one, 'Goldilocks and the Three Bears' (id 67695905c10a46bd81aa498beab9609e), showed neither a progress bar nor a result in 60 s; Cancel was not reached. The store answers that download with HTTP 402 (a paid book); other books (The Lion and the Mouse) download with 200. Likely cause, not proven: the app shows nothing on a 402, and the check picks the first story whatever its price. Evidence: `D:/print-the-damn-book-worktrees/reviews/s21-store-dialog.log`. Follow-ups are in Slice 24 (`docs/plan/slices/24-buy-to-print.md`, section A).
+
 Lessons from the VM runs:
 - Win32 file dialogs in the VM expose no UIA Value pattern. Set the path with `WM_SETTEXT` on the Edit (ids 1152, 1148, 1001) and press OK with `BM_CLICK` on `IDOK`.
 - Page tiles expose only their label text ("page-3") to UIA; read them and sort by position.
@@ -103,8 +107,7 @@ Both go to the folder `CLAUDE.md` files (already present in `tools/desktop-test/
 
 #### Not yet verified
 
-- `store-dialog` (list, download, Cancel) has not run: the VM has no network; it needs the host run with `-HostStore -AcknowledgeHostDesktop`.
-- `open-dino` and `handover-check` ran with the `-Dino` file given at the run; no sample .dino is in the repo.
+- `store-dialog` (list, download, Cancel) FAILED on the host on 2026-11-18 (see *Verified*); it needs a re-run once Slice 24 handles the 402 and the check picks a free book.
 
 ## User's answer
 

@@ -45,6 +45,8 @@ Today `DinoStoreEntry` has no access or product field (`Core/Dino/DinoStoreCatal
 - [ ] Copy `HttpErrorKind`/`HttpErrorClassifier` into `Core/Net/` with their tests, and replace the blanket `DinoStoreException` text in `DinoStoreClient.SendAsync` with the classified kind and the Decision 5 messages.
 - [ ] `DinoStoreEntry` gains `Access` (free/paid) and `PrintProductId` from the Worker's `/api/stories` listing (fields added by Slice 408). Missing `access` counts as free, as on the Worker (`stories.ts:358`).
 - [ ] The store dialog shows "Free" or the print price on each book.
+- [ ] The store dialog shows a message, not silence, when a download answers HTTP 402 (found 2026-11-18: 'Goldilocks and the Three Bears' showed no progress bar or result in 60 s; log `D:/print-the-damn-book-worktrees/reviews/s21-store-dialog.log`).
+- [ ] The `tools/desktop-test` `store-dialog` check picks a free book (or expects the paid-book message) instead of the first story (same log).
 
 ### B. The purchase service (copy of Dino's)
 - [ ] Add `App/Purchases/IPrintPurchases.cs` (Decision 1 shape, minus subscriptions) and `WindowsPrintPurchases.cs`, a line-for-line port of `WindowsPurchases.cs` to WPF. The TFM moves to `net10.0-windows10.0.19041.0` for `Windows.Services.Store`; context7 first.
