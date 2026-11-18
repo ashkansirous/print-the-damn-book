@@ -1,8 +1,8 @@
 ### Slice 23 — Text that doesn't fit gets its own page, no empty lines, and the Dino back cover
 
-*Planned 2026-11-17 from the user's report; not built yet.*
+*In progress (wave 2026-11-18), draft PR.*
 
-**Touches:** `src/PrintTheDamnBook.Core/Text/StoryLines.cs` (new), `src/PrintTheDamnBook.Core/Text/BookText.cs`, `src/PrintTheDamnBook.Core/Layout/StoryTextLayout.cs`, `src/PrintTheDamnBook.Core/Layout/StoryPlacement.cs` (new), `src/PrintTheDamnBook.Core/Dino/DinoBook.cs`, `src/PrintTheDamnBook.Core/Dino/DinoBookReader.cs`, `src/PrintTheDamnBook.Core/Dino/DinoBackCover.cs` (new), `src/PrintTheDamnBook.Core/Dino/BackCoverWording.cs` (new), `src/PrintTheDamnBook.App/Printing/StoryPainter.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/PageNotes.cs`, `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`, `src/PrintTheDamnBook.App/Views/CheckStepView.xaml`, `tests/PrintTheDamnBook.Core.Tests/**`, `tests/PrintTheDamnBook.App.Tests/**`, `tools/desktop-test/**`
+**Touches:** `src/PrintTheDamnBook.Core/Text/StoryLines.cs` (exists since Slice 25: reuse and extend, never a second cleaner), `src/PrintTheDamnBook.Core/Text/BookText.cs`, `src/PrintTheDamnBook.Core/Text/StoryText.cs`, `src/PrintTheDamnBook.App/Services/BookTextStore.cs`, `src/PrintTheDamnBook.App/ViewModels/PageViewModel.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.cs`, `src/PrintTheDamnBook.Core/Layout/StoryTextLayout.cs`, `src/PrintTheDamnBook.Core/Layout/StoryPlacement.cs` (new), `src/PrintTheDamnBook.Core/Dino/DinoBook.cs`, `src/PrintTheDamnBook.Core/Dino/DinoBookReader.cs`, `src/PrintTheDamnBook.Core/Dino/DinoBackCover.cs` (new), `src/PrintTheDamnBook.Core/Dino/BackCoverWording.cs` (new), `src/PrintTheDamnBook.App/Printing/StoryPainter.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Story.cs`, `src/PrintTheDamnBook.App/ViewModels/MainViewModel.Dino.cs`, `src/PrintTheDamnBook.App/ViewModels/PageNotes.cs`, `src/PrintTheDamnBook.App/Services/DinoBookCache.cs`, `src/PrintTheDamnBook.App/Views/CheckStepView.xaml`, `tests/PrintTheDamnBook.Core.Tests/**`, `tests/PrintTheDamnBook.App.Tests/**`, `tools/desktop-test/**`
 
 ## Why
 
@@ -54,6 +54,19 @@ Checked on `origin/main` 2026-11-17 (ground-in-code, read only, the app was not 
 4. **The back cover prints as the book's real back cover**, the last outside page, in place of the blank one. Its
    credits sit in the **middle** band by default and can be moved up or down in the Check step like any band.
    A `.dino` without a back cover keeps the generated blank, as today.
+
+## Design notes (wave coordinator, 2026-11-18, night run)
+
+- **Slice 25 is merged first** (PR #58): `Core/Text/StoryLines.Clean` already drops empty lines and trims each line; part A
+  applies it where text enters layout and the painter, it does not write a second one. Slice 25's rule stands: a Dino page is
+  user-edited only when its cleaned text matches the book's source in none of its languages.
+- **`ChosenByUser` lives on `PageTextEntry`** (`BookText.cs`) as an optional JSON field, absent = false, kept by
+  `BookText.Normalize`, read and written only through `BookTextStore` (repo rule). It is the only new saved field.
+- **Back cover credits follow Slice 25's rule:** the back cover page's text counts as the user's own only when its cleaned text
+  equals the credit lines in none of the book's languages; otherwise a language switch (and the open-time reconcile) re-makes it
+  in the new language. The credit lines per language come only from Core `BackCoverWording`.
+- Every value that rests on more than one input (the move decision: fit at the smallest step x `ChosenByUser`) is one pure,
+  unit-tested Core function; the App only calls it.
 
 ## Items
 
