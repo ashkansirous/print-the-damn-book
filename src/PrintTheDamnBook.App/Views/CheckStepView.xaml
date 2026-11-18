@@ -313,6 +313,9 @@
       </StackPanel>
     </Border>
     </WrapPanel>
+    <!-- Which pages a language switch left alone because the user had changed their words. -->
+    <TextBlock Text="{Binding KeptTextNotice}" Foreground="{StaticResource WarningBrush}" TextWrapping="Wrap" Margin="0,-6,0,14"
+               AutomationProperties.Name="Pages that kept your own text" Visibility="{Binding KeptTextNotice, Converter={StaticResource PresentToVisibility}}" />
 
     <!-- Warning chips -->
     <ItemsControl ItemsSource="{Binding Chips}" Margin="0,-4,0,18" Visibility="{Binding HasChips, Converter={StaticResource BoolToVisibility}}">

@@ -175,6 +175,7 @@ public sealed partial class MainViewModel : ObservableObject
         SourcePath = string.Empty;
         LoadProblem = null;
         BookNotice = null;
+        KeptTextNotice = null;
         OpenFailure = null;
         ReleaseMemory(retired);
     }

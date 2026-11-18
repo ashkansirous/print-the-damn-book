@@ -27,6 +27,9 @@ public sealed partial class MainViewModel
     private const string UnsupportedNoticeFormat = "This book's own language is not supported yet. Showing it in {0}.";
     private const string SavedLanguageSuffix = " (as saved with this book)";
     private const string SavedLanguageNotice = "The language this book was saved in is no longer offered, so its words stay as they were.";
+    private const string KeptPageOne = "Page ";
+    private const string KeptPageMany = "Pages ";
+    private const string KeptTextTail = " kept your own text.";
     private const string TranslateFailureText = "Could not change the language.";
     private const string SkippedOneText = "1 page had no picture and was left out.";
     private const string SkippedManyText = " pages had no picture and were left out.";
@@ -47,6 +50,10 @@ public sealed partial class MainViewModel
     private CancellationTokenSource? _loadCancel;
     private CancellationTokenSource? _translateCancel;
     private string? _languageNotice;
+
+    /// <summary>Which pages kept the user's own words at the last language switch; shown on the Check step beside the language select, cleared when a book opens.</summary>
+    [ObservableProperty]
+    public partial string? KeptTextNotice { get; set; }
 
     /// <summary>The alert of an unusable hand-over that the start of a load dismissed; put back if that load is cancelled.</summary>
     private string? _stashedHandoverProblem;
@@ -294,7 +301,7 @@ public sealed partial class MainViewModel
             _syncingLanguage = false;
         }
 
-        await ApplyLanguageAsync(from, code);
+        await ApplyLanguageAsync(from, code, reconcileOnly: false);
     }
 
     /// <summary>The reason shown for a book that could not be opened: the file's own message when it is meant for the user, else a plain sentence.</summary>
@@ -383,7 +390,20 @@ public sealed partial class MainViewModel
 
     private static LoadedFolder ReadDino(string path, CancellationToken cancel)
     {
-        var dino = DinoBookCache.Open(path, cancel);
+        return LoadOpened(DinoBookCache.Open(path, cancel), cancel);
+    }
+
+    /// <summary>Shows a book that is already extracted, without the shared cache (the test seam of <see cref="ReadDino"/>'s second half).</summary>
+    internal void ShowOpened(OpenedDino dino)
+    {
+        Show(dino.Folder, LoadOpened(dino, CancellationToken.None));
+    }
+
+    /// <summary>The pictures' pages in reading order, with their words: what a language switch works on (read by tests).</summary>
+    internal IReadOnlyList<BookPage> BookPages => _pageList.Pages;
+
+    private static LoadedFolder LoadOpened(OpenedDino dino, CancellationToken cancel)
+    {
         try
         {
             var start = dino.Book.StartLanguage() ?? throw new NoPrintableLanguageException(NoPrintableLanguageText);
@@ -445,8 +465,10 @@ public sealed partial class MainViewModel
             IsDinoBook = _dino is not null;
             _dinoSource = _dino is { } dino ? new Dictionary<string, string>(SourceWords(dino), StringComparer.OrdinalIgnoreCase) : new(StringComparer.OrdinalIgnoreCase);
             _languageNotice = null;
+            KeptTextNotice = null;
             DinoLanguages = _dino is { } opened ? LanguageOptions(opened.Book, load.Book.Language) : [];
             SelectedDinoLanguage = _dino is { } shown ? SelectedLanguageOf(shown.Book, load.Book.Language) : string.Empty;
+            LanguageSwitch = ReconcileLanguageOnOpen();
         }
         finally
         {
@@ -474,11 +496,11 @@ public sealed partial class MainViewModel
         return saved.Length > 0 && !book.IsOwn(saved) && !options.Any(o => o.Code == saved && o.IsEnabled);
     }
 
-    /// <summary>The saved language, else the starting language; says so when the book's own language is not supported and another was chosen.</summary>
+    /// <summary>The saved language when the book has it, else the starting language; says so when the book's own language is not supported and another was chosen.</summary>
     private string SelectedLanguageOf(DinoBook book, string? savedLanguage)
     {
         var saved = DinoBook.Primary(savedLanguage);
-        if (saved.Length > 0 && !book.IsOwn(saved))
+        if (saved.Length > 0 && !book.IsOwn(saved) && book.Languages().Any(l => l.Code == saved))
         {
             return saved;
         }
@@ -498,6 +520,9 @@ public sealed partial class MainViewModel
         return new DinoLanguageOption(language.Code, label, language.IsSupported);
     }
 
+    /// <summary>The language switch started last (finished when it completes); awaited by tests, otherwise fire-and-forget.</summary>
+    internal Task LanguageSwitch { get; private set; } = Task.CompletedTask;
+
     partial void OnSelectedDinoLanguageChanged(string oldValue, string newValue)
     {
         if (_syncingLanguage || _dino is null || string.IsNullOrEmpty(oldValue) || string.IsNullOrEmpty(newValue))
@@ -512,7 +537,7 @@ public sealed partial class MainViewModel
         }
 
         _direction.LanguageChanged();
-        _ = ApplyLanguageAsync(oldValue, newValue);
+        LanguageSwitch = ApplyLanguageAsync(oldValue, newValue, reconcileOnly: false);
     }
 
     /// <summary>The arrow keys can land on a disabled (unsupported) language; put the select back on the one in use.</summary>
@@ -534,38 +559,47 @@ public sealed partial class MainViewModel
     /// throws their work away; only words still as the book had them in <paramref name="from"/> are replaced. The translating runs off the UI
     /// thread; past the slow-wait mark the Check step says so and offers Cancel, which leaves every page as it was.
     /// </summary>
-    private async Task ApplyLanguageAsync(string from, string to)
+    private async Task ApplyLanguageAsync(string from, string to, bool reconcileOnly)
     {
         var dino = _dino!;
         var work = TranslationWork();
         using var cancel = new CancellationTokenSource();
         using var slow = new CancellationTokenSource();
+        _translateCancel?.Cancel();
         _translateCancel = cancel;
         IsTranslating = true;
         _ = AfterSlowWaitAsync(slow.Token, () => IsTranslatingSlow = true);
         try
         {
-            var done = await Task.Run(() => Translate(dino.Book, work, from, to, cancel.Token), cancel.Token);
-            if (ReferenceEquals(dino, _dino))
+            var done = await Task.Run(() =>
             {
-                ApplyTranslated(done);
+                TranslateProbe?.Invoke(cancel.Token);
+                return Translate(dino.Book, work, to, cancel.Token);
+            }, cancel.Token);
+            if (IsCurrentRun(cancel))
+            {
+                ApplyRun(done, reconcileOnly);
             }
         }
         catch (OperationCanceledException)
         {
-            RevertIfStillOpen(dino, from);
+            if (IsCurrentRun(cancel))
+            {
+                RevertLanguage(from);
+            }
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            if (RevertIfStillOpen(dino, from))
+            if (IsCurrentRun(cancel))
             {
-                Status = TranslateFailureText;
+                RevertLanguage(from);
+                Status = reconcileOnly ? Status : TranslateFailureText;
             }
         }
         finally
         {
             slow.Cancel();
-            if (ReferenceEquals(_translateCancel, cancel))
+            if (IsCurrentRun(cancel))
             {
                 _translateCancel = null;
                 IsTranslatingSlow = false;
@@ -574,16 +608,25 @@ public sealed partial class MainViewModel
         }
     }
 
-    /// <summary>Puts the select back on <paramref name="code"/> unless the book has been replaced meanwhile (the new book's select is not ours to touch).</summary>
-    private bool RevertIfStillOpen(OpenedDino dino, string code)
-    {
-        if (!ReferenceEquals(dino, _dino))
-        {
-            return false;
-        }
+    /// <summary>Test seam: runs on the translating thread before the work starts, so a test can hold or fail a run.</summary>
+    internal Action<CancellationToken>? TranslateProbe { get; set; }
 
-        RevertLanguage(code);
-        return true;
+    /// <summary>The current run is the one whose source is <c>_translateCancel</c>; a run that was superseded or whose book closed is not, and does nothing.</summary>
+    private bool IsCurrentRun(CancellationTokenSource cancel)
+    {
+        return ReferenceEquals(_translateCancel, cancel);
+    }
+
+    private void ApplyRun(List<TranslationResult> done, bool reconcileOnly)
+    {
+        if (reconcileOnly)
+        {
+            ReconcileTranslated(done);
+        }
+        else
+        {
+            ApplyTranslated(done);
+        }
     }
 
     /// <summary>Stops a translation under way for a book that is going away.</summary>
@@ -615,13 +658,16 @@ public sealed partial class MainViewModel
         return work;
     }
 
-    private static List<TranslationResult> Translate(DinoBook book, List<TranslationJob> work, string from, string to, CancellationToken cancel)
+    private static List<TranslationResult> Translate(DinoBook book, List<TranslationJob> work, string to, CancellationToken cancel)
     {
+        var codes = book.Languages().Select(l => l.Code).ToList();
+        var target = codes.IndexOf(DinoBook.Primary(to));
         var done = new List<TranslationResult>(work.Count);
         foreach (var job in work)
         {
             cancel.ThrowIfCancellationRequested();
-            done.Add(new TranslationResult(job.Page, book.In(job.Source, from), book.In(job.Source, to)));
+            var forms = codes.Select(code => book.In(job.Source, code)).ToList();
+            done.Add(new TranslationResult(job.Page, forms, target >= 0 ? forms[target] : book.In(job.Source, to)));
         }
 
         return done;
@@ -629,21 +675,81 @@ public sealed partial class MainViewModel
 
     private void ApplyTranslated(List<TranslationResult> done)
     {
+        var kept = ApplyForms(done);
+        System.Diagnostics.Debug.WriteLine($"[language] switched pages={done.Count} keptOwnText={kept.Count}");
+        ScheduleBookTextSave();
+        Refresh();
+        KeptTextNotice = KeptTextNoticeOf(kept);
+    }
+
+    /// <summary>
+    /// Gives every page that is not user-edited the words of the target language and returns the pages that are. A page is user-edited only
+    /// when its cleaned words match the book's words in none of its languages; a page already in the target language is left as it is.
+    /// </summary>
+    private List<BookPage> ApplyForms(List<TranslationResult> done)
+    {
+        var kept = new List<BookPage>();
         foreach (var result in done)
         {
-            if (result.Page.Story is { } story && story.Text == result.FromText)
+            if (result.Page.Story is not { } story)
+            {
+                continue;
+            }
+
+            if (!result.Forms.Any(form => StoryLines.SameWords(story.Text, form)))
+            {
+                kept.Add(result.Page);
+            }
+            else if (!StoryLines.SameWords(story.Text, result.ToText))
             {
                 SetStory(result.Page, story with { Text = result.ToText });
             }
         }
 
-        ScheduleBookTextSave();
+        return kept;
+    }
+
+    /// <summary>
+    /// Opening a book puts the pages the user did not edit into the language the select shows, so the select never disagrees with the words.
+    /// It runs through the same off-thread path and loading state as a switch; the disk text is not rewritten and no notice is made.
+    /// </summary>
+    private Task ReconcileLanguageOnOpen()
+    {
+        return _dino is not null && SelectedDinoLanguage.Length > 0
+            ? ApplyLanguageAsync(SelectedDinoLanguage, SelectedDinoLanguage, reconcileOnly: true)
+            : Task.CompletedTask;
+    }
+
+    private void ReconcileTranslated(List<TranslationResult> done)
+    {
+        ApplyForms(done);
         Refresh();
+    }
+
+    /// <summary>"Pages 3, 7 kept your own text." for the pages a language switch left alone, numbered as the Check step shows them; null when it changed every page.</summary>
+    private string? KeptTextNoticeOf(List<BookPage> kept)
+    {
+        if (kept.Count == 0)
+        {
+            return null;
+        }
+
+        var covers = kept.Where(p => p.Kind != PageKind.Numbered).Select(TitleOf).ToList();
+        var numbers = kept.Where(p => p.Kind == PageKind.Numbered).Select(p => _printedNumbers.TryGetValue(p, out var number) ? number : 0)
+            .Where(number => number > 0).Order().Select(number => number.ToString(System.Globalization.CultureInfo.CurrentCulture)).ToList();
+        var parts = new List<string>(covers);
+        if (numbers.Count > 0)
+        {
+            parts.Add((numbers.Count == 1 ? KeptPageOne : KeptPageMany) + string.Join(", ", numbers));
+        }
+
+        return string.Join(", ", parts) + KeptTextTail;
     }
 
     private sealed record TranslationJob(BookPage Page, string Source);
 
-    private sealed record TranslationResult(BookPage Page, string FromText, string ToText);
+    /// <summary><paramref name="Forms"/> is the page's source words in every language of the book; <paramref name="ToText"/> the one for the target.</summary>
+    private sealed record TranslationResult(BookPage Page, IReadOnlyList<string> Forms, string ToText);
 
     /// <summary>The notice for an opened book: pages left out, a language chosen for them, and saved words that could not be carried over (an alternate folder without them).</summary>
     internal static string? NoticeOf(OpenedDino? dino, string? languageNotice)
