@@ -23,7 +23,7 @@ public class BookTextJsonTests
 
         Assert.True(load.CanSave);
         Assert.Equal(TextPageBackground.TintedFromCover, load.Book.TextPages);
-        Assert.Equal(new PageTextEntry("Inside, the stadium is enormous.", TextPlacement.OwnPage), load.Book.Pages["2.jpg"]);
+        Assert.Equal(new PageTextEntry("Inside, the stadium is enormous.", TextPlacement.OwnPage, null, true), load.Book.Pages["2.jpg"]);
         Assert.Equal(BookText.CurrentSchemaVersion, load.Book.SchemaVersion);
     }
 

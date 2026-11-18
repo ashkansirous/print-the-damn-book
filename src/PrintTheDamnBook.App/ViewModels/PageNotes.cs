@@ -13,6 +13,20 @@ internal static class PageNotes
     private const string SpacerHint = "Keeps the text facing its picture.";
     private const string Unreadable = "Could not be read as an image.";
 
+    private const string MovedPrefix = "Moved to its own page so the words fit: ";
+
+    /// <summary>"Moved to its own page so the words fit: pages 3, 7." for the printed numbers of the pages the fit moved; null when none.</summary>
+    public static string? MovedToOwnPage(IReadOnlyList<int> printedNumbers)
+    {
+        if (printedNumbers.Count == 0)
+        {
+            return null;
+        }
+
+        var label = printedNumbers.Count == 1 ? "page " : "pages ";
+        return MovedPrefix + label + string.Join(", ", printedNumbers.Select(n => n.ToString(System.Globalization.CultureInfo.CurrentCulture))) + ".";
+    }
+
     public static (string? Note, bool IsWarned) For(BookPage page, bool hasImage, bool isMissingBackCoverBlank)
     {
         if (page.Kind == PageKind.Spacer)

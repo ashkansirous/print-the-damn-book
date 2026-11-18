@@ -117,9 +117,10 @@ public static class DinoBookCache
         return DinoCacheLayout.Verify(folder, names) ? Opened(path, book, names, pictures, new Placement(folder, false)) : null;
     }
 
-    private static List<string> FileNamesOf(DinoPictures pictures)
+    /// <summary>The files a finished cache folder holds: the book's pictures, then its back cover picture, or the generated blank when it has none.</summary>
+    internal static List<string> FileNamesOf(DinoPictures pictures)
     {
-        return new[] { pictures.CoverFile }.OfType<string>().Concat(pictures.PageFiles).Append(BackCoverFile).ToList();
+        return new[] { pictures.CoverFile }.OfType<string>().Concat(pictures.PageFiles).Append(pictures.BackCoverFile ?? BackCoverFile).ToList();
     }
 
     private static void Hold(string name)
@@ -215,7 +216,11 @@ public static class DinoBookCache
         try
         {
             var pictures = DinoBookReader.ExtractPictures(read, book, temp, cancel);
-            WriteBlankPicture(Path.Combine(temp, BackCoverFile));
+            if (pictures.BackCoverFile is null)
+            {
+                WriteBlankPicture(Path.Combine(temp, BackCoverFile));
+            }
+
             DinoCacheLayout.WriteManifest(temp, names);
             cancel.ThrowIfCancellationRequested();
             return Opened(path, book, names, pictures, PlaceUnderMutex(temp, folder, names));
@@ -405,7 +410,7 @@ public static class DinoBookCache
         return SafeId.IsMatch(book.Id) ? book.Id + "-" + hash : hash;
     }
 
-    /// <summary>A Dino book has no back cover, so the book ends on a plain white page that prints as nothing. Written to a temp file and moved, so a crash never leaves a half-written one.</summary>
+    /// <summary>A Dino book without a back cover (Slice 23: one with a back cover uses its picture instead) ends on a plain white page that prints as nothing. Written to a temp file and moved, so a crash never leaves a half-written one.</summary>
     private static void WriteBlankPicture(string path)
     {
         if (File.Exists(path))

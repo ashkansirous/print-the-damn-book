@@ -24,6 +24,9 @@ public enum TextBand
 /// </summary>
 public sealed record StoryText(string Text, TextPlacement Placement = TextPlacement.OnPicture, TextBand? Band = null)
 {
+    /// <summary>True when the user flipped the page's placement switch themselves; such a page is never moved by the fit (Slice 23).</summary>
+    public bool ChosenByUser { get; init; }
+
     /// <summary>How plain each band of the picture is, once the picture has been looked at; null until then.</summary>
     public BandPlainness? Plainness { get; init; }
 

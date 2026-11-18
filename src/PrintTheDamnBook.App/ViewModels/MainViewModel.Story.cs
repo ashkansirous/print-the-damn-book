@@ -76,6 +76,9 @@ public sealed partial class MainViewModel
     private BookTextStore? _bookText;
     private Dictionary<string, PageTextEntry> _textEntries = new(StringComparer.OrdinalIgnoreCase);
     private string _bookTextFolder = string.Empty;
+
+    /// <summary>The pages the fit moved to their own page at the last refresh (not the ones the user chose).</summary>
+    private IReadOnlyList<BookPage> _movedPages = [];
     private BookPage? _filledPage;
     private bool _syncingEditor;
     private bool _loadingBookText;
@@ -285,6 +288,10 @@ public sealed partial class MainViewModel
     [ObservableProperty]
     public partial bool IsSavingText { get; set; }
 
+    /// <summary>"Moved to its own page so the words fit: pages 3, 7." for the pages the fit moved by itself; null when none moved.</summary>
+    [ObservableProperty]
+    public partial string? MovedTextNotice { get; set; }
+
     private void InitStoryEditor()
     {
         _typingTimer.Tick += (_, _) => OnTypingPaused();
@@ -386,7 +393,7 @@ public sealed partial class MainViewModel
             return;
         }
 
-        var story = page.Story is { } current ? current with { Text = text, Placement = SelectedPlacement } : new StoryText(text, SelectedPlacement, PickedBandOf(page));
+        var story = page.Story is { } current ? current with { Text = text } : new StoryText(text, SelectedPlacement, PickedBandOf(page));
         SetStory(page, string.IsNullOrWhiteSpace(text) ? null : story);
         HasStoryText = page.Story is not null;
         _typingTimer.Stop();
@@ -401,13 +408,120 @@ public sealed partial class MainViewModel
 
     private void ApplyPlacement(TextPlacement placement)
     {
-        if (SelectedPage is not { Story: { } story } page || story.Placement == placement)
+        if (SelectedPage is not { Story: { } story } page || (story.Placement == placement && story.ChosenByUser))
         {
             return;
         }
 
-        SetStory(page, story with { Placement = placement });
+        // A page the fit already moved has this placement but is still automatic: setting it by hand makes it the user's.
+        var chosen = new StoryPlacement(story.Placement, story.ChosenByUser).ChosenAs(placement);
+        SetStory(page, story with { Placement = chosen.Placement, ChosenByUser = chosen.ChosenByUser });
         Refresh();
+    }
+
+    /// <summary>
+    /// Asks Core where each page's words belong: a page the user did not choose moves to its own page when its words do not fit the
+    /// band even at the smallest size, and back onto the picture when they fit again. Runs before the pages are expanded; changes the
+    /// in-memory placement only (it is derived, so it is not saved until the user edits the page).
+    /// </summary>
+    private void ApplyAutomaticPlacement(StoryContext context)
+    {
+        var moved = new List<BookPage>();
+        foreach (var page in _pageList.Pages)
+        {
+            if (page.Story is not { IsEmpty: false } story || !page.CanHaveOwnPage || story.ChosenByUser)
+            {
+                continue;
+            }
+
+            if (BandFits(page, story, context) is not { } fits)
+            {
+                // Not decided (size not loaded): the page keeps its earlier automatic placement, and a page already moved stays in the notice.
+                if (story.Placement == TextPlacement.OwnPage)
+                {
+                    moved.Add(page);
+                }
+
+                continue;
+            }
+
+            var resolved = new StoryPlacement(story.Placement, false).Resolve(fits);
+            if (resolved.Placement != story.Placement)
+            {
+                page.Story = story with { Placement = resolved.Placement };
+                Debug.WriteLine($"[fit] {page.Label} {(fits ? "back onto the picture" : "moved to its own page")}");
+            }
+
+            if (resolved.Placement == TextPlacement.OwnPage)
+            {
+                moved.Add(page);
+            }
+        }
+
+        _movedPages = moved;
+    }
+
+    /// <summary>
+    /// Whether the words fit the page's band at the smallest size, whatever the current placement. Null (not decided: the page stays where it
+    /// is) when the picture's real size is not loaded yet or the picture cannot be read: it never decodes here, so the UI thread is not held; the
+    /// preload's completion refreshes the book and decides it then. The answer is memoised per <see cref="FitKey"/>, so a refresh measures only
+    /// the pages whose words, paper, margin, scaling, numbers or picture size changed.
+    /// </summary>
+    internal bool? BandFits(BookPage page, StoryText story, StoryContext context)
+    {
+        if (_thumbnails.Peek(page.Path)?.RealSize is not { } pixels)
+        {
+            return null;
+        }
+
+        var key = new FitKey(StoryLines.Clean(story.Text), context.Kind, context.MarginMm, context.Scaling, context.Numbers, pixels);
+        if (_fitMemo.TryGetValue(key, out var known))
+        {
+            return known;
+        }
+
+        FitComputations++;
+        var visible = HalfSheetLayout.Resolve(pixels, context.Sheet, false, context.MarginMm, context.Scaling, context.Numbers).Visible;
+        var fits = StoryPainter.FitBand(key.Text, context.Kind, visible).Fits;
+        if (_fitMemo.Count >= FitMemoLimit)
+        {
+            _fitMemo.Clear();
+        }
+
+        _fitMemo[key] = fits;
+        return fits;
+    }
+
+    /// <summary>What the band fit depends on: the cleaned words (which also fix the font and direction), the paper, the layout options and the real picture size.</summary>
+    private readonly record struct FitKey(string Text, PaperKind Paper, double MarginMm, ScalingMode Scaling, PageNumberPosition Numbers, SizeD Picture);
+
+    private const int FitMemoLimit = 1000;
+    private readonly Dictionary<FitKey, bool> _fitMemo = [];
+
+    /// <summary>How many band fits were measured (not served from the memo): read by tests.</summary>
+    internal int FitComputations { get; private set; }
+
+    /// <summary>The loader holding the book's thumbnails and real sizes (read by tests).</summary>
+    internal ThumbnailLoader Thumbnails => _thumbnails;
+
+    /// <summary>Whether a refresh is waiting on the coalescing timer after a picture was read on the UI thread; setting false cancels it (tests).</summary>
+    internal bool FitRefreshPending
+    {
+        get => _sampleTimer.IsEnabled;
+        set
+        {
+            if (!value)
+            {
+                _sampleTimer.Stop();
+            }
+        }
+    }
+
+    /// <summary>The notice for the pages the fit moved, numbered as the Check step prints them; null when none moved.</summary>
+    private string? MovedTextNoticeOf()
+    {
+        var numbers = _movedPages.Select(p => _printedNumbers.GetValueOrDefault(p)).Where(n => n > 0).Order().ToList();
+        return PageNotes.MovedToOwnPage(numbers);
     }
 
     private void ApplyBand(TextBand band)
@@ -430,7 +544,7 @@ public sealed partial class MainViewModel
         {
             if (page.Story is { } kept)
             {
-                _textEntries[key] = new PageTextEntry(kept.Text, kept.Placement, kept.Band);
+                _textEntries[key] = new PageTextEntry(kept.Text, kept.Placement, kept.Band, kept.ChosenByUser);
                 RememberPick(key, kept);
                 if (gainedWords)
                 {
@@ -442,6 +556,8 @@ public sealed partial class MainViewModel
             {
                 _textEntries.Remove(key);
             }
+
+            NoteBackCoverWords(key, page.Story is not null);
         }
 
         ScheduleBookTextSave();
@@ -454,8 +570,22 @@ public sealed partial class MainViewModel
             return;
         }
 
-        _bookText.Schedule(new BookText { TextPages = Print.TextPages, Language = SavedLanguage, ReadingDirection = _direction.Picked, Pages = new Dictionary<string, PageTextEntry>(_textEntries, StringComparer.OrdinalIgnoreCase) });
+        _bookText.Schedule(new BookText { TextPages = Print.TextPages, Language = SavedLanguage, ReadingDirection = _direction.Picked, BackCoverCleared = _backCoverCleared, Pages = new Dictionary<string, PageTextEntry>(_textEntries, StringComparer.OrdinalIgnoreCase) });
         UpdateSaveStatus();
+    }
+
+    /// <summary>
+    /// True once the user took the words off this Dino book's back cover (it is never inferred from a missing entry, so a save made before the
+    /// entries are filled cannot set it); put back to false when words are given to the back cover again.
+    /// </summary>
+    private bool _backCoverCleared;
+
+    private void NoteBackCoverWords(string key, bool hasWords)
+    {
+        if (_dino is { } dino && IsBackCoverKey(dino, key))
+        {
+            _backCoverCleared = !hasWords;
+        }
     }
 
     private void OnBookTextStateChanged()
@@ -485,11 +615,12 @@ public sealed partial class MainViewModel
         try
         {
             _textEntries = new Dictionary<string, PageTextEntry>(load.Book.Pages, StringComparer.OrdinalIgnoreCase);
+            _backCoverCleared = load.Book.BackCoverCleared;
             foreach (var page in _pageList.Pages)
             {
                 if (page.Path is { } path && _textEntries.TryGetValue(BookTextJson.KeyFor(folder, path), out var entry))
                 {
-                    page.Story = new StoryText(entry.Text, entry.Placement, entry.Band);
+                    page.Story = new StoryText(entry.Text, entry.Placement, entry.Band) { ChosenByUser = entry.IsChosenByUser };
                     RememberPick(BookTextJson.KeyFor(folder, path), page.Story);
                 }
             }
@@ -672,6 +803,7 @@ public sealed partial class MainViewModel
         _bookText = null;
         _direction.Restore(null);
         _textEntries = new Dictionary<string, PageTextEntry>(StringComparer.OrdinalIgnoreCase);
+        _backCoverCleared = false;
         _samples.Clear();
         _plainness.Clear();
         _bandPicks.Clear();
@@ -729,8 +861,24 @@ public sealed partial class MainViewModel
             return StoryTiles.TextPage(page, context);
         }
 
-        var thumbnail = _thumbnails.Load(page.Path);
-        return StoryTiles.Picture(thumbnail as System.Windows.Media.Imaging.BitmapSource, page, context) ?? thumbnail;
+        var thumbnail = LoadNotingSize(page.Path);
+        return StoryTiles.Picture(thumbnail as System.Windows.Media.Imaging.BitmapSource, _thumbnails.RealSizeOf(page.Path), page, context) ?? thumbnail;
+    }
+
+    /// <summary>
+    /// Loads a thumbnail on this thread. When that read fills in a real size the fit could not use before (a picture the preload had not reached),
+    /// the page's placement is decided by a refresh on the same coalescing timer the picture reads use.
+    /// </summary>
+    internal ImageSource? LoadNotingSize(string? path)
+    {
+        var wasLoaded = _thumbnails.Peek(path) is not null;
+        var thumbnail = _thumbnails.Load(path);
+        if (!wasLoaded && _thumbnails.Peek(path)?.RealSize is not null && !_sampleTimer.IsEnabled)
+        {
+            _sampleTimer.Start();
+        }
+
+        return thumbnail;
     }
 
     private int CountTooLong(IReadOnlyList<BookPage> pages, StoryContext context)
@@ -740,8 +888,8 @@ public sealed partial class MainViewModel
 
     private TextFitResult? FitOf(BookPage page, StoryContext context)
     {
-        var thumbnail = _thumbnails.Load(page.Path) as System.Windows.Media.Imaging.BitmapSource;
-        var size = thumbnail is null ? (SizeD?)null : new SizeD(thumbnail.PixelWidth, thumbnail.PixelHeight);
+        var thumbnail = LoadNotingSize(page.Path) as System.Windows.Media.Imaging.BitmapSource;
+        var size = _thumbnails.RealSizeOf(page.Path) ?? (thumbnail is null ? null : new SizeD(thumbnail.PixelWidth, thumbnail.PixelHeight));
         return StoryTiles.FitOf(page, size, context);
     }
 

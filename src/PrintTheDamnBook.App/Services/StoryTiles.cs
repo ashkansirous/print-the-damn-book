@@ -40,14 +40,14 @@ internal static class StoryTiles
     }
 
     /// <summary>The picture with its band over it, drawn at print scale; null when the page has no band text or the picture is unreadable.</summary>
-    public static ImageSource? Picture(BitmapSource? picture, BookPage page, StoryContext context)
+    public static ImageSource? Picture(BitmapSource? picture, SizeD? realPixels, BookPage page, StoryContext context)
     {
         if (picture is null || !page.HasBandText)
         {
             return null;
         }
 
-        var placement = PlacementOf(new SizeD(picture.PixelWidth, picture.PixelHeight), context);
+        var placement = PlacementOf(realPixels ?? new SizeD(picture.PixelWidth, picture.PixelHeight), context);
         var band = StoryPainter.PaintBand(page.Story!, context.Kind, placement.Visible);
         var image = placement.Image;
         var visual = new DrawingVisual();
