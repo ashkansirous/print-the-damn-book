@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Every slice except 12, 13, 22, 24, 26, 29 and 30 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)); 12, 13, 22, 24 and 26 are parked and 29-30 are planned (the table below; 32-34 are parked in it too). 28 merged 2026-11-19 (PR #72). 31 merged 2026-11-19 (PR #70). 27 merged 2026-11-19 (PR #67). 25 merged 2026-11-18 (PR #58). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45). 23 merged 2026-11-18 (PR #59).
+Every slice except 12, 13, 22, 24, 26, 29, 30, 32, 33 and 34 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)); 12, 13, 22, 24, 26, 32, 33 and 34 are parked and 29-30 are planned (the table below). 28 merged 2026-11-19 (PR #72). 31 merged 2026-11-19 (PR #70). 27 merged 2026-11-19 (PR #67). 25 merged 2026-11-18 (PR #58). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45). 23 merged 2026-11-18 (PR #59).
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
