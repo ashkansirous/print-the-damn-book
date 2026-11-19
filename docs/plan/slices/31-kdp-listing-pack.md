@@ -4,7 +4,11 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 5).*
 
+*In progress (wave 2026-11-19), draft PR.*
+
 **Touches:** `.claude/skills/kdp-listing/**` (new), `kdp/listings/**` (new)
+
+**Migrations:** none
 
 **Depends on:** Slice 27 (page count per book, for price). Independent of 28–30 otherwise.
 
