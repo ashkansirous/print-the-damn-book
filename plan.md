@@ -36,6 +36,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 31 | Amazon KDP: listing pack and `kdp-listing` skill | planned (after 27) | | | [31](docs/plan/slices/31-kdp-listing-pack.md) |
 | 32 | Amazon KDP: Kindle edition | parked: starts only when the owner says in an interactive session that the first two paperbacks sold enough (doc's kill rule) | | | [32](docs/plan/slices/32-kdp-kindle-edition.md) |
 | 33 | Amazon KDP: other languages, right-to-left, Farsi/Arabic Kindle | parked: same gate as 32; starts only when the owner says in an interactive session that the first two paperbacks sold enough | | | [33](docs/plan/slices/33-kdp-other-languages.md) |
+| 34 | Dino back cover: read the store's PascalCase keys | planned | | | [34](docs/plan/slices/34-backcover-key-case.md) |
 
 Notes:
 
