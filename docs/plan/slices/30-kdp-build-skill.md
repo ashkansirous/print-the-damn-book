@@ -4,8 +4,16 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 4).*
 
+*In progress (wave 2026-11-19), draft PR.*
+
 **Touches:** `.claude/skills/kdp-build/**` (new), `.claude/agents/kdp-visual-check.md` (new),
-`src/PrintTheDamnBook.Cli/**` (new, from an earlier KDP slice) (page previews for the agent), `CLAUDE.md` (names the repo's agent)
+`src/PrintTheDamnBook.Cli/**` (new, from an earlier KDP slice) (page previews for the agent), `CLAUDE.md` (names the repo's agent),
+`src/PrintTheDamnBook.Kdp/KdpExporter.cs`, `src/PrintTheDamnBook.Kdp/KdpCheckReport.cs`, `src/PrintTheDamnBook.Kdp/Pictures/**`,
+`src/PrintTheDamnBook.Kdp/Previews/**` (new), `src/PrintTheDamnBook.Core/Kdp/**` (preview sizing and contact-sheet grid maths), `tests/PrintTheDamnBook.Kdp.Tests/**`, `tests/PrintTheDamnBook.Core.Tests/Kdp/**`
+
+*Night run, wave 2 (2026-11-19): Touches widened from the premise check (Slice 28 writes previews only for flagged pages, from
+`KdpExporter` and `Pictures/CutLineInputs.cs`; there is no contact sheet yet). `.claude/settings.json` is not touched: the skill
+runs the `kdp` command through `dotnet run` like any repo command, and permission lines are the owner's to add.*
 
 **Depends on:** Slices 27–29.
 
