@@ -4,7 +4,7 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 3).*
 
-*Built 2026-11-19 (PR #76), not merged; not yet verified on KDP (upload and proof), see Not yet verified.*
+*Built 2026-11-19, merged as PR #76 (a3f59c1); not yet verified on KDP (upload and proof), see Not yet verified.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/KdpCoverSize.cs` (new), `src/PrintTheDamnBook.Kdp/Cover/**` (new),
 `src/PrintTheDamnBook.Kdp/KdpExporter.cs`, `src/PrintTheDamnBook.Kdp/KdpCheckReport.cs`, `src/PrintTheDamnBook.Kdp/KdpFonts.cs`,
@@ -81,7 +81,7 @@ Findings files (outside the repo): `reviews/pr-76-high.md`, `pr-76-medium.md`, `
 
 Follow-ups for check pass 3 findings 1-7 are not yet in a planned slice.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-19)
 
 - KDP cover size and the panel order and barcode side by reading direction live in Core `KdpCoverSize`; the Kdp project only draws it. A cover failure never stops `interior.pdf` and `check-report.md`, and an older `cover.pdf` is kept as `cover-previous.pdf`, never deleted. (Slice 29: docs/plan/slices/29-kdp-cover-pdf.md)
 
@@ -89,4 +89,4 @@ Follow-ups for check pass 3 findings 1-7 are not yet in a planned slice.
 
 - `[owner]` Upload Freddy's `cover.pdf` and interior at https://kdp.amazon.com/en_US/bookshelf, pass KDP's cover check (watch the 0.0012 in page-size rounding) and order a proof.
 - `[owner]` A real Farsi book's cover (no free book has Farsi text; the lion fa check was layout only).
-- `[cloud]` The Linux CI `kdp-linux` run on PR #76.
+- Verified 2026-11-19: Linux CI `kdp-linux` passed on PR #76 (1m30s).

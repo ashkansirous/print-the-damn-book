@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 29: Amazon KDP: cover PDF ([slice](slices/29-kdp-cover-pdf.md))
+
+- [owner] **You:** upload Freddy's cover with the interior | at https://kdp.amazon.com/en_US/bookshelf upload `cover.pdf` and `interior.pdf` from the `kdp` command's output, pass KDP's cover check (watch the 0.0012 in page-size rounding) and order a proof.
+- [owner] A real Farsi book's cover (no free book has Farsi text; the lion fa check was layout only).
+
 ### Slice 28: Amazon KDP: print-ready pictures ([slice](slices/28-kdp-print-ready-pictures.md))
 
 - [owner] **You:** run the kdp command over your 12 paid books | with your own .dino copies run `dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en --out <folder>` per book and check the cut-line flags at `CutLineCheck.FlagRatio` 2.5, so that the flag level is tuned on real books: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/28-kdp-print-ready-pictures.md
