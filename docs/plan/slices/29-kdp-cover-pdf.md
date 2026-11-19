@@ -4,7 +4,10 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 3).*
 
+*In progress (wave 2026-11-19), draft PR.*
+
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/KdpCoverSize.cs` (new), `src/PrintTheDamnBook.Kdp/Cover/**` (new),
+`src/PrintTheDamnBook.Kdp/KdpExporter.cs`, `src/PrintTheDamnBook.Kdp/KdpCheckReport.cs`, `src/PrintTheDamnBook.Kdp/KdpFonts.cs`,
 `src/PrintTheDamnBook.Cli/**` (new, from an earlier KDP slice), `tests/PrintTheDamnBook.Core.Tests/Kdp/**` (new, from an earlier KDP slice), `tests/PrintTheDamnBook.Kdp.Tests/**` (new, from an earlier KDP slice)
 
 **Depends on:** Slice 27 (page count from `KdpPagePlan`). Can run alongside Slice 28 if their `src/PrintTheDamnBook.Cli/**`
@@ -28,6 +31,12 @@ clear barcode area (doc, milestone 3).
   - Front: the `.dino` cover picture, cropped and resampled by the same Kdp decoder path as Slice 27/28, with the title.
     Back: the Dino back-cover picture (`DinoBackCover.PictureFile`) with the `BackCoverWording` lines, plus a short line
     pointing to the Dino app; barcode box bottom right left empty.
+- Decided by the night run, wave 2 (2026-11-19), because Slice 34 (the back-cover reader reads camelCase keys only) is
+  parked and real store books write PascalCase: when the book's `BackCover` is null, the back half is drawn plain (the
+  title only, no picture, no credit lines), the barcode box is still left clear, and the check report says
+  "back cover: no Dino back cover read (picture and credits missing; Slice 34)". `cover.pdf` is still written. The cover
+  code never reads `story.json` itself (root rule: .dino files are parsed only through `Core/Dino`). Once Slice 34 merges,
+  real books get the picture and credits with no change here.
 
 #### Work
 
