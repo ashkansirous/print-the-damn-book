@@ -29,6 +29,13 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 22 | Dino follow-ups from Slice 20's reviews and tests | parked: feedback loop, waits for the user | | | [22](docs/plan/slices/22-dino-review-followups.md) |
 | 24 | Paid Dino books must be bought before they print ($0.99 print purchase, Store errors, test-build bypass) | parked: skipped by the user 2026-11-18; comes back only when the user asks in an interactive session | | | [24](docs/plan/slices/24-buy-to-print.md) |
 | 26 | Follow-ups from Slices 23 and 25 reviews | parked: feedback loop, waits for the user | | | [26](docs/plan/slices/26-s23-s25-review-followups.md) |
+| 27 | Amazon KDP: interior PDF for one Dino book, from a cross-platform command line | planned | | | [27](docs/plan/slices/27-kdp-interior-pdf.md) |
+| 28 | Amazon KDP: print-ready pictures (cut-line flags, per-page offset, upscaler) | planned (after 27) | | | [28](docs/plan/slices/28-kdp-print-ready-pictures.md) |
+| 29 | Amazon KDP: cover PDF | planned (after 27) | | | [29](docs/plan/slices/29-kdp-cover-pdf.md) |
+| 30 | Amazon KDP: `kdp-build` skill and visual-check agent | planned (after 27–29) | | | [30](docs/plan/slices/30-kdp-build-skill.md) |
+| 31 | Amazon KDP: listing pack and `kdp-listing` skill | planned (after 27) | | | [31](docs/plan/slices/31-kdp-listing-pack.md) |
+| 32 | Amazon KDP: Kindle edition | planned: starts only when the owner says the first two paperbacks sold enough (doc's kill rule) | | | [32](docs/plan/slices/32-kdp-kindle-edition.md) |
+| 33 | Amazon KDP: other languages, right-to-left, Farsi/Arabic Kindle | planned: same gate as 32 | | | [33](docs/plan/slices/33-kdp-other-languages.md) |
 
 Notes:
 
@@ -42,6 +49,7 @@ Notes:
 ## Outstanding work
 
 - **Not yet tried on a device:** 12 checks across 6 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- Amazon KDP spin-offs that belong to other repos (Scope Inbox doc of 2026-11-18, *Spin-offs*), not planned there yet: print-resolution art for Three Little Pigs, Town Mouse, Ugly Duckling and X Marks the Treasure, and author/credit fields per book (ReadTheStupidText / dino-reader); audiobook collections (dino-reader). Later here: hardcover treasury and 3-in-1 collection, agent upload to KDP through the owner's Chrome from the third book on ([slice 27](docs/plan/slices/27-kdp-interior-pdf.md)).
 - Slice 26, waiting on the user (parked by the feedback loop of night 2026-11-18-1302): the unfixed last-pass review findings of Slices 23 and 25 (an Own page choice lost on retype, a language select left on the wrong language after a cancelled switch, a possible `book.json` write on open), the unexplained blank-line collapse, and the `$GuestChecks` list gap. Decide whether to build it ([slice 26](docs/plan/slices/26-s23-s25-review-followups.md)).
 - Seven ClaudeSkills tooling gaps from the feedback loop of night 2026-11-18-1302 are open (user files copied into public test data, check-pass rule vs global fix rule, timer-kill clash, "read in full" claims, unchecked branch-sweep, inline Python writes, host-window approval guard): see the note's *Open findings* ([note](docs/plan/notes/2026-11-18-1302-feedback-loop.md)).
 - The Drive phone registry `_projects.md` has no print-the-damn-book entry, so every mirror skips the product step (mirror runs of 2026-11-18). The `mirror-to-drive` skill says the user adds it from the phone ([_projects.md](https://drive.google.com/file/d/1odWjsIVCAhEws99BF0kDNjAfT2EzBNhh/view)); no session added it.
@@ -73,9 +81,9 @@ Notes:
 - PDF or WebP input (images only; PDF is the first thing to add if a generator produces it).
 - Multiple signatures or perfect binding: one folded stack per book.
 - Saving a book project file: reopen the folder instead. (Exception from Slice 14: story text is saved in `book.json` in the folder; page order is not.)
-- Trim marks, bleed, crop marks: pages are fit inside the half-sheet, nothing is cut.
+- Trim marks, bleed, crop marks: pages are fit inside the half-sheet, nothing is cut. (Exception approved 2026-11-18: the Amazon KDP exporter crops and adds bleed for KDP output only, Slices 27–28.)
 - Printing through another app's dialog, or a Dockerfile / GHCR image (desktop app, no backend).
-- macOS or Linux builds. (Android and iOS are parked slices 12–13, not out of scope.)
+- macOS or Linux builds. (Android and iOS are parked slices 12–13, not out of scope. Exception approved 2026-11-18: the Amazon KDP command-line tool builds and runs on Linux too, Slice 27; the WPF app stays Windows-only.)
 - A light theme for the redesign (Nocturne is dark only for now).
 - Translating or mirroring the app's own screens (Slice 17 changes only the book). Hebrew and other non-Arabic-script right-to-left languages.
 - The Dino Reader side of the hand-over (its "Print this book" action); Slice 19 builds only this app's side.
