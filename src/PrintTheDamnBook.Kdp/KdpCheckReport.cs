@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using PrintTheDamnBook.Core.Kdp;
+using PrintTheDamnBook.Kdp.Pictures;
 
 namespace PrintTheDamnBook.Kdp;
 
@@ -57,16 +58,37 @@ public static class KdpCheckReport
     {
         text.AppendLine("## Pictures");
         text.AppendLine();
-        text.AppendLine("| Story page | Source px | Kept (x, y, w x h) | Target px | Effective dpi |");
-        text.AppendLine("| --- | --- | --- | --- | --- |");
+        text.AppendLine("| Story page | Source px | Kept (x, y, w x h) | Target px | Scale | Effective dpi | Cut line | Preview |");
+        text.AppendLine("| --- | --- | --- | --- | --- | --- | --- | --- |");
         for (var i = 0; i < result.Pictures.Count; i++)
         {
             var p = result.Pictures[i];
             var c = p.Crop.Source;
-            text.AppendLine(CultureInfo.InvariantCulture, $"| {i + 1} | {p.SourceWidth} x {p.SourceHeight} | {c.X}, {c.Y}, {c.Width} x {c.Height} | {p.Crop.TargetWidth} x {p.Crop.TargetHeight} | {p.Crop.EffectiveDpi:0} |");
+            text.AppendLine(CultureInfo.InvariantCulture, $"| {i + 1} | {p.SourceWidth} x {p.SourceHeight} | {c.X}, {c.Y}, {c.Width} x {c.Height} | {p.Crop.TargetWidth} x {p.Crop.TargetHeight} | {p.Crop.Scale:0.00}x | {p.Crop.EffectiveDpi:0} | {CutLineText(p)} | {(p.Preview is null ? string.Empty : CutLineInputs.PreviewPath(i + 1))} |");
         }
 
         text.AppendLine();
+    }
+
+    /// <summary>"FLAGGED" with the score, "chosen" for a page the owner set an offset for, otherwise "ok".</summary>
+    private static string CutLineText(KdpPicture picture)
+    {
+        if (picture.OffsetIgnored)
+        {
+            return $"offset {picture.RequestedOffsetPx} px ignored (no spare height)";
+        }
+
+        if (picture.OffsetClamped)
+        {
+            return $"chosen offset {picture.AppliedOffsetPx} px (asked {picture.RequestedOffsetPx}, clamped)";
+        }
+
+        if (picture.OffsetChosen)
+        {
+            return $"chosen offset {picture.AppliedOffsetPx} px";
+        }
+
+        return picture.Cut.Flagged ? string.Create(CultureInfo.InvariantCulture, $"FLAGGED (score {picture.Cut.Score:0.0})") : string.Create(CultureInfo.InvariantCulture, $"ok (score {picture.Cut.Score:0.0})");
     }
 
     private static void AppendWarnings(StringBuilder text, KdpInteriorResult result)
