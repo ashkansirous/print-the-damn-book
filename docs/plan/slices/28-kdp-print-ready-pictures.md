@@ -4,7 +4,7 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 1).*
 
-*Built 2026-11-19 (wave 2026-11-19), PR #72, not merged yet. Not yet verified: the 12 paid books and the printed proof (see below).*
+*Built 2026-11-19 (wave 2026-11-19), merged as PR #72 (9acb8db) on 2026-11-19. Not yet verified: the 12 paid books and the printed proof (see below).*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/KdpPictureCrop.cs`, `src/PrintTheDamnBook.Core/Kdp/CutLineCheck.cs` (new),
 `src/PrintTheDamnBook.Core/Kdp/KdpBookSettings.cs` (new), `src/PrintTheDamnBook.Kdp/Pictures/**` (new),
@@ -113,12 +113,12 @@ against the original is 37.62 vs 36.42 dB (page 3) and 38.73 vs 37.22 dB (page 8
   - `src/PrintTheDamnBook.Kdp/KdpInterior.cs:45`: `settings.OffsetFor(i + 1)` keys by index in `pictures`, not by story page; when story pages are left out (`book.SkippedPages > 0`) offsets and check rows can point at the wrong picture; key by the real story index or refuse offsets when pages were left out.
   - Found in the check run (no review finding): when two books share a title, the id-mismatch error names the same title twice, so the message does not tell the books apart.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-19)
 
 - The cut-line flag and the crop offset maths live in Core `Kdp/` (`CutLineCheck`, `KdpPictureCrop`, `KdpBookSettings`); the Kdp project only decodes and hands over pixels. (Slice 28: docs/plan/slices/28-kdp-print-ready-pictures.md)
 - `kdp.json` in the output folder is the owner's per-page offset record, keyed to the book id. It is written last (after the PDF, report and previews) and never overwritten when unreadable or from another book. (Slice 28: docs/plan/slices/28-kdp-print-ready-pictures.md)
 
-#### For README.md
+#### For README.md (lifted 2026-11-19)
 
 - `kdp` command: `--offset <page>=<px>` (repeatable; `=0` clears) moves the square crop down on that page; the choice is saved in `kdp.json` in the output folder.
 

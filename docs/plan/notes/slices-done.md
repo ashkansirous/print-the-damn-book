@@ -29,3 +29,4 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 23 | Text that doesn't fit gets its own page, no empty lines, Dino back cover | built | #59 | | [23](../slices/23-fit-and-back-cover.md) |
 | 27 | Amazon KDP: interior PDF for one Dino book, from a cross-platform command line | built | #67 | | [27](../slices/27-kdp-interior-pdf.md) |
 | 31 | Amazon KDP: listing pack and `kdp-listing` skill | built | #70 | | [31](../slices/31-kdp-listing-pack.md) |
+| 28 | Amazon KDP: print-ready pictures (cut-line flags, per-page offset, upscaler) | built | #72 | | [28](../slices/28-kdp-print-ready-pictures.md) |
