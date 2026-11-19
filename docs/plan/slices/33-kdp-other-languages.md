@@ -5,9 +5,9 @@
 (milestone 7). Same gate as Slice 32: starts only when the owner says the first two paperbacks sold enough (doc's kill
 rule, 2026-11-18).*
 
-**Touches:** `src/PrintTheDamnBook.Core/Kdp/KdpFrontMatterWording.cs`, `src/PrintTheDamnBook.Core/Kdp/KdpPagePlan.cs`,
-`src/PrintTheDamnBook.Kdp/**`, `.claude/skills/kdp-listing/**`, `tests/PrintTheDamnBook.Core.Tests/Kdp/**`,
-`tests/PrintTheDamnBook.Kdp.Tests/**`
+**Touches:** `src/PrintTheDamnBook.Core/Kdp/KdpFrontMatterWording.cs` (new, from an earlier KDP slice), `src/PrintTheDamnBook.Core/Kdp/KdpPagePlan.cs` (new, from an earlier KDP slice),
+`src/PrintTheDamnBook.Kdp/**` (new, from an earlier KDP slice), `.claude/skills/kdp-listing/**` (new, from an earlier KDP slice), `tests/PrintTheDamnBook.Core.Tests/Kdp/**` (new, from an earlier KDP slice),
+`tests/PrintTheDamnBook.Kdp.Tests/**` (new, from an earlier KDP slice)
 
 **Depends on:** Slices 27–31 (32 for Farsi/Arabic, which are Kindle only).
 

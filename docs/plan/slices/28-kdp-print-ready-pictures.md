@@ -4,10 +4,10 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 1).*
 
-**Touches:** `src/PrintTheDamnBook.Core/Kdp/KdpPictureCrop.cs`, `src/PrintTheDamnBook.Core/Kdp/CutLineCheck.cs` (new),
+**Touches:** `src/PrintTheDamnBook.Core/Kdp/KdpPictureCrop.cs` (new, from an earlier KDP slice), `src/PrintTheDamnBook.Core/Kdp/CutLineCheck.cs` (new),
 `src/PrintTheDamnBook.Core/Kdp/KdpBookSettings.cs` (new), `src/PrintTheDamnBook.Kdp/Pictures/**` (new),
-`src/PrintTheDamnBook.Kdp/KdpImageDecoder.cs`, `src/PrintTheDamnBook.Cli/**`, `tests/PrintTheDamnBook.Core.Tests/Kdp/**`,
-`tests/PrintTheDamnBook.Kdp.Tests/**`
+`src/PrintTheDamnBook.Kdp/KdpImageDecoder.cs` (new, from an earlier KDP slice), `src/PrintTheDamnBook.Cli/**` (new, from an earlier KDP slice), `tests/PrintTheDamnBook.Core.Tests/Kdp/**` (new, from an earlier KDP slice),
+`tests/PrintTheDamnBook.Kdp.Tests/**` (new, from an earlier KDP slice)
 
 **Depends on:** Slice 27.
 

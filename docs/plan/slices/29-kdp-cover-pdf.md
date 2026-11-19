@@ -5,7 +5,7 @@
 (milestone 3).*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/KdpCoverSize.cs` (new), `src/PrintTheDamnBook.Kdp/Cover/**` (new),
-`src/PrintTheDamnBook.Cli/**`, `tests/PrintTheDamnBook.Core.Tests/Kdp/**`, `tests/PrintTheDamnBook.Kdp.Tests/**`
+`src/PrintTheDamnBook.Cli/**` (new, from an earlier KDP slice), `tests/PrintTheDamnBook.Core.Tests/Kdp/**` (new, from an earlier KDP slice), `tests/PrintTheDamnBook.Kdp.Tests/**` (new, from an earlier KDP slice)
 
 **Depends on:** Slice 27 (page count from `KdpPagePlan`). Can run alongside Slice 28 if their `src/PrintTheDamnBook.Cli/**`
 edits are kept to separate files.

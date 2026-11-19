@@ -5,7 +5,7 @@
 (milestone 4).*
 
 **Touches:** `.claude/skills/kdp-build/**` (new), `.claude/agents/kdp-visual-check.md` (new),
-`src/PrintTheDamnBook.Cli/**` (page previews for the agent), `CLAUDE.md` (names the repo's agent)
+`src/PrintTheDamnBook.Cli/**` (new, from an earlier KDP slice) (page previews for the agent), `CLAUDE.md` (names the repo's agent)
 
 **Depends on:** Slices 27–29.
 

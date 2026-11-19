@@ -7,7 +7,7 @@
 milestones 6–7").*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/KindleLayout.cs` (new), `src/PrintTheDamnBook.Kdp/Kindle/**` (new),
-`src/PrintTheDamnBook.Cli/**`, `tests/PrintTheDamnBook.Core.Tests/Kdp/**`, `tests/PrintTheDamnBook.Kdp.Tests/**`
+`src/PrintTheDamnBook.Cli/**` (new, from an earlier KDP slice), `tests/PrintTheDamnBook.Core.Tests/Kdp/**` (new, from an earlier KDP slice), `tests/PrintTheDamnBook.Kdp.Tests/**` (new, from an earlier KDP slice)
 
 **Depends on:** Slices 27–28.
 
