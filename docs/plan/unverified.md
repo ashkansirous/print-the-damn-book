@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 31: Amazon KDP: listing pack and `kdp-listing` skill ([slice](slices/31-kdp-listing-pack.md))
+
+- [owner] Paste the Freddy listing into the KDP paperback form at https://kdp.amazon.com/en_US/bookshelf and write any field that needed rewriting.
+- [owner] Pick the real KDP categories (the category tree needs the login) and confirm the 4.20 print cost in KDP's calculator.
+
 ### Slice 27: Amazon KDP interior PDF for one Dino book ([slice](slices/27-kdp-interior-pdf.md))
 
 - [owner] A Freddy and the Slipper `.dino` from the owner's own copy (paid store book, download refused), then build its interior with the command.
