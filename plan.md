@@ -34,8 +34,8 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 29 | Amazon KDP: cover PDF | planned (after 27) | | | [29](docs/plan/slices/29-kdp-cover-pdf.md) |
 | 30 | Amazon KDP: `kdp-build` skill and visual-check agent | planned (after 27–29) | | | [30](docs/plan/slices/30-kdp-build-skill.md) |
 | 31 | Amazon KDP: listing pack and `kdp-listing` skill | planned (after 27) | | | [31](docs/plan/slices/31-kdp-listing-pack.md) |
-| 32 | Amazon KDP: Kindle edition | planned: starts only when the owner says the first two paperbacks sold enough (doc's kill rule) | | | [32](docs/plan/slices/32-kdp-kindle-edition.md) |
-| 33 | Amazon KDP: other languages, right-to-left, Farsi/Arabic Kindle | planned: same gate as 32 | | | [33](docs/plan/slices/33-kdp-other-languages.md) |
+| 32 | Amazon KDP: Kindle edition | parked: starts only when the owner says in an interactive session that the first two paperbacks sold enough (doc's kill rule) | | | [32](docs/plan/slices/32-kdp-kindle-edition.md) |
+| 33 | Amazon KDP: other languages, right-to-left, Farsi/Arabic Kindle | parked: same gate as 32; starts only when the owner says in an interactive session that the first two paperbacks sold enough | | | [33](docs/plan/slices/33-kdp-other-languages.md) |
 
 Notes:
 
