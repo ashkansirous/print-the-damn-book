@@ -2,7 +2,7 @@
 
 *Planned 2026-11-19 by run-all-waves night 2026-11-19-2055, wave 1, from a finding while building Slice 27.*
 
-**Touches:** `src/PrintTheDamnBook.Core/Dino/DinoBackCover.cs`, `tests/PrintTheDamnBook.Core.Tests/Dino/**`,
+**Touches:** `src/PrintTheDamnBook.Core/Dino/DinoBackCover.cs`, `tests/PrintTheDamnBook.Core.Tests/DinoBackCoverReaderTests.cs`,
 `tests/PrintTheDamnBook.App.Tests/StoryFitAndBackCoverTests.cs`
 
 **Migrations:** none
