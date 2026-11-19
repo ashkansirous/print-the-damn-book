@@ -4,7 +4,7 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 5).*
 
-*Built 2026-11-19 (wave 2026-11-19), PR #70, not merged; the paste into KDP is not yet verified.*
+*Built 2026-11-19 (wave 2026-11-19), merged as PR #70 (c1ad5b0); the paste into KDP is not yet verified.*
 
 **Touches:** `.claude/skills/kdp-listing/**` (new), `kdp/listings/**` (new)
 
@@ -79,7 +79,7 @@ Acceptance (doc): the owner can paste each book's listing into KDP without writi
 - `kdp/listings/freddy-and-the-slipper/en.md:35`: the description says "dark kitchen"; the art may light it by the fridge, unconfirmed (#5).
 - `kdp/listings/freddy-and-the-slipper/en.md:45`: keyword 3 repeats the age field, and "tale(s)" sits in keywords 2 and 3 (#6).
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-19)
 
 - The `kdp-listing` skill writes listings under `kdp/listings/<book>/<lang>.md`; `check-listing.mjs` must pass before a listing is pasted into KDP; every KDP limit cites an Amazon help page with its date. (Slice 31: docs/plan/slices/31-kdp-listing-pack.md)
 

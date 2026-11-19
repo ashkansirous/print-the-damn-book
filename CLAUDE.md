@@ -28,6 +28,7 @@ dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en -
 - `src/PrintTheDamnBook.Core/Kdp/` — KDP layout maths (trim, bleed, page plan, crop).
 - `src/PrintTheDamnBook.Kdp/` — KDP PDF drawing and image decoding (`KdpImageDecoder`), cross-platform.
 - `src/PrintTheDamnBook.Cli/` — command-line `kdp` command; only parses arguments and calls Kdp.
+- `kdp/listings/<book>/<lang>.md` — KDP listing text per book; `.claude/skills/kdp-listing/` writes and checks it (`check-listing.mjs`).
 - `tests/PrintTheDamnBook.Kdp.Tests/` — xUnit v3 for Kdp (runs on Linux CI).
 - `tests/PrintTheDamnBook.Core.Tests/` — xUnit v3, covers everything in Core.
 - `tests/PrintTheDamnBook.App.Tests/` — xUnit v3, net10.0-windows, App view-model tests (`InternalsVisibleTo`).
@@ -92,4 +93,5 @@ dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en -
 - A Dino page counts as user-edited only when its `StoryLines.Clean` text matches the book's source in none of its languages; never compare raw strings. (Slice 25: docs/plan/slices/25-dino-language-switch-pages.md)
 - KDP layout maths (trim, bleed, page plan, crop) lives in Core `Kdp/`; drawing and image decoding only in `PrintTheDamnBook.Kdp` (`KdpImageDecoder`); the CLI `PrintTheDamnBook.Cli` only parses arguments and calls Kdp. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)
 - Kdp fonts link the App's `Fonts/` files as embedded resources; never add a second copy. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)
+- The `kdp-listing` skill writes listings under `kdp/listings/<book>/<lang>.md`; `check-listing.mjs` must pass before a listing is pasted into KDP; every KDP limit cites an Amazon help page with its date. (Slice 31: docs/plan/slices/31-kdp-listing-pack.md)
 - Linux CI (`kdp-linux`) builds and tests the Core, Kdp, Cli and Kdp.Tests projects by path, never the `.slnx`, and runs only Kdp.Tests plus the Core `Kdp` test namespace. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)
