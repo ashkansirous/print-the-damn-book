@@ -4,18 +4,18 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 
 ### Slice 28: Amazon KDP: print-ready pictures ([slice](slices/28-kdp-print-ready-pictures.md))
 
-- [owner] Run the kdp command over the 12 paid books (the owner's own .dino copies) and confirm `CutLineCheck.FlagRatio` 2.5 on them.
+- [owner] **You:** run the kdp command over your 12 paid books | with your own .dino copies run `dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en --out <folder>` per book and check the cut-line flags at `CutLineCheck.FlagRatio` 2.5, so that the flag level is tuned on real books: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/28-kdp-print-ready-pictures.md
 - [owner] The printed proof decides whether an AI upscaler is needed (settles the upscaler question).
 
 ### Slice 31: Amazon KDP: listing pack and `kdp-listing` skill ([slice](slices/31-kdp-listing-pack.md))
 
-- [owner] Paste the Freddy listing into the KDP paperback form at https://kdp.amazon.com/en_US/bookshelf and write any field that needed rewriting.
-- [owner] Pick the real KDP categories (the category tree needs the login) and confirm the 4.20 print cost in KDP's calculator.
+- [owner] **You:** paste the Freddy listing into KDP | open https://kdp.amazon.com/en_US/bookshelf, create the paperback, paste each field from https://github.com/ashkansirous/print-the-damn-book/tree/main/kdp/listings and note any field that needed rewriting.
+- [owner] **You:** pick the KDP categories and confirm the print cost | in the paperback form at https://kdp.amazon.com/en_US/bookshelf choose the real categories (the tree needs your login) and confirm the 4.20 print cost in KDP's calculator.
 
 ### Slice 27: Amazon KDP interior PDF for one Dino book ([slice](slices/27-kdp-interior-pdf.md))
 
-- [owner] A Freddy and the Slipper `.dino` from the owner's own copy (paid store book, download refused), then build its interior with the command.
-- [owner] Upload the interior PDF as a KDP paperback draft at https://kdp.amazon.com/en_US/bookshelf and record the previewer warnings.
+- [owner] **You:** build Freddy and the Slipper from your own copy | it is a paid store book (the download is refused without a purchase), so run the kdp command on your own `.dino`: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/27-kdp-interior-pdf.md
+- [owner] **You:** upload the interior PDF as a KDP paperback draft | at https://kdp.amazon.com/en_US/bookshelf upload `interior.pdf` in the paperback content step and note the previewer warnings in the slice file: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/27-kdp-interior-pdf.md
 
 ### Slice 23: Text that doesn't fit gets its own page, no empty lines, Dino back cover ([slice](slices/23-fit-and-back-cover.md))
 
