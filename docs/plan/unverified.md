@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 28: Amazon KDP: print-ready pictures ([slice](slices/28-kdp-print-ready-pictures.md))
+
+- [owner] Run the kdp command over the 12 paid books (the owner's own .dino copies) and confirm `CutLineCheck.FlagRatio` 2.5 on them.
+- [owner] The printed proof decides whether an AI upscaler is needed (settles the upscaler question).
+
 ### Slice 31: Amazon KDP: listing pack and `kdp-listing` skill ([slice](slices/31-kdp-listing-pack.md))
 
 - [owner] Paste the Freddy listing into the KDP paperback form at https://kdp.amazon.com/en_US/bookshelf and write any field that needed rewriting.
