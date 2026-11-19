@@ -1,19 +1,39 @@
 using System.Globalization;
 using System.Text;
 using PrintTheDamnBook.Core.Kdp;
+using PrintTheDamnBook.Core.Text;
+using PrintTheDamnBook.Kdp.Cover;
 using PrintTheDamnBook.Kdp.Pictures;
 
 namespace PrintTheDamnBook.Kdp;
 
+/// <summary>What happened to a <c>cover.pdf</c> from an earlier run when this run made no cover (it is renamed, never deleted).</summary>
+public enum StaleCover
+{
+    NotApplicable,
+    None,
+    Renamed,
+    RenameFailed,
+}
+
 /// <summary>The <c>check-report.md</c> written beside <c>interior.pdf</c>: what the PDF holds and every warning, so the owner (and later slices) can see it without opening the PDF.</summary>
 public static class KdpCheckReport
 {
-    public static string Build(string title, string language, KdpInteriorResult result)
+    public static string Build(string title, string language, KdpInteriorResult result, KdpCoverResult? cover = null, string? coverError = null, StaleCover stale = StaleCover.NotApplicable)
     {
         var text = new StringBuilder();
         text.AppendLine(CultureInfo.InvariantCulture, $"# KDP interior check: {title} ({language})");
         text.AppendLine();
         AppendSummary(text, result);
+        if (cover is not null)
+        {
+            AppendCover(text, cover);
+        }
+        else if (coverError is not null)
+        {
+            AppendCoverFailed(text, coverError, stale);
+        }
+
         AppendPages(text, result);
         AppendPictures(text, result);
         AppendWarnings(text, result);
@@ -29,6 +49,43 @@ public static class KdpCheckReport
         text.AppendLine(CultureInfo.InvariantCulture, $"- Text pages facing their pictures: {Facing(result.Plan)}");
         text.AppendLine();
     }
+
+    /// <summary>The cover.pdf facts: size from KDP's formula, the spine and the clear barcode box (inches from the top-left of the file).</summary>
+    private static void AppendCover(StringBuilder text, KdpCoverResult cover)
+    {
+        var box = cover.Barcode;
+        text.AppendLine("## Cover");
+        text.AppendLine();
+        text.AppendLine(CultureInfo.InvariantCulture, $"- Cover size: {cover.WidthInches:0.0000} x {cover.HeightInches:0.0000} in (back + spine + front, bleed {KdpCoverSize.BleedInches} in on the top, bottom and outside edges)");
+        text.AppendLine(CultureInfo.InvariantCulture, $"- Spine width: {cover.SpineInches:0.0000} in for {cover.PageCount} pages ({KdpCoverSize.SpineInchesPerPage} in per page, premium colour); {SpineTextNote(cover.PageCount)}");
+        var corner = cover.Direction == ReadingDirection.RightToLeft ? "lower left" : "lower right";
+        text.AppendLine(CultureInfo.InvariantCulture, $"- Barcode box, left clear: {box.Width} x {box.Height} in at x {box.X:0.000}, y {box.Y:0.000} in ({corner} of the back cover)");
+        text.AppendLine(CultureInfo.InvariantCulture, $"- Back cover picture read from the book: {(cover.BackPictureRead ? "yes" : "no")}; credit lines read: {(cover.CreditsRead ? "yes" : "no")}");
+        text.AppendLine(CultureInfo.InvariantCulture, $"- Cover fonts embedded: {cover.Fonts.Embedded} of {cover.Fonts.Fonts}");
+        text.AppendLine();
+    }
+
+    private static string SpineTextNote(int pageCount) => KdpCoverSize.HasSpineText(pageCount)
+        ? $"no spine text is drawn (KDP allows it from {KdpCoverSize.SpineTextMinPages} pages; this book has {pageCount})"
+        : $"no spine text (KDP needs at least {KdpCoverSize.SpineTextMinPages} pages)";
+
+    private static void AppendCoverFailed(StringBuilder text, string coverError, StaleCover stale)
+    {
+        text.AppendLine("## Cover");
+        text.AppendLine();
+        text.AppendLine(CultureInfo.InvariantCulture, $"- cover.pdf was not written: {coverError}{StaleNote(stale)}");
+        text.AppendLine();
+    }
+
+    private static string StaleNote(StaleCover stale) => StaleText(stale) is { } text ? $" ({text})" : string.Empty;
+
+    /// <summary>The one line about an older cover.pdf, shared by the report and the command line; null when there is nothing to say.</summary>
+    public static string? StaleText(StaleCover stale) => stale switch
+    {
+        StaleCover.Renamed => $"older {KdpExporter.CoverName} kept as {KdpExporter.PreviousCoverName}",
+        StaleCover.RenameFailed => $"could not rename the older {KdpExporter.CoverName} to {KdpExporter.PreviousCoverName}, delete it before upload: it does NOT match this interior",
+        _ => null,
+    };
 
     /// <summary>"yes" when every text page and its picture are the two pages of one spread.</summary>
     private static string Facing(KdpPlan plan)

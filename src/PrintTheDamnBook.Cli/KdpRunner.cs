@@ -34,10 +34,22 @@ public static class KdpRunner
         {
             error.WriteLine($"Building {Path.GetFileName(request.DinoPath)} ...");
             var result = KdpExporter.Export(request);
-            output.WriteLine($"Wrote {result.PdfPath} ({result.PageCount} pages) and {result.ReportPath}.");
+            var written = result.CoverError is null ? $"{result.PdfPath} ({result.PageCount} pages), {result.CoverPath} and {result.ReportPath}" : $"{result.PdfPath} ({result.PageCount} pages) and {result.ReportPath}";
+            output.WriteLine($"Wrote {written}.");
             foreach (var warning in result.Warnings)
             {
                 error.WriteLine($"Warning: {warning}");
+            }
+
+            if (result.CoverError is { } coverError)
+            {
+                if (result.CoverNote is { } note)
+                {
+                    error.WriteLine($"Note: {note}");
+                }
+
+                error.WriteLine($"Error: cover.pdf was not written: {coverError}");
+                return Failed;
             }
 
             return Ok;

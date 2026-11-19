@@ -1,6 +1,7 @@
 using PrintTheDamnBook.Core.Dino;
 using PrintTheDamnBook.Core.Kdp;
 using PrintTheDamnBook.Core.Text;
+using PrintTheDamnBook.Kdp.Cover;
 using PrintTheDamnBook.Kdp.Pictures;
 
 namespace PrintTheDamnBook.Kdp;
@@ -10,19 +11,26 @@ namespace PrintTheDamnBook.Kdp;
 public sealed record KdpExportRequest(string DinoPath, string Language, string OutFolder, IReadOnlyDictionary<int, int>? Offsets = null);
 
 /// <summary>The files written and what to tell the person who ran the command.</summary>
-public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings);
+public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null);
 
-/// <summary><c>.dino</c> in, <c>interior.pdf</c> and <c>check-report.md</c> out (Slice 27).</summary>
+/// <summary>The pictures pulled out of a book: one per story page, the cover and the back cover (each null when the book has none).</summary>
+internal sealed record BookPictures(List<byte[]> Pages, byte[]? Cover, byte[]? Back);
+
+/// <summary><c>.dino</c> in, <c>interior.pdf</c>, <c>cover.pdf</c> and <c>check-report.md</c> out (Slices 27 and 29).</summary>
 public static class KdpExporter
 {
     public const string PdfName = "interior.pdf";
+    public const string CoverName = "cover.pdf";
+    public const string PreviousCoverName = "cover-previous.pdf";
     public const string ReportName = "check-report.md";
+    public const string NoCoverWarning = "cover: the book has no cover picture; its first story picture is used on the front";
 
     public static KdpExportResult Export(KdpExportRequest request)
     {
         var book = ReadBook(request.DinoPath);
         var language = ChooseLanguage(book, request.Language);
-        var pictures = ReadPictures(request.DinoPath, book);
+        var all = ReadPictures(request.DinoPath, book);
+        var pictures = all.Pages;
         Directory.CreateDirectory(request.OutFolder);
         var storyPages = Math.Min(book.Pages.Count, pictures.Count);
         var settings = MergeOffsets(request, book, storyPages);
@@ -35,15 +43,71 @@ public static class KdpExporter
             pictures,
             settings);
         var built = Build(input);
-        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages), .. built.Warnings]);
+        var (cover, coverError) = TryBuildCover(book, language, all, built.Plan.PageCount);
+        var coverPath = Path.Combine(request.OutFolder, CoverName);
+        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages), .. built.Warnings, .. cover?.Warnings ?? []]);
         var pdfPath = Path.Combine(request.OutFolder, PdfName);
         var reportPath = Path.Combine(request.OutFolder, ReportName);
         var result = built with { Warnings = warnings };
         var toSave = OffsetsToSave(request, book, built.Pictures);
-        WriteBoth(pdfPath, result.Pdf, reportPath, KdpCheckReport.Build(input.Title, language.Code, result));
+        var pdfs = cover is null ? [(pdfPath, result.Pdf)] : new[] { (pdfPath, result.Pdf), (coverPath, cover.Pdf) };
+        var older = WriteAll(pdfs, reportPath, cover is null ? coverPath : null, stale => KdpCheckReport.Build(input.Title, language.Code, result, cover, coverError, stale));
         WritePreviews(request.OutFolder, built.Pictures);
         SaveOffsets(request, toSave);
-        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings);
+        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older));
+    }
+
+    /// <summary>
+    /// The isolation boundary for the whole cover pipeline (picture decode, layout, rendering to bytes): a cover that cannot be made must not stop the
+    /// interior and the report. The filter is broad on purpose, because decoders, SkiaSharp and QuestPDF throw many unrelated types; only process-fatal
+    /// exceptions and cancellation propagate.
+    /// </summary>
+    private static (KdpCoverResult? Cover, string? Error) TryBuildCover(DinoBook book, DinoLanguage language, BookPictures all, int pageCount)
+    {
+        try
+        {
+            return (BuildCover(book, language, all, pageCount), null);
+        }
+        catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException or AccessViolationException or OperationCanceledException))
+        {
+            return (null, ex.Message);
+        }
+    }
+
+    /// <summary>With no new cover, an older cover.pdf is renamed to cover-previous.pdf (replacing an older one of that name), never deleted; a rename that fails is reported, not thrown.</summary>
+    private static StaleCover KeepOlderCover(string coverPath)
+    {
+        if (!File.Exists(coverPath))
+        {
+            return StaleCover.None;
+        }
+
+        try
+        {
+            File.Move(coverPath, Path.Combine(Path.GetDirectoryName(coverPath)!, PreviousCoverName), overwrite: true);
+            return StaleCover.Renamed;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return StaleCover.RenameFailed;
+        }
+    }
+
+    /// <summary>The cover: the book's cover picture on the front (its first story picture when it has none, with a warning) and its back cover picture and credits behind.</summary>
+    private static KdpCoverResult BuildCover(DinoBook book, DinoLanguage language, BookPictures all, int pageCount)
+    {
+        var front = all.Cover ?? (all.Pages.Count > 0 ? all.Pages[0] : throw new KdpException("The book has no pictures, so there is nothing to put on the cover."));
+        var direction = TextDirection.ForLanguage(language.Code);
+        var input = new KdpCoverInput(book.In(book.Title, language.Code), language.Code, book.BackCover?.Credits, front, all.Back, pageCount, direction);
+        try
+        {
+            var result = KdpCover.Build(input);
+            return all.Cover is null ? result with { Warnings = [NoCoverWarning, .. result.Warnings] } : result;
+        }
+        catch (Exception ex) when (ex is QuestPDF.Drawing.Exceptions.DocumentDrawingException or QuestPDF.Drawing.Exceptions.DocumentLayoutException)
+        {
+            throw new KdpException($"The cover PDF could not be drawn: {ex.Message}", ex);
+        }
     }
 
     /// <summary>The owner's choices in <c>kdp.json</c> beside the output, with any <c>--offset</c> of this run added (0 clears the page's choice); nothing is saved yet. A file that cannot be read stops the run and is left as it is.</summary>
@@ -159,22 +223,33 @@ public static class KdpExporter
         }
     }
 
-    /// <summary>Both files go to temporary names first and are moved into place together, so a failed write never leaves a new PDF beside an old report; a cleanup failure never hides the first error.</summary>
-    private static void WriteBoth(string pdfPath, byte[] pdf, string reportPath, string report)
+    /// <summary>
+    /// The PDFs and the report go to temporary names first and are moved into place together, so a failed write never leaves a new PDF beside an old report; a cleanup failure never hides the first error.
+    /// With no new cover (<paramref name="noCoverPath"/> set), an older cover.pdf is renamed once the PDFs are written, and the outcome goes into the report.
+    /// </summary>
+    private static StaleCover WriteAll(IReadOnlyList<(string Path, byte[] Bytes)> pdfs, string reportPath, string? noCoverPath, Func<StaleCover, string> buildReport)
     {
-        var pdfTemp = pdfPath + ".tmp";
-        var reportTemp = reportPath + ".tmp";
+        var temps = pdfs.Select(p => p.Path + ".tmp").Append(reportPath + ".tmp").ToList();
         try
         {
-            File.WriteAllBytes(pdfTemp, pdf);
-            File.WriteAllText(reportTemp, report);
-            File.Move(pdfTemp, pdfPath, overwrite: true);
-            File.Move(reportTemp, reportPath, overwrite: true);
+            for (var i = 0; i < pdfs.Count; i++)
+            {
+                File.WriteAllBytes(temps[i], pdfs[i].Bytes);
+            }
+
+            var older = noCoverPath is null ? StaleCover.NotApplicable : KeepOlderCover(noCoverPath);
+            File.WriteAllText(temps[^1], buildReport(older));
+            for (var i = 0; i < pdfs.Count; i++)
+            {
+                File.Move(temps[i], pdfs[i].Path, overwrite: true);
+            }
+
+            File.Move(temps[^1], reportPath, overwrite: true);
+            return older;
         }
         finally
         {
-            TryDelete(pdfTemp);
-            TryDelete(reportTemp);
+            temps.ForEach(TryDelete);
         }
     }
 
@@ -259,14 +334,15 @@ public static class KdpExporter
     }
 
     /// <summary>The pictures are pulled out through <see cref="DinoBookReader"/> (its caps and name checks) into a temporary folder that is removed afterwards.</summary>
-    private static List<byte[]> ReadPictures(string path, DinoBook book)
+    private static BookPictures ReadPictures(string path, DinoBook book)
     {
         var folder = Path.Combine(Path.GetTempPath(), "ptdb-kdp-" + Guid.NewGuid().ToString("N"));
         try
         {
             using var stream = File.OpenRead(path);
             var extracted = DinoBookReader.ExtractPictures(stream, book, folder);
-            return extracted.PageFiles.Select(file => File.ReadAllBytes(Path.Combine(folder, file))).ToList();
+            byte[]? Read(string? file) => file is null ? null : File.ReadAllBytes(Path.Combine(folder, file));
+            return new BookPictures(extracted.PageFiles.Select(file => Read(file)!).ToList(), Read(extracted.CoverFile), Read(extracted.BackCoverFile));
         }
         catch (DinoBookException ex)
         {
