@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 27: Amazon KDP interior PDF for one Dino book ([slice](slices/27-kdp-interior-pdf.md))
+
+- [owner] A Freddy and the Slipper `.dino` from the owner's own copy (paid store book, download refused), then build its interior with the command.
+- [owner] Upload the interior PDF as a KDP paperback draft at https://kdp.amazon.com/en_US/bookshelf and record the previewer warnings.
+
 ### Slice 23: Text that doesn't fit gets its own page, no empty lines, Dino back cover ([slice](slices/23-fit-and-back-cover.md))
 
 - [owner] Print to PDF a store Dino book with a back cover in its own language and in Farsi: the credits are in the middle of the last outside page in that language, with no blank page after it (the credits are drawn into the picture; no script can read them).

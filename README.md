@@ -56,4 +56,6 @@ dotnet build PrintTheDamnBook.slnx
 dotnet run --project src/PrintTheDamnBook.App
 ```
 
+Build a KDP interior PDF from a `.dino` on Windows or Linux: `dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en --out <folder>` (the exe is `print-the-damn-book kdp <book.dino> --language en --out <folder>`). It writes `interior.pdf` and `check-report.md`.
+
 Status and the implementation plan: [plan.md](plan.md).
