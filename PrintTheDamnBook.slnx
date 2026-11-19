@@ -1,10 +1,13 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/PrintTheDamnBook.App/PrintTheDamnBook.App.csproj" />
+    <Project Path="src/PrintTheDamnBook.Cli/PrintTheDamnBook.Cli.csproj" />
     <Project Path="src/PrintTheDamnBook.Core/PrintTheDamnBook.Core.csproj" />
+    <Project Path="src/PrintTheDamnBook.Kdp/PrintTheDamnBook.Kdp.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/PrintTheDamnBook.App.Tests/PrintTheDamnBook.App.Tests.csproj" />
     <Project Path="tests/PrintTheDamnBook.Core.Tests/PrintTheDamnBook.Core.Tests.csproj" />
+    <Project Path="tests/PrintTheDamnBook.Kdp.Tests/PrintTheDamnBook.Kdp.Tests.csproj" />
   </Folder>
 </Solution>
