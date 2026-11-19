@@ -1,11 +1,13 @@
 using PrintTheDamnBook.Core.Dino;
 using PrintTheDamnBook.Core.Kdp;
 using PrintTheDamnBook.Core.Text;
+using PrintTheDamnBook.Kdp.Pictures;
 
 namespace PrintTheDamnBook.Kdp;
 
 /// <summary>What the command line asked for: one local <c>.dino</c>, the language to print it in and the folder to write to.</summary>
-public sealed record KdpExportRequest(string DinoPath, string Language, string OutFolder);
+/// <param name="Offsets">Crop offsets (story page number to pixels) from <c>--offset</c>, saved to <c>kdp.json</c>; null when none were given.</param>
+public sealed record KdpExportRequest(string DinoPath, string Language, string OutFolder, IReadOnlyDictionary<int, int>? Offsets = null);
 
 /// <summary>The files written and what to tell the person who ran the command.</summary>
 public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings);
@@ -21,21 +23,140 @@ public static class KdpExporter
         var book = ReadBook(request.DinoPath);
         var language = ChooseLanguage(book, request.Language);
         var pictures = ReadPictures(request.DinoPath, book);
+        Directory.CreateDirectory(request.OutFolder);
+        var storyPages = Math.Min(book.Pages.Count, pictures.Count);
+        var settings = MergeOffsets(request, book, storyPages);
         var input = new KdpBookInput(
             book.In(book.Title, language.Code),
             language.Code,
             book.BackCover?.Credits,
             DateTime.UtcNow.Year,
             book.Pages.Select(p => StoryLines.Clean(book.In(p.Text, language.Code))).ToList(),
-            pictures);
+            pictures,
+            settings);
         var built = Build(input);
-        var result = built with { Warnings = [.. BookWarnings(book, language), .. built.Warnings] };
-
-        Directory.CreateDirectory(request.OutFolder);
+        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages), .. built.Warnings]);
         var pdfPath = Path.Combine(request.OutFolder, PdfName);
         var reportPath = Path.Combine(request.OutFolder, ReportName);
+        var result = built with { Warnings = warnings };
+        var toSave = OffsetsToSave(request, book, built.Pictures);
         WriteBoth(pdfPath, result.Pdf, reportPath, KdpCheckReport.Build(input.Title, language.Code, result));
+        WritePreviews(request.OutFolder, built.Pictures);
+        SaveOffsets(request, toSave);
         return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings);
+    }
+
+    /// <summary>The owner's choices in <c>kdp.json</c> beside the output, with any <c>--offset</c> of this run added (0 clears the page's choice); nothing is saved yet. A file that cannot be read stops the run and is left as it is.</summary>
+    private static KdpBookSettings MergeOffsets(KdpExportRequest request, DinoBook book, int storyPages)
+    {
+        try
+        {
+            var settings = ReadStored(request, book);
+            foreach (var (page, pixels) in request.Offsets ?? new Dictionary<int, int>())
+            {
+                if (page < 1 || page > storyPages)
+                {
+                    throw new KdpException($"--offset names page {page}, but the book has {storyPages} story pages with a picture.");
+                }
+
+                settings = pixels == 0 ? settings.Without(page) : settings.WithOffset(page, pixels);
+            }
+
+            return settings;
+        }
+        catch (KdpSettingsException ex)
+        {
+            throw new KdpException(ex.Message, ex);
+        }
+    }
+
+    /// <summary>The file as it is on disk; one that was made for another book stops the run (<see cref="KdpSettingsException"/>) and is never overwritten.</summary>
+    private static KdpBookSettings ReadStored(KdpExportRequest request, DinoBook book)
+    {
+        var stored = KdpBookSettings.Read(SettingsPath(request));
+        stored.EnsureBook(book.Id, book.Title);
+        return stored;
+    }
+
+    private static string SettingsPath(KdpExportRequest request) => Path.Combine(request.OutFolder, KdpBookSettings.FileName);
+
+    /// <summary>Saved entries for pages the book does not have are ignored by the build; say so, so a stale file is not a silent surprise.</summary>
+    private static IEnumerable<string> StaleOffsetWarnings(KdpBookSettings settings, int storyPages)
+    {
+        foreach (var page in settings.Pages.Where(p => p > storyPages))
+        {
+            yield return $"{KdpBookSettings.FileName} has an offset for story page {page}, but the book has {storyPages} story pages; it is ignored.";
+        }
+    }
+
+    /// <summary>
+    /// Works out what this run's <c>--offset</c> choices make of <c>kdp.json</c>, in memory: only offsets that moved something (the value actually used) and
+    /// clears, with the book's identity. Null when nothing changes. An offset with no effect is not saved; <c>KdpInterior</c> already warns about it once.
+    /// </summary>
+    private static KdpBookSettings? OffsetsToSave(KdpExportRequest request, DinoBook book, IReadOnlyList<KdpPicture> pictures)
+    {
+        if (request.Offsets is not { Count: > 0 } offsets)
+        {
+            return null;
+        }
+
+        try
+        {
+            var before = ReadStored(request, book);
+            var settings = before;
+            foreach (var (page, pixels) in offsets)
+            {
+                if (pixels == 0)
+                {
+                    settings = settings.Without(page);
+                }
+                else if (pictures[page - 1].MaxOffsetPx > 0)
+                {
+                    settings = settings.WithOffset(page, pictures[page - 1].AppliedOffsetPx);
+                }
+            }
+
+            return settings.ToJson() == before.ToJson() ? null : settings.ForBook(book.Id, book.Title);
+        }
+        catch (KdpSettingsException ex)
+        {
+            throw new KdpException(ex.Message, ex);
+        }
+    }
+
+    /// <summary>The last write of a run: <c>kdp.json</c> is touched only after the PDF, report and previews are in place, so a failure earlier leaves the old file as it was.</summary>
+    private static void SaveOffsets(KdpExportRequest request, KdpBookSettings? settings)
+    {
+        try
+        {
+            settings?.Write(SettingsPath(request));
+        }
+        catch (KdpSettingsException ex)
+        {
+            throw new KdpException(ex.Message, ex);
+        }
+    }
+
+    /// <summary>The previews of this run's flagged pages go to <c>previews/</c>; those of an earlier run are removed first so none is stale.</summary>
+    private static void WritePreviews(string outFolder, IReadOnlyList<KdpPicture> pictures)
+    {
+        var folder = Path.Combine(outFolder, Path.GetDirectoryName(CutLineInputs.PreviewPath(1))!);
+        if (Directory.Exists(folder))
+        {
+            foreach (var old in Directory.GetFiles(folder, "page-*.jpg"))
+            {
+                File.Delete(old);
+            }
+        }
+
+        for (var i = 0; i < pictures.Count; i++)
+        {
+            if (pictures[i].Preview is { } preview)
+            {
+                Directory.CreateDirectory(folder);
+                File.WriteAllBytes(Path.Combine(outFolder, CutLineInputs.PreviewPath(i + 1)), preview);
+            }
+        }
     }
 
     /// <summary>Both files go to temporary names first and are moved into place together, so a failed write never leaves a new PDF beside an old report; a cleanup failure never hides the first error.</summary>

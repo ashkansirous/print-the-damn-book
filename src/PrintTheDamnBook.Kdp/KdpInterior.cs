@@ -12,7 +12,8 @@ public sealed record KdpBookInput(
     DinoCredits? Credits,
     int Year,
     IReadOnlyList<string> Texts,
-    IReadOnlyList<byte[]> Pictures);
+    IReadOnlyList<byte[]> Pictures,
+    KdpBookSettings? Settings = null);
 
 /// <summary>The words of one story page and what was chosen for them.</summary>
 public sealed record KdpStoryResult(int StoryIndex, int Position, double Pt, bool Shrunk);
@@ -40,10 +41,13 @@ public static class KdpInterior
         KdpFonts.EnsureRegistered();
         var direction = TextDirection.ForLanguage(book.Language);
         var plan = KdpPagePlan.Build(book.Texts.Count, direction);
-        var pictures = book.Pictures.Select(KdpImageDecoder.Prepare).ToList();
+        var settings = book.Settings ?? KdpBookSettings.Empty;
+        var pictures = book.Pictures.Select((bytes, i) => KdpImageDecoder.Prepare(bytes, settings.OffsetFor(i + 1), settings.HasOffset(i + 1))).ToList();
         var warnings = new List<string>(plan.Warnings);
         var stories = ChooseSizes(book, plan, direction, warnings);
         warnings.AddRange(UpscaleWarnings(pictures));
+        warnings.AddRange(CutWarnings(pictures));
+        warnings.AddRange(OffsetWarnings(pictures));
 
         var digits = PageNumbering.DigitsFor(book.Language);
         var drawing = new KdpDrawing(
@@ -87,6 +91,33 @@ public static class KdpInterior
         }
 
         return results.OrderBy(r => r.StoryIndex).ToList();
+    }
+
+    /// <summary>One line for the pages where art likely runs across the cut line, with the way to move the crop.</summary>
+    private static IEnumerable<string> CutWarnings(IReadOnlyList<KdpPicture> pictures)
+    {
+        var pages = Enumerable.Range(1, pictures.Count).Where(n => pictures[n - 1].Flagged).ToList();
+        if (pages.Count > 0)
+        {
+            yield return $"{pages.Count} picture(s) may be cut through a character: story page(s) {string.Join(", ", pages)}. Look at the previews, then move the crop with --offset <page>=<pixels>.";
+        }
+    }
+
+    /// <summary>A line for each page whose chosen offset could not be applied as asked (no spare height, or more than the picture allows).</summary>
+    private static IEnumerable<string> OffsetWarnings(IReadOnlyList<KdpPicture> pictures)
+    {
+        for (var i = 0; i < pictures.Count; i++)
+        {
+            var p = pictures[i];
+            if (p.OffsetIgnored)
+            {
+                yield return $"Story page {i + 1}: the offset of {p.RequestedOffsetPx} px has no effect, because this picture has no spare height to move the crop (it is cropped at the sides, not the bottom). An --offset for it is not saved.";
+            }
+            else if (p.OffsetClamped)
+            {
+                yield return $"Story page {i + 1}: the offset of {p.RequestedOffsetPx} px is more than the picture allows; {p.AppliedOffsetPx} px was used.";
+            }
+        }
     }
 
     /// <summary>One line for all the pictures that are enlarged: how many, and the lowest resolution they end up with on the page.</summary>

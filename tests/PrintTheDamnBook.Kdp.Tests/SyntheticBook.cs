@@ -32,18 +32,20 @@ internal static class SyntheticBook
 
     /// <param name="pages">How many story pages the book lists.</param>
     /// <param name="withoutPicture">How many of the last pages have no picture file in the archive (the reader skips them).</param>
-    public static string WriteDino(string path, int pages, int withoutPicture = 0)
+    /// <param name="pictureWidth">Width of every picture in the archive.</param>
+    /// <param name="pictureHeight">Height of every picture in the archive.</param>
+    public static string WriteDino(string path, int pages, int withoutPicture = 0, int pictureWidth = SourceWidth, int pictureHeight = SourceHeight, string id = "test1")
     {
         var story = new StringBuilder("{\"Title\":\"Freddy and the Test\",\"Language\":\"en\",\"Pages\":[");
         story.AppendJoin(',', Enumerable.Range(1, pages).Select(i => $"{{\"Text\":\"Page {i} of the test.\",\"ImageFile\":\"page-{i}.jpg\"}}"));
         story.Append("]}");
         using var file = File.Create(path);
         using var zip = new ZipArchive(file, ZipArchiveMode.Create);
-        Add(zip, "package.json", Encoding.UTF8.GetBytes("{\"schemaVersion\":1,\"id\":\"test1\",\"title\":\"Freddy and the Test\",\"language\":\"en\"}"));
+        Add(zip, "package.json", Encoding.UTF8.GetBytes($"{{\"schemaVersion\":1,\"id\":\"{id}\",\"title\":\"Freddy and the Test\",\"language\":\"en\"}}"));
         Add(zip, "story.json", Encoding.UTF8.GetBytes(story.ToString()));
         for (var i = 1; i <= pages - withoutPicture; i++)
         {
-            Add(zip, $"page-{i}.jpg", Picture(i));
+            Add(zip, $"page-{i}.jpg", Picture(i, pictureWidth, pictureHeight));
         }
 
         return path;

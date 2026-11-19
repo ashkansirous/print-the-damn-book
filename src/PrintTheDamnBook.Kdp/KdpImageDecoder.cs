@@ -1,10 +1,24 @@
 using PrintTheDamnBook.Core.Kdp;
+using PrintTheDamnBook.Kdp.Pictures;
 using SkiaSharp;
 
 namespace PrintTheDamnBook.Kdp;
 
 /// <summary>A picture ready for its page: the JPEG at exactly the KDP pixel size, and what was done to it.</summary>
-public sealed record KdpPicture(byte[] Jpeg, int SourceWidth, int SourceHeight, KdpCrop Crop);
+public sealed record KdpPicture(byte[] Jpeg, int SourceWidth, int SourceHeight, KdpCrop Crop, CutLineScore Cut, bool OffsetChosen, byte[]? Preview, int RequestedOffsetPx = 0, int MaxOffsetPx = 0)
+{
+    /// <summary>The offset actually used (the request, clamped so the kept part stays inside the picture).</summary>
+    public int AppliedOffsetPx => Crop.Source.Y;
+
+    /// <summary>True when the owner chose an offset that moved nothing (a picture with no spare height, or a request of 0 from a hand-edited file is not counted).</summary>
+    public bool OffsetIgnored => OffsetChosen && RequestedOffsetPx > 0 && MaxOffsetPx == 0;
+
+    /// <summary>True when the owner asked for more than the picture allows and got the largest possible.</summary>
+    public bool OffsetClamped => OffsetChosen && MaxOffsetPx > 0 && RequestedOffsetPx > MaxOffsetPx;
+
+    /// <summary>True when a character would likely be cut and the owner has not chosen an offset for this page.</summary>
+    public bool Flagged => !OffsetChosen && Cut.Flagged;
+}
 
 /// <summary>The one place a picture is decoded for KDP: reads it, applies its EXIF orientation, crops to the page and resamples to the exact pixel size.</summary>
 public static class KdpImageDecoder
@@ -14,12 +28,16 @@ public static class KdpImageDecoder
     /// <summary>A picture is untrusted input: one with more pixels than this (width x height, 50 million, about 200 MB decoded) is refused before it is decoded.</summary>
     public const long MaxPixels = 50_000_000;
 
-    public static KdpPicture Prepare(byte[] encoded)
+    /// <param name="offsetPx">How far down the kept part is moved (the owner's choice; clamped to the picture).</param>
+    /// <param name="offsetChosen">True when the offset is the owner's own choice: the page is then never flagged over it.</param>
+    public static KdpPicture Prepare(byte[] encoded, int offsetPx = 0, bool offsetChosen = false)
     {
         using var source = Decode(encoded);
-        var crop = KdpPictureCrop.For(source.Width, source.Height);
+        var crop = KdpPictureCrop.For(source.Width, source.Height, offsetPx);
+        var cut = offsetChosen ? CutLineScore.None : CutLineCheck.Evaluate(CutLineInputs.Luma(source), crop.Source);
+        var preview = cut.Flagged ? CutLineInputs.Preview(source, crop.Source) : null;
         using var page = Resample(source, crop);
-        return new KdpPicture(Encode(page), source.Width, source.Height, crop);
+        return new KdpPicture(Encode(page), source.Width, source.Height, crop, cut, offsetChosen, preview, offsetPx, KdpPictureCrop.MaxOffset(source.Width, source.Height));
     }
 
     private static SKBitmap Decode(byte[] encoded)
@@ -71,12 +89,12 @@ public static class KdpImageDecoder
         return page;
     }
 
-    /// <summary>Shrinking uses a mipmapped linear filter (a bare cubic filter aliases a picture much wider than the page); enlarging keeps the cubic.</summary>
+    /// <summary>Shrinking uses a mipmapped linear filter (a bare cubic filter aliases a picture much wider than the page); enlarging uses the Catmull-Rom cubic (sharper than Mitchell by 1.2 to 1.5 dB on a down-and-up round trip of two real pictures, no ringing seen side by side; Slice 28).</summary>
     private static SKSamplingOptions SamplingFor(KdpCrop crop)
     {
         return crop.Source.Width > crop.TargetWidth
             ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear)
-            : new SKSamplingOptions(SKCubicResampler.Mitchell);
+            : new SKSamplingOptions(SKCubicResampler.CatmullRom);
     }
 
     private static byte[] Encode(SKBitmap page)
