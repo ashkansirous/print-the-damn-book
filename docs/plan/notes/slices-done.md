@@ -27,3 +27,4 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 21 | Scripted desktop checks (test harness) | built | #44 | | [21](../slices/21-desktop-test-harness.md) |
 | 25 | Dino: switching language translates every page, not only the cover | built | #58 | | [25](../slices/25-dino-language-switch-pages.md) |
 | 23 | Text that doesn't fit gets its own page, no empty lines, Dino back cover | built | #59 | | [23](../slices/23-fit-and-back-cover.md) |
+| 27 | Amazon KDP: interior PDF for one Dino book, from a cross-platform command line | built | #67 | | [27](../slices/27-kdp-interior-pdf.md) |

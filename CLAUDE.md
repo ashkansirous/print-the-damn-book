@@ -12,6 +12,7 @@ dotnet build PrintTheDamnBook.slnx
 dotnet test PrintTheDamnBook.slnx
 dotnet format PrintTheDamnBook.slnx --verify-no-changes   # CI enforces; run before pushing
 dotnet run --project src/PrintTheDamnBook.App
+dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en --out <folder>   # KDP interior.pdf + check-report.md (Windows or Linux)
 ```
 
 ## Architecture map
@@ -24,6 +25,10 @@ dotnet run --project src/PrintTheDamnBook.App
   `MainWindow.xaml` and `App.xaml` at the project root, `ViewModels/` (`MainViewModel`,
   `PageViewModel`), `Themes/` (`Nocturne.xaml` tokens, `Controls.xaml`, `Icons.xaml`), `Views/` (wizard step views `OpenStepView`, `CheckStepView`, `PrintStepView`, `DoneStepView`; `NocturneDialog`), `Services/` (`FolderImages`, `ThumbnailLoader`, `ImageDecoder`, `FontLicences`),
   `Printing/` (System.Printing, on `StaThread`), `Settings/` (`SettingsStore`).
+- `src/PrintTheDamnBook.Core/Kdp/` — KDP layout maths (trim, bleed, page plan, crop).
+- `src/PrintTheDamnBook.Kdp/` — KDP PDF drawing and image decoding (`KdpImageDecoder`), cross-platform.
+- `src/PrintTheDamnBook.Cli/` — command-line `kdp` command; only parses arguments and calls Kdp.
+- `tests/PrintTheDamnBook.Kdp.Tests/` — xUnit v3 for Kdp (runs on Linux CI).
 - `tests/PrintTheDamnBook.Core.Tests/` — xUnit v3, covers everything in Core.
 - `tests/PrintTheDamnBook.App.Tests/` — xUnit v3, net10.0-windows, App view-model tests (`InternalsVisibleTo`).
 - `tools/store-assets/` — generates the Store/MSIX images from `docs/design`.
@@ -85,3 +90,6 @@ dotnet run --project src/PrintTheDamnBook.App
 - A Dino back cover's credit lines come only from Core `BackCoverWording`; names and labels are never built in the App. (Slice 23: docs/plan/slices/23-fit-and-back-cover.md)
 - Store failure kinds are typed (`DinoDiskException`, `DinoNetworkException`); never classify a failure from a bare `IOException` or message text. (Slice 20: docs/plan/slices/20-dino-open-hardening.md)
 - A Dino page counts as user-edited only when its `StoryLines.Clean` text matches the book's source in none of its languages; never compare raw strings. (Slice 25: docs/plan/slices/25-dino-language-switch-pages.md)
+- KDP layout maths (trim, bleed, page plan, crop) lives in Core `Kdp/`; drawing and image decoding only in `PrintTheDamnBook.Kdp` (`KdpImageDecoder`); the CLI `PrintTheDamnBook.Cli` only parses arguments and calls Kdp. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)
+- Kdp fonts link the App's `Fonts/` files as embedded resources; never add a second copy. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)
+- Linux CI (`kdp-linux`) builds and tests the Core, Kdp, Cli and Kdp.Tests projects by path, never the `.slnx`, and runs only Kdp.Tests plus the Core `Kdp` test namespace. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)

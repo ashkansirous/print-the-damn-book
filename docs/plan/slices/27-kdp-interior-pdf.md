@@ -4,7 +4,7 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 2, plus the plain crop of milestone 1 and the doc's "First step").*
 
-*Built 2026-11-19 (wave 2026-11-19), PR #67, not merged; item E built from a stand-in book (Freddy is a paid store book), not yet verified on KDP.*
+*Built 2026-11-19 (wave 2026-11-19), merged as PR #67 (65c7c89); item E built from a stand-in book (Freddy is a paid store book), not yet verified on KDP.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/**` (new), `src/PrintTheDamnBook.Kdp/**` (new),
 `src/PrintTheDamnBook.Cli/**` (new), `tests/PrintTheDamnBook.Core.Tests/Kdp/**` (new),
@@ -147,7 +147,8 @@ piece: `.dino` in, KDP interior PDF out, for Freddy and the Slipper in English, 
 download URL answers `402 Payment Required` (checked 2026-11-19), and so does every other `paid` book, Goldilocks (the first English entry) included.
 The first English book a plain GET can fetch is **The Lion and the Mouse** (`access: free`, 15 pages), so the draft is that one, built from the store's
 HD download (`downloadUrl` plus `&size=hd`, the catalog's `hdDownloadUrl`: 1,792 x 2,400 px pictures; the normal download has 896 px). Output is in the
-git-ignored `tmp/lion-hd-out/` of the worktree. A Freddy `.dino` needs the owner's own copy (the Dino BookBuilder's output) and is still to do.
+git-ignored `tmp/lion-hd-out/` of the worktree, kept after the worktree's removal in
+`D:/print-the-damn-book-worktrees/reviews/27-kdp-out/` (with `lion-hd.dino`). A Freddy `.dino` needs the owner's own copy (the Dino BookBuilder's output) and is still to do.
 
 Check report of that run (`print-the-damn-book kdp lion-hd.dino --language en --out tmp/lion-hd-out`, exit 0), checked again with a separate PdfPig
 reader: 36 pages, every page 8.625 x 8.75 in, 15 images all 2,588 x 2,625 px, one font (`AAAAAA+Andika`) embedded as a subset, every even page 4-34 is
@@ -197,13 +198,13 @@ Kindle (32); other languages and right-to-left (33); release artifacts for the c
 - #7 Only `DocumentLayoutException` is caught in `Fits` (`KdpTextFit.cs:21`).
 - #8 `--help` prints usage on stderr and exits 2 (`KdpRunner.cs:15`).
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-19)
 
 - KDP layout maths (trim, bleed, page plan, crop) lives in Core `Kdp/`; drawing and image decoding only in `PrintTheDamnBook.Kdp` (`KdpImageDecoder`); the CLI `PrintTheDamnBook.Cli` only parses arguments and calls Kdp. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)
 - Kdp fonts link the App's `Fonts/` files as embedded resources; never add a second copy. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)
 - Linux CI (`kdp-linux`) builds and tests the Core, Kdp, Cli and Kdp.Tests projects by path, never the `.slnx`, and runs only Kdp.Tests plus the Core `Kdp` test namespace. (Slice 27: docs/plan/slices/27-kdp-interior-pdf.md)
 
-#### For README.md
+#### For README.md (lifted 2026-11-19)
 
 - Build a KDP interior PDF from a `.dino` on Windows or Linux: `dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en --out <folder>` (the exe is `print-the-damn-book kdp <book.dino> --language en --out <folder>`); it writes `interior.pdf` and `check-report.md`.
 
