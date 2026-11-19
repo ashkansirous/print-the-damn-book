@@ -4,6 +4,8 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 2, plus the plain crop of milestone 1 and the doc's "First step").*
 
+*In progress (wave 2026-11-19), draft PR.*
+
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/**` (new), `src/PrintTheDamnBook.Kdp/**` (new),
 `src/PrintTheDamnBook.Cli/**` (new), `tests/PrintTheDamnBook.Core.Tests/Kdp/**` (new),
 `tests/PrintTheDamnBook.Kdp.Tests/**` (new), `PrintTheDamnBook.slnx`, `.github/workflows/ci.yml`,
@@ -64,6 +66,24 @@ piece: `.dino` in, KDP interior PDF out, for Freddy and the Slipper in English, 
   upscaler choice are Slice 28.
 - **Story text:** on the text page only, never on the picture (the picture's own text band is cut off). Page
   numbers on text pages, bottom centre, inside the safe margin; none on title, copyright, dedication, blanks, pictures.
+
+#### Decisions (wave 2026-11-19, from the premise check on origin/main ed0e03c)
+
+- **Text-size steps:** `StoryTextLayout.PageStepsPt(PaperKind)` knows only A4 and Letter (`LayoutTypes.cs:9`), so the
+  KDP steps are a Core constant `KdpTrim.TextStepsPt` fed to `StoryTextLayout.Choose(stepsPt, fits)`; `PaperKind` and
+  `StoryTextLayout` are not changed.
+- **Page numbers:** a printed book's page number is its physical position (title page = 1). Numbers come from
+  `PageNumbering.Compute` over the KDP page list mapped to `BookPage`s if that yields the physical position for every
+  text page; if it does not (its Cover/`IsUnnumbered` rules), Core `KdpPagePlan` gives each page `Number = position`
+  and the builder writes why in this file. Either way they are shown on text pages only.
+- **Getting the `.dino`:** `DinoBookCache` and `DinoStoreClient` are App-only (net10.0-windows), so the command line
+  takes a local `.dino` path only. For item E the builder fetches Freddy's `.dino` with a plain GET from the store
+  catalog (`DinoStoreCatalog`, host dinoreader.sirous.uk; no identifiers) into a git-ignored folder, or, if Freddy is
+  not in the catalog, builds the first English store book and writes which one here.
+- **CI:** the ubuntu job builds and tests the Core, Kdp, Cli and test projects by path, never the `.slnx` (the App is
+  net10.0-windows).
+- **Tests of internals:** `InternalsVisibleTo` for `PrintTheDamnBook.Kdp.Tests` goes in the Kdp csproj; Kdp.Tests copies
+  the existing test csproj shape (xunit.v3.mtp-v2 3.2.2, `xunit.runner.json`).
 
 #### Grounding (ground-in-code on origin/main 416a274, 2026-11-19)
 
