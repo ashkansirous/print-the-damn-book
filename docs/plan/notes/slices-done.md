@@ -30,3 +30,4 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 27 | Amazon KDP: interior PDF for one Dino book, from a cross-platform command line | built | #67 | | [27](../slices/27-kdp-interior-pdf.md) |
 | 31 | Amazon KDP: listing pack and `kdp-listing` skill | built | #70 | | [31](../slices/31-kdp-listing-pack.md) |
 | 28 | Amazon KDP: print-ready pictures (cut-line flags, per-page offset, upscaler) | built | #72 | | [28](../slices/28-kdp-print-ready-pictures.md) |
+| 29 | Amazon KDP: cover PDF (back, spine and front in one wrap) | built | #76 | | [29](../slices/29-kdp-cover-pdf.md) |
