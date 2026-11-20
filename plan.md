@@ -33,7 +33,6 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 33 | Amazon KDP: other languages, right-to-left, Farsi/Arabic Kindle | planned: paperback languages unparked by the owner 2026-11-20 (all languages from day one, Slice 39); Farsi/Arabic Kindle keeps Slice 32's gate | | | [33](docs/plan/slices/33-kdp-other-languages.md) |
 | 35 | Amazon KDP follow-ups from Slices 27-31 reviews and the 2026-11-20 live check | planned | | | [35](docs/plan/slices/35-kdp-followups.md) |
 | 37 | Amazon KDP: the crop agent also places the cover text and picks its colours | planned | | | [37](docs/plan/slices/37-kdp-cover-text-by-agent.md) |
-| 38 | Amazon KDP robot: the book catalog, and one paperback saved as a KDP draft | planned | | | [38](docs/plan/slices/38-kdp-robot-draft.md) |
 | 39 | Amazon KDP robot: every language, and keeping published books up to date | planned | | | [39](docs/plan/slices/39-kdp-robot-languages-and-updates.md) |
 | 40 | Amazon KDP: series, "Also by" page, author page, short link to the Dino app | planned | | | [40](docs/plan/slices/40-kdp-series-and-cross-links.md) |
 
@@ -49,7 +48,8 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 23 checks across 13 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 26 checks across 14 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- Slice 38 (KDP robot) is built but `draft` refuses to run until its page maps are confirmed from a capture; next step needs the owner signed in to KDP for the capture session: [KDP bookshelf](https://kdp.amazon.com/en_US/bookshelf) ([slice 38](docs/plan/slices/38-kdp-robot-draft.md)).
 - KDP robot open points (owner can change; [slice 40](docs/plan/slices/40-kdp-series-and-cross-links.md)): the other 14 books stay in series "Dino Stories"; Love from Seagull Island is book 1 of "Little Seagull’s Big Adventures" and X Marks the Treasure book 2. Arabic and Farsi paperbacks don't exist on KDP, so those wait for the Kindle edition (Slice 32's gate).
 - Amazon KDP spin-offs that belong to other repos (Scope Inbox doc of 2026-11-18, *Spin-offs*), not planned there yet: print-resolution art for Three Little Pigs, Town Mouse, Ugly Duckling and X Marks the Treasure, and author/credit fields per book (ReadTheStupidText / dino-reader); audiobook collections (dino-reader). Later here: hardcover treasury and 3-in-1 collection, KDP upload is now planned as the Playwright robot, Slices 38-40.
 - Slice 26, planned again by the feedback loop of night 2026-11-19-2055 (parked by the loop of 2026-11-18-1302): the unfixed last-pass review findings of Slices 23 and 25 (an Own page choice lost on retype, a language select left on the wrong language after a cancelled switch, a possible `book.json` write on open), the unexplained blank-line collapse, and the `$GuestChecks` list gap. The next night builds it ([slice 26](docs/plan/slices/26-s23-s25-review-followups.md)).

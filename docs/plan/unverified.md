@@ -2,6 +2,12 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 38: Amazon KDP robot: the book catalog, and one paperback saved as a KDP draft ([slice](slices/38-kdp-robot-draft.md))
+
+- [session] With the owner signed in to KDP: `login`, then `status`, then `capture` saves the bookshelf and the page HTML and screenshots; the page maps are rewritten from them and marked `confirmed: true`.
+- [session] After the maps are confirmed: `draft freddy-and-the-slipper en` makes a draft, and a second `status` shows it as a draft; the summary lists every field and the draft's page shows the same values.
+- [owner] Presses Publish on the Freddy draft when they want it live (the robot never does).
+
 ### Slice 36: Amazon KDP: an agent picks every crop, cover without white boxes, tinted text pages ([slice](slices/36-kdp-crop-agent-and-cover.md))
 
 - [owner] The owner looks at the Freddy cover and text spreads (H, rebuilt in `D:\print-the-damn-book-worktrees\s36\tmp\freddy-final`) and says whether they look right; the first cover was rejected on 2026-11-20.
