@@ -28,7 +28,7 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 
 ### Slice 29: Amazon KDP: cover PDF ([slice](slices/29-kdp-cover-pdf.md))
 
-- [owner] **You:** upload Freddy's cover with the interior (the owner rejected the first Freddy cover on 2026-11-20; the upload waits for the Slice 36 rebuild in `D:\print-the-damn-book-worktrees\s36\tmp\freddy-final` and the owner's answers to Slice 36's two open desk choices) | at https://kdp.amazon.com/en_US/bookshelf upload `cover.pdf` and `interior.pdf` from the `kdp` command's output, pass KDP's cover check (watch the 0.0012 in page-size rounding) and order a proof.
+- [owner] **You:** upload Freddy's cover with the interior (the owner rejected the first Freddy cover on 2026-11-20; the upload now waits only on the owner; the rebuilt `interior.pdf` and `cover.pdf` for all 16 books are in `D:\print-the-damn-book-worktrees\s37\tmp\books\<book>\`) | at https://kdp.amazon.com/en_US/bookshelf upload `cover.pdf` and `interior.pdf` from the `kdp` command's output, pass KDP's cover check (watch the 0.0012 in page-size rounding) and order a proof.
 - [owner] A real Farsi book's cover (no free book has Farsi text; the lion fa check was layout only).
 
 ### Slice 28: Amazon KDP: print-ready pictures ([slice](slices/28-kdp-print-ready-pictures.md))

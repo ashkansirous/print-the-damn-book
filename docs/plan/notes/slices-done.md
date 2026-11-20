@@ -34,4 +34,5 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 30 | Amazon KDP: `kdp-build` skill and visual-check agent | built | #77 | | [30](../slices/30-kdp-build-skill.md) |
 | 34 | Dino back cover: read the store's PascalCase keys (built as part of Slice 36) | built | #85 | | [34](../slices/34-backcover-key-case.md) |
 | 36 | Amazon KDP: an agent picks every picture's crop, a cover without white boxes, tinted text pages | built | #85 | | [36](../slices/36-kdp-crop-agent-and-cover.md) |
+| 37 | Amazon KDP: the crop agent also places the cover text and picks its colours | built | #88 | | [37](../slices/37-kdp-cover-text-by-agent.md) |
 | 38 | Amazon KDP robot: the book catalog, and one paperback saved as a KDP draft (built; `draft` blocked until the page maps are confirmed from a capture with the owner signed in) | built | #90 | | [38](../slices/38-kdp-robot-draft.md) |
