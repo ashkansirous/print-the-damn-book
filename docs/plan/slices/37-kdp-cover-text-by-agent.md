@@ -37,6 +37,15 @@ makes the thick black outline in the owner's close-up.
   sideways, e.g. to the right of drawing lines). The QR code and its line stay in the barcode-free bottom corner; the
   agent picks their text and shadow colours.
 - The agent decides from the same 480 px uncut copies as the crop (Slice 36's trial: 480 px).
+- **New Dino line** (owner, 2026-11-20: "change the text in the back to be ..."): on the back cover next to the QR code,
+  exactly "Listen to this story in Dino: Kids Books & Stories. Want to join in? Pick a character and speak their lines
+  yourself!" (replaces "Hear this story in Dino: Kids Books & Stories, and speak as the characters yourself!").
+- **Last interior page** (owner: "in the last page of the interior, we have the same text. change it to ... and add the
+  qr code"): the same line replaces the "Hear this story in" text (`KdpFrontMatterWording.AboutHeading` + `AboutLine`),
+  with the same QR code to `https://dinoreader.sirous.uk/` beside it.
+- **All books** (owner: "update the skills. these should be applied to all books."): the `kdp-crop` and `kdp-build`
+  skills apply the cover text choices, wording and QR to every book; after the build, all 16 books in
+  `D:\high-res-books` are rebuilt through `kdp-crop` and `kdp-build`, one crop agent per book.
 
 #### Decisions (desk, 2026-11-20)
 
@@ -58,8 +67,11 @@ makes the thick black outline in the owner's close-up.
 - [ ] **D — Agent and skill.** `kdp-crop-check` returns, for `front` and `back`, the text box(es) and the two colours
   with a one-line reason each; `kdp-crop` applies them with the CLI and reruns; the agent's never-decide-unseen rule
   covers them too.
-- [ ] **E — Freddy rebuild.** Run `kdp-crop` and `kdp-build` on `D:\high-res-books\Freddy and the Slipper v10.hd.dino`;
-  show the owner small renders of the front title and the back credits next to Slice 36's.
+- [ ] **F — New Dino line and interior QR.** The new line on the back cover and the last interior page (one Core
+  constant for both), and the QR code on that page; tests decode it.
+- [ ] **E — Rebuild all 16 books.** Run `kdp-crop` and `kdp-build` on every book in `D:\high-res-books` (Freddy first);
+  show the owner small renders of Freddy's front title and back credits next to Slice 36's, then a contact sheet of all
+  16 covers.
 
 #### Verification
 
