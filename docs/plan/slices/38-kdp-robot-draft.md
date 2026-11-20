@@ -1,9 +1,19 @@
 ### Slice 38 — Amazon KDP robot: the book catalog, and one paperback saved as a KDP draft
 
+*In progress (wave 2026-11-20), draft PR.*
+
 *Planned 2026-11-20 with the owner (interactive session, RefineScope). First of three robot slices (38, 39, 40).*
 
 **Touches:** `kdp/catalog.json` (new), `kdp/state/` (new), `tools/kdp-robot/` (new), `.claude/skills/kdp-publish/` (new),
-`CLAUDE.md`, `docs/plan/slices/38-kdp-robot-draft.md`
+`.github/workflows/ci.yml`, `CLAUDE.md`, `docs/plan/slices/38-kdp-robot-draft.md`
+
+Claim-time premise check (2026-11-20, decided by the coordinator): `tools/store-assets` is plain ESM JavaScript (`.mjs`,
+no TypeScript, no test runner), and the repo's only node tests are `*.test.mjs` run with `node --test`. So the robot is
+**plain ESM `.mjs` with `node --test`**, not TypeScript; read "TypeScript" below as that, and `catalog.ts` as
+`catalog.mjs`. `tools/kdp-robot/.gitignore` ignores its `node_modules/`. No CI runs node tests today, so `ci.yml` gets
+one step running `node --test` over `tools/kdp-robot` (no browser needed: the unit tests never open KDP). The listing
+has no territories or matte/glossy field: both come from the catalog. The `kdp` output folder is
+`tmp/kdp-out/<dino file name without extension>-<lang>/`.
 
 **Migrations:** none
 
