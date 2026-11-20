@@ -5,6 +5,7 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 ### Slice 42: Amazon KDP: one text size for every story page of a book ([slice](slices/42-kdp-one-text-size-per-book.md))
 
 - [owner] The owner looks at the rebuilt story pages.
+- [session] Item C re-run after merge: rebuild all 16 books on merged `main` with their saved `kdp.json` and confirm none has a page that doesn't fit (the pre-merge rebuild was on the reviewed code).
 
 ### Slice 37: Amazon KDP: the crop agent also places the cover text and picks its colours ([slice](slices/37-kdp-cover-text-by-agent.md))
 
