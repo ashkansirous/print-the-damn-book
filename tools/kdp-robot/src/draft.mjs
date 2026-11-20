@@ -17,7 +17,7 @@ import { FieldNotFound, readField, readFields, single, writeField } from './fiel
 import { readBookshelfRows } from './commands.mjs';
 import { matchRows, parseBookshelfRows } from './bookshelf.mjs';
 import {
-  assertEditable, baselineOf, fileHash, hasIsbn, isbnPlan, judgeFileCheck, judgeSave, keepKdpId, liveCategories, liveTrim, needsUpload,
+  assertEditable, baselineOf, fileHash, hasIsbn, IdConflict, isbnPlan, judgeFileCheck, judgeSave, keepKdpId, liveCategories, liveTrim, needsUpload,
   requireConfirmedPages, requireKdpId, singleRow, StoppedAtUnconfirmedPage, stateForTitle, waitForVerdict,
 } from './checks.mjs';
 
@@ -29,6 +29,7 @@ export const START_PAGES = [BOOKSHELF_PAGE];
 const SAVE_TIMEOUT_MS = 60 * 1000;
 const ID_TIMEOUT_MS = 10 * 1000;
 const CREATE_ID_WAIT_MS = 5 * 1000;
+const OVERLAY_WAIT_MS = 60 * 1000; // how long a read waits for the Saving/working popover to clear
 
 /** Everything a run needs, with the problems found before any browser opens. */
 export function planDraft(root, catalog, book, lang) {
@@ -179,8 +180,20 @@ async function applyDetail(page, field) {
 }
 
 async function readPage(page) {
+  const saving = (await page.locator(CONTENT.savingOverlay).count()) > 0; // the judges hold every verdict back while it shows
   const alerts = (await page.locator(CONTENT.messageBoxes).allInnerTexts()).map((t) => t.trim()).filter(Boolean);
-  return { alerts, bodyText: await page.locator('body').innerText().catch(() => '') };
+  return { alerts, bodyText: await page.locator('body').innerText().catch(() => ''), saving };
+}
+
+/** A read that counts for a decision or a baseline: waits for the Saving/working overlay to clear, and stops (fail closed) when it never does. */
+async function readSettled(page, ctx) {
+  const until = Date.now() + (ctx.overlayWaitMs ?? OVERLAY_WAIT_MS);
+  for (;;) {
+    const read = await readPage(page);
+    if (!read.saving) return read;
+    if (Date.now() >= until) throw new Error('KDP still shows its Saving/working popover after the wait; nothing was decided or changed from this page. Look at the title on KDP, then run draft again');
+    await sleep(ctx.pollMs ?? 250);
+  }
 }
 
 /** KDP's own alert texts go into the summary once each. */
@@ -190,12 +203,24 @@ function collectMessages(ctx, alerts) {
 
 /** Save as Draft counts only when KDP shows a saved marker; an error alert or no marker stops the run with KDP's words. */
 export async function savePage(page, pageName, ctx, diff = null) {
-  const baseline = baselineOf(judgeSave, await readPage(page)); // a marker already on the page never counts as this save
+  const baseline = baselineOf(judgeSave, await readSettled(page, ctx)); // a marker already on the page never counts as this save; read with no overlay
+  markSaveMayCreate(ctx); // before the click: a stop at any later point must never lead to a second Create
   await clickButton(page, 'Save as Draft');
-  await waitForVerdict({
-    what: `the ${pageName} page save`, judge: judgeSave, read: () => readPage(page), timeoutMs: ctx.saveTimeoutMs ?? SAVE_TIMEOUT_MS,
-    pollMs: ctx.pollMs, baseline, onMessages: (a) => collectMessages(ctx, a),
-  });
+  try {
+    await waitForVerdict({
+      what: `the ${pageName} page save`, judge: judgeSave, read: () => readPage(page), timeoutMs: ctx.saveTimeoutMs ?? SAVE_TIMEOUT_MS,
+      pollMs: ctx.pollMs, baseline, onMessages: (a) => collectMessages(ctx, a),
+    });
+  } catch (e) {
+    try {
+      await noteIdAfterFailure(page, ctx); // the save may have created the title even though KDP's verdict was an error or nothing
+    } catch (conflict) {
+      log(`the save failed first: ${e.message}`); // an IdConflict replaces the error, so KDP's own words go to the log
+      collectMessages(ctx, [e.message]);
+      throw conflict;
+    }
+    throw e;
+  }
   await ensureKdpPage(page);
   await noteKdpId(page, ctx, ctx.idTimeoutMs ?? ID_TIMEOUT_MS);
   ctx.screens.push(await shot(page, join(ctx.dir, 'shots'), pageName));
@@ -203,15 +228,42 @@ export async function savePage(page, pageName, ctx, diff = null) {
   requireKdpId(ctx.kdpId);
 }
 
+/** After a failed save: a read or write problem of the id goes to the summary; an IdConflict is never swallowed. */
+async function noteIdAfterFailure(page, ctx) {
+  try {
+    await noteKdpId(page, ctx, 0);
+  } catch (err) {
+    if (err instanceof IdConflict) throw err;
+    log(`could not note the KDP id after the failed save: ${err.message}`);
+    collectMessages(ctx, [`the KDP id could not be noted after the failed save: ${err.message}`]);
+  }
+}
+
+/** While no id is known, a save click (or the Create click) can create a title on KDP: the marker goes to disk first, so a stop never leads to a second Create. */
+export function markSaveMayCreate(ctx) {
+  if (ctx.kdpId) return;
+  ctx.savedWithoutId = true;
+  if (!ctx.record) return;
+  ctx.record({ savedWithoutId: true });
+  log('marker savedWithoutId written before the click');
+}
+
+/** Removes the pre-Create marker (memory and disk) after a failure that provably happened before any title could be made. */
+function clearCreateMarker(ctx) {
+  ctx.savedWithoutId = false;
+  ctx.record?.({ savedWithoutId: undefined });
+}
+
 /**
  * The save worked, so the title now exists on KDP: with no id in the URL, kdp/state marks it (and the fields just saved) so the
  * next run never creates a second one; then the id is looked up on the bookshelf row of this title (`ctx.findShelfId`).
  */
 async function recordUnnumberedSave(page, ctx, diff) {
-  ctx.record?.({ savedWithoutId: true, ...(diff ? { fields: recordableFields(diff) } : {}) });
+  if (diff) ctx.record?.({ savedWithoutId: true, fields: recordableFields(diff) }); // the marker itself is already on disk (markSaveMayCreate)
   const id = ctx.findShelfId ? await ctx.findShelfId(page) : null;
   if (!id) return;
   ctx.kdpId = id;
+  ctx.savedWithoutId = false;
   ctx.record?.({ kdpId: id });
   log(`KDP title id ${id} (from the bookshelf row)`);
 }
@@ -227,6 +279,7 @@ export async function noteKdpId(page, ctx, waitMs) {
   const keep = keepKdpId(ctx.kdpId, id);
   if (keep === ctx.kdpId) return;
   ctx.kdpId = keep;
+  ctx.savedWithoutId = false; // nextState drops the marker from disk once the id is recorded
   ctx.record?.({ kdpId: keep });
   log(`KDP title id ${keep}`);
 }
@@ -242,8 +295,18 @@ export async function createTitle(page, ctx) {
   log('create: no KDP id yet, creating a new paperback');
   await page.goto(BOOKSHELF_URL);
   await ensureKdpPage(page);
-  await clickAction(page, BOOKSHELF.createButton);
-  await clickAction(page, BOOKSHELF.paperbackChoice);
+  markSaveMayCreate(ctx); // KDP may make the title when this choice is clicked; the marker is on disk first
+  try {
+    await clickAction(page, BOOKSHELF.createButton);
+  } catch (e) {
+    clearCreateMarker(ctx); // only the "Create paperback" button was clicked (or not found): no title can exist yet
+    throw e;
+  }
+  try {
+    await clickAction(page, BOOKSHELF.paperbackChoice);
+  } catch (e) {
+    throw new Error(`the paperback choice click failed (${e.message}). KDP may have made a new title anyway, so kdp/state keeps savedWithoutId and no second one is created. Open the KDP bookshelf: if there is a new draft title, put its id in kdp/state as kdpId; if there is none, remove savedWithoutId from kdp/state, then run draft again`);
+  }
   await ensureKdpPage(page);
   await noteKdpId(page, ctx, ctx.createIdWaitMs ?? CREATE_ID_WAIT_MS);
   if (!ctx.kdpId) log('create: the new title has no id yet; it comes with the first Save as Draft');
@@ -304,8 +367,7 @@ async function uploadFile(page, input, path, ctx, kind) {
   log(`upload ${kind}: ${path}`);
   const loc = page.locator(input);
   if ((await loc.count()) !== 1) throw new FieldNotFound(`${kind} file input`, await loc.count());
-  const before = await readPage(page);
-  const baseline = { ...judgeFileCheck(kind, before), key: before.alerts.join('|') };
+  const baseline = baselineOf((p) => judgeFileCheck(kind, p), await readSettled(page, ctx)); // no overlay while the baseline is read
   await guardField(loc, `${kind} file input`, [CONTENT.uploadLabels[kind]]);
   await loc.setInputFiles(path); // Playwright docs: /microsoft/playwright, Locator.setInputFiles
   await waitForVerdict({
@@ -335,7 +397,7 @@ async function confirmIsbn(page, ctx) {
 
 async function waitForIsbn(page, ctx) {
   const started = Date.now();
-  while (!hasIsbn((await readPage(page)).bodyText)) {
+  while (!hasIsbn((await readSettled(page, ctx)).bodyText)) { // never a number read under the overlay
     if (Date.now() - started > (ctx.isbnTimeoutMs ?? CONTENT.isbnTimeoutMs)) throw new Error('no 978/979 ISBN shows after "Assign me a KDP ISBN" and its confirm step; nothing was recorded. Look at the title on KDP before running draft again');
     await pace();
   }
@@ -374,7 +436,7 @@ async function applyContentField(page, f, isbn, ctx) {
 async function runContent(page, plan, state, ctx) {
   const fields = plan.fields.filter((f) => f.page === 'content');
   const specFields = fields.filter((f) => CONTENT_SPECS[f.key] && !CONTENT_SPECS[f.key].readOnly);
-  const body = (await readPage(page)).bodyText;
+  const body = (await readSettled(page, ctx)).bodyText; // the ISBN and trim decisions never run on a read taken under the overlay
   const live = { ...(await readFields(page, specFields.map((f) => f.key), CONTENT_SPECS)), isbn: hasIsbn(body) ? 'Free KDP ISBN' : undefined, trim: liveTrim(body) };
   const diff = diffFields(fields, live);
   const isbn = decideIsbn(diff, body, state);

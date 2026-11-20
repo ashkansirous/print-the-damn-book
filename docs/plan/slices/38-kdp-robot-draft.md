@@ -179,3 +179,30 @@ Built: `tools/kdp-robot` (plain ESM `.mjs`, playwright 1.64.1, 73 node tests pas
 - Skipped #8 (`reviews/kdpmaps-check.md`): "writeParagraphs uses loc.press('Enter') on the iframe body; press refocuses and may reset the caret" - minor; checked in the live draft run's read-back summary (multi-paragraph description in the real editor).
 - Skipped #9 (`reviews/kdpmaps-check.md`): "CLAUDE.md (Slice 38 rule), nit. Rule says fields are found" - the root CLAUDE.md rule is changed in the index pass after merge. Check file: 0 of 9 applied, 9 of 9 read.
 - Follow-up 2026-11-20 (`fix/kdp-maps`): owner signed in to the robot's browser; bookshelf, new-details and create pages were captured read-only; 92 node tests pass.
+
+#### Follow-up 2026-11-20: save alerts (`fix/kdp-alerts`)
+
+Live run 2026-11-20 18:17Z (`draft freddy-and-the-slipper en`, run without the owner's go: the owner had not approved adding books): Details saved, but the robot stopped mid-"Saving..." because it read KDP's hidden `a-hidden` message templates as errors. Two Freddy drafts existed (J7D02A7MVND, 6MMJANJ74Y7); 6MMJANJ74Y7 was deleted on the owner's yes 2026-11-20. **Rule now: no live KDP run without the owner's explicit go per book.**
+
+Built:
+- Message boxes are read only when `:visible`.
+- The verdict and the ISBN/baseline reads wait for `#saving-popover` / `#working-popover` (`readSettled`, 60 s, fail closed).
+- The `savedWithoutId` marker is written before the Save as Draft and Create clicks (likely cause of the duplicate: it was written only after a successful save, `draft.mjs`).
+- The KDP id is read from the URL even after a rejected save; `IdConflict` is not swallowed; known progress texts do not block success.
+- 111 tests, 110 pass, 1 skipped.
+
+From review (follow-up):
+- Applied (`reviews/kdpalerts-high.md`): findings 1-7, all 7 applied.
+- Applied (`reviews/kdpalerts-medium.md`): findings 1, 3 and 5.
+- Skipped #2 (`reviews/kdpalerts-medium.md`): "`markSaveMayCreate` writes `savedWithoutId` before the Save click" - the marker staying after a failed save is the fail-closed guard against a second title; the owner clears it via kdpId.
+- Skipped #4 (`reviews/kdpalerts-medium.md`): "`noteIdAfterFailure` calls `noteKdpId(page, ctx, 0)`" - a missing id stops the run rather than guessing. 5 of 5 read.
+- Applied (`reviews/kdpalerts-check.md`): finding 3.
+- Skipped #1 (`reviews/kdpalerts-check.md`): "savingOverlay selector unconfirmed mid-save" - the overlay selector can only be confirmed on a live save, which needs the owner's go; listed in *Not yet verified* below.
+- Skipped #2 (`reviews/kdpalerts-check.md`): "savedWithoutId marker is written before the Save click" - fails closed.
+- Skipped #4 (`reviews/kdpalerts-check.md`): "any new visible non-success, non-progress alert blocks saved/done" - fails closed, stops with KDP's words.
+- Skipped #5 (`reviews/kdpalerts-check.md`): "ignore list matches exact alert text" - cannot give a false saved (`ERROR_WORDS` runs first and the stale guard holds). 5 of 5 read.
+- `reviews/kdpalerts-check2.md`: no findings (check of the `waitForIsbn` fix). 0 of 0.
+
+Not yet verified (after the owner's go for a live save):
+- `[session]` The overlay selectors (`#saving-popover`, `#working-popover`) are seen mid-save on a real KDP save.
+- `[session]` One Save as Draft creates exactly one title.

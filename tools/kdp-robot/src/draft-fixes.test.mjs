@@ -107,7 +107,7 @@ function fakeSavePage({ alerts = [], body = 'Paperback Details', url = 'https://
   btn.click = async () => { clicked = true; };
   return {
     getByRole: () => btn,
-    locator: (sel) => (sel === 'body' ? { innerText: async () => (clicked ? body : 'Paperback Details') } : { allInnerTexts: async () => (clicked ? alerts : []) }),
+    locator: (sel) => (sel === 'body' ? { innerText: async () => (clicked ? body : 'Paperback Details') } : { count: async () => 0, allInnerTexts: async () => (clicked ? alerts : []) }),
     url: () => url,
     title: async () => 'Paperback Details',
     screenshot: async () => {},
@@ -140,7 +140,7 @@ test('4: no KDP id after the details save stops the run; a found id is recorded 
   const recorded = [];
   const ctx = saveCtx({ record: (p) => recorded.push(p) });
   await savePage(fakeSavePage({ body: 'Paperback Details\nYour changes have been saved.' }), 'details', ctx);
-  assert.deepEqual(recorded, [{ kdpId: 'ABC1234567' }]);
+  assert.deepEqual(recorded, [{ savedWithoutId: true }, { kdpId: 'ABC1234567' }]); // marker before the click, then the id (which clears it)
 });
 
 function categoryPage({ textCount = 1, leafCount = 1, checked = true }) {
@@ -205,7 +205,7 @@ function isbnPage({ confirm, shows }) {
   return {
     clicks,
     getByRole: (role, o) => (o.name === 'Assign ISBN' ? ok : assign),
-    locator: (s) => (s === 'body' ? { innerText: async () => (shows(clicks) ? 'ISBN: 978-1-2345-6789-0' : 'nothing') } : { allInnerTexts: async () => [] }),
+    locator: (s) => (s === 'body' ? { innerText: async () => (shows(clicks) ? 'ISBN: 978-1-2345-6789-0' : 'nothing') } : { count: async () => 0, allInnerTexts: async () => [] }),
   };
 }
 
@@ -228,6 +228,24 @@ test('2: an ISBN that never shows is not recorded', async () => {
   const rec = [];
   await assert.rejects(assignIsbn(never, { record: (p) => rec.push(p), isbnTimeoutMs: 20, isbnConfirmWaitMs: 5, pollMs: 1 }), /nothing was recorded/);
   assert.deepEqual(rec, []);
+});
+
+/** An ISBN page whose body already shows a number, but under the Saving overlay for the first `overlayReads` reads. */
+function isbnUnderOverlay(overlayReads) {
+  const page = isbnPage({ confirm: false, shows: () => true });
+  let reads = 0;
+  const base = page.locator;
+  page.locator = (s) => (s === 'body' ? base(s) : { count: async () => (reads++ < overlayReads ? 1 : 0), allInnerTexts: async () => [] });
+  return page;
+}
+
+test('2: an ISBN read under the Saving overlay is never recorded; it waits for the overlay to clear', async () => {
+  const rec = [];
+  await assignIsbn(isbnUnderOverlay(3), { record: (p) => rec.push(p), isbnTimeoutMs: 20, isbnConfirmWaitMs: 5, pollMs: 1, overlayWaitMs: 500 });
+  assert.equal(rec.length, 1);
+  const stuck = [];
+  await assert.rejects(assignIsbn(isbnUnderOverlay(1e9), { record: (p) => stuck.push(p), isbnTimeoutMs: 20, isbnConfirmWaitMs: 5, pollMs: 1, overlayWaitMs: 20 }), /still shows its Saving/);
+  assert.deepEqual(stuck, []);
 });
 
 test('13: a PDF whose hash matches kdp/state is not uploaded again', async () => {

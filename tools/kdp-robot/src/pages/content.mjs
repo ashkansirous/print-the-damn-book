@@ -25,7 +25,11 @@ export const CONTENT = {
   coverInput: 'input[type="file"][id*="cover" i], input[type="file"][name*="cover" i]',
   uploadLabels: { manuscript: /manuscript|interior/i, cover: /cover/i }, // what a file input's own label may say (unconfirmed)
   coverChoice: /upload a cover you already have/i,
-  messageBoxes: '[role="alert"], .a-alert-content, .a-alert-container',
+  // Visible boxes only: KDP keeps every message template in the DOM under class a-hidden (display:none), capture 2026-11-20.
+  messageBoxes: '[role="alert"]:visible, .a-alert-content:visible, .a-alert-container:visible',
+  // The "Saving..." and "working" popovers (ids in the 2026-11-20 new-details capture); while one shows, a save has no verdict yet
+  // and no read of the page counts. Not confirmed mid-save: KDP may move the popover into another element.
+  savingOverlay: '#saving-popover:visible, #working-popover:visible',
   fileCheckTimeoutMs: 15 * 60 * 1000,
   isbnTimeoutMs: 30 * 1000,
 };
