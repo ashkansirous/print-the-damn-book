@@ -2,8 +2,8 @@
 
 *Planned 2026-11-20 with the owner (interactive session, RefineScope).*
 
-**Touches:** `tools/kdp-robot/`, `kdp/catalog.json`, `kdp/listings/`, `.claude/skills/kdp-listing/`,
-`.claude/skills/kdp-publish/`, `docs/plan/slices/39-kdp-robot-languages-and-updates.md`
+**Touches:** `tools/kdp-robot/` (new, from Slice 38), `kdp/catalog.json` (new, from Slice 38), `kdp/listings/`,
+`.claude/skills/kdp-listing/`, `.claude/skills/kdp-publish/` (new, from Slice 38), `docs/plan/slices/39-kdp-robot-languages-and-updates.md`
 
 **Migrations:** none
 

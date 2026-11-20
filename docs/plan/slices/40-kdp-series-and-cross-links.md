@@ -2,9 +2,9 @@
 
 *Planned 2026-11-20 with the owner (interactive session, RefineScope).*
 
-**Touches:** `kdp/catalog.json`, `kdp/author/` (new), `tools/kdp-robot/`, `src/PrintTheDamnBook.Core/Kdp/`,
-`src/PrintTheDamnBook.Kdp/`, `tests/PrintTheDamnBook.Core.Tests/Kdp/`, `tests/PrintTheDamnBook.Kdp.Tests/`,
-`.claude/skills/kdp-publish/`, `docs/plan/slices/40-kdp-series-and-cross-links.md`
+**Touches:** `kdp/catalog.json` (new, from Slice 38), `kdp/author/` (new), `tools/kdp-robot/` (new, from Slice 38),
+`src/PrintTheDamnBook.Core/Kdp/`, `src/PrintTheDamnBook.Kdp/`, `tests/PrintTheDamnBook.Core.Tests/Kdp/`,
+`tests/PrintTheDamnBook.Kdp.Tests/`, `.claude/skills/kdp-publish/` (new, from Slice 38), `docs/plan/slices/40-kdp-series-and-cross-links.md`
 
 **Migrations:** none
 
