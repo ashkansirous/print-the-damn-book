@@ -65,7 +65,7 @@ export function fieldLabel(label) {
 export async function writeField(page, key, spec, value) {
   const loc = await locate(page, key, spec, value);
   // A radio's group name is shared by every radio of the group, so it is never an allowed identity: its own value attribute is.
-  if (spec.kind === 'radio') return safeCheck(loc, `${key} = ${value}`, [value, spec.values?.[value]].filter((t) => t != null));
+  if (spec.kind === 'radio') return safeCheck(loc, `${key} = ${value}`, [value, spec.values?.[value], spec.guardLabels?.[value]].filter((t) => t != null));
   await guardField(loc, key, [fieldLabel(spec.label), ...(spec.ref ? [spec.ref] : [])]);
   if (spec.css) await assertShownLabel(loc, key, spec);
   // KDP's native selects sit under a styled dropdown, so the click-ability checks are skipped (the guard above already ran),

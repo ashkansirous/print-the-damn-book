@@ -25,6 +25,11 @@ export const DETAILS_SPECS = {
     kind: 'radio', css: 'input[name="data-print-book-is-public-domain"]', ref: 'data-print-book-is-public-domain',
     values: { 'I own the copyright and I hold necessary publishing rights.': 'false', 'This is a public domain work.': 'true' },
     options: ['I own the copyright and I hold necessary publishing rights.', 'This is a public domain work.'],
+    // The exact text of each option's live <label> (capture 2026-11-20), help link included: the Publish guard exempts only this static string.
+    guardLabels: {
+      'I own the copyright and I hold necessary publishing rights.': 'I own the copyright and I hold necessary publishing rights. What are publishing rights?',
+      'This is a public domain work.': 'This is a public domain work What is a public domain work?',
+    },
   },
   'age-min': byId('select', 'data-print-book-reading-interest-age-start-input-native', 'Minimum age', AGE_LABELS),
   'age-max': byId('select', 'data-print-book-reading-interest-age-end-input-native', 'Maximum age', AGE_LABELS),
