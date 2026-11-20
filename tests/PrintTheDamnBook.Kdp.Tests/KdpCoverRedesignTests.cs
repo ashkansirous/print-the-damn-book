@@ -146,6 +146,46 @@ public class KdpCoverRedesignTests
     }
 
     [Fact]
+    public void The_shadow_ink_sits_where_the_letters_are_in_a_box_taller_than_the_words()
+    {
+        var middle = InkCentreY(c => c.AlignMiddle());
+        var bottom = InkCentreY(c => c.AlignBottom());
+        var top = InkCentreY(c => c.AlignTop());
+
+        // Box 1 in tall at 300 dpi plus 0.15 in padding above: the box's middle is at 195 px (the shadow is nudged 3 px down).
+        Assert.InRange(middle, 195 - 20, 195 + 20);
+        Assert.True(top < middle - 60, $"top-aligned ink centre {top} is not above the middle {middle}");
+        Assert.True(bottom > middle + 60, $"bottom-aligned ink centre {bottom} is not below the middle {middle}");
+    }
+
+    private static double InkCentreY(Func<IContainer, IContainer> align)
+    {
+        var png = KdpSoftShadow.Png(3, 1, 30, (c, color) => align(c).Text(t =>
+        {
+            t.DefaultTextStyle(s => s.FontSize(30).FontColor(color));
+            t.Span("Soft");
+        }), "#FF0000");
+
+        using var bitmap = SKBitmap.Decode(png);
+        int first = bitmap.Height, last = -1;
+        for (var y = 0; y < bitmap.Height; y++)
+        {
+            for (var x = 0; x < bitmap.Width; x++)
+            {
+                if (bitmap.GetPixel(x, y).Alpha > 40)
+                {
+                    first = Math.Min(first, y);
+                    last = Math.Max(last, y);
+                    break;
+                }
+            }
+        }
+
+        Assert.True(last >= 0, "the shadow has no ink");
+        return (first + last) / 2.0;
+    }
+
+    [Fact]
     public void A_saved_text_choice_is_drawn_in_its_box_and_colours()
     {
         var front = new KdpCoverText(new KdpTextBox(0.15, 0.55, 0.7, 0.2), "#FFEE00", "#112233");
@@ -216,9 +256,63 @@ public class KdpCoverRedesignTests
             KdpExporter.Export(request with { CoverText = new Dictionary<string, KdpCoverText?> { [KdpPictureKeys.Front] = null } });
             var cleared = KdpBookSettings.Read(Path.Combine(outFolder, KdpBookSettings.FileName));
 
-            Assert.Equal(choice, saved.CoverText(KdpPictureKeys.Front));
-            Assert.Equal(choice, kept.CoverText(KdpPictureKeys.Front));
+            Assert.Equal(choice with { ForOffsetPx = 0 }, saved.CoverText(KdpPictureKeys.Front));
+            Assert.Equal(choice with { ForOffsetPx = 0 }, kept.CoverText(KdpPictureKeys.Front));
             Assert.Null(cleared.CoverText(KdpPictureKeys.Front));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void A_text_choice_given_with_an_over_max_offset_is_stamped_with_the_offset_used_and_is_not_stale()
+    {
+        var folder = SyntheticBook.NewFolder();
+        try
+        {
+            var dino = SyntheticBook.WriteDino(Path.Combine(folder, "t.dino"), 3);
+            var outFolder = Path.Combine(folder, "out");
+            var choice = new KdpCoverText(new KdpTextBox(0.1, 0.6, 0.8, 0.2), "#ABCDEF", "#000000");
+            var request = new KdpExportRequest(dino, "en", outFolder, CoverOffsets: new Dictionary<string, int> { [KdpPictureKeys.Front] = 99999 }, CoverText: new Dictionary<string, KdpCoverText?> { [KdpPictureKeys.Front] = choice });
+
+            var first = KdpExporter.Export(request);
+            var saved = KdpBookSettings.Read(Path.Combine(outFolder, KdpBookSettings.FileName));
+            var second = KdpExporter.Export(request with { CoverOffsets = new Dictionary<string, int> { [KdpPictureKeys.Front] = 88888 }, CoverText = null });
+
+            var used = saved.CoverOffsetFor(KdpPictureKeys.Front);
+            Assert.InRange(used, 1, 99998);
+            Assert.Equal(used, saved.CoverText(KdpPictureKeys.Front)!.ForOffsetPx);
+            Assert.DoesNotContain(first.Warnings, w => w.Contains("another crop", StringComparison.Ordinal));
+            Assert.DoesNotContain(second.Warnings, w => w.Contains("another crop", StringComparison.Ordinal));
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void A_text_choice_saved_beside_an_over_max_stored_offset_is_stamped_with_the_clamped_offset_and_is_not_stale_later()
+    {
+        var folder = SyntheticBook.NewFolder();
+        try
+        {
+            var dino = SyntheticBook.WriteDino(Path.Combine(folder, "t.dino"), 3);
+            var outFolder = Path.Combine(folder, "out");
+            var settingsPath = Path.Combine(outFolder, KdpBookSettings.FileName);
+            var choice = new KdpCoverText(new KdpTextBox(0.1, 0.6, 0.8, 0.2), "#ABCDEF", "#000000");
+            KdpExporter.Export(new KdpExportRequest(dino, "en", outFolder, CoverOffsets: new Dictionary<string, int> { [KdpPictureKeys.Front] = 99999 }));
+            var clamped = KdpBookSettings.Read(settingsPath).CoverOffsetFor(KdpPictureKeys.Front);
+            KdpBookSettings.Read(settingsPath).WithCoverOffset(KdpPictureKeys.Front, clamped + 30).Write(settingsPath);
+
+            var first = KdpExporter.Export(new KdpExportRequest(dino, "en", outFolder, CoverText: new Dictionary<string, KdpCoverText?> { [KdpPictureKeys.Front] = choice }));
+            var second = KdpExporter.Export(new KdpExportRequest(dino, "en", outFolder));
+
+            Assert.Equal(clamped, KdpBookSettings.Read(settingsPath).CoverText(KdpPictureKeys.Front)!.ForOffsetPx);
+            Assert.DoesNotContain(first.Warnings, w => w.Contains("another crop", StringComparison.Ordinal));
+            Assert.DoesNotContain(second.Warnings, w => w.Contains("another crop", StringComparison.Ordinal));
         }
         finally
         {
@@ -459,7 +553,7 @@ public class KdpCoverRedesignTests
     }
 
     [Fact]
-    public void A_soft_shadow_of_words_that_overflow_their_box_does_not_throw()
+    public void A_soft_shadow_of_words_that_overflow_their_box_is_left_out_instead_of_misplaced()
     {
         var words = string.Join(' ', Enumerable.Repeat("overflowing", 40));
 
@@ -469,8 +563,34 @@ public class KdpCoverRedesignTests
             t.Span(words);
         }), "#000000");
 
-        Assert.NotNull(png);
-        Assert.NotEmpty(png);
+        Assert.Null(png);
+    }
+
+    [Fact]
+    public void A_text_choice_made_for_the_offset_in_effect_is_used()
+    {
+        var box = new KdpCoverText(new KdpTextBox(0.15, 0.55, 0.7, 0.2), "#FFEE00", "#112233", ForOffsetPx: 40);
+        var settings = KdpBookSettings.Empty.WithCoverOffset(KdpPictureKeys.Front, 40).WithCoverText(KdpPictureKeys.Front, box);
+
+        var result = KdpCover.Build(Input(settings));
+
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("another crop", StringComparison.Ordinal));
+        using var pdf = PdfDocument.Open(result.Pdf);
+        AssertWordsIn(pdf.GetPage(1), "Freddy", KdpTextBoxMaths.Resolve(box.Box, KdpCoverSize.FrontTrim(24, ReadingDirection.LeftToRight), null)!.Value, "#FFEE00");
+    }
+
+    [Fact]
+    public void A_text_choice_made_for_another_offset_falls_back_and_warns()
+    {
+        var box = new KdpCoverText(new KdpTextBox(0.15, 0.55, 0.7, 0.2), "#FFEE00", "#112233", ForOffsetPx: 40);
+        var settings = KdpBookSettings.Empty.WithCoverOffset(KdpPictureKeys.Front, 80).WithCoverText(KdpPictureKeys.Front, box);
+
+        var result = KdpCover.Build(Input(settings));
+
+        Assert.Contains(result.Warnings, w => w.Contains("front cover", StringComparison.Ordinal) && w.Contains("another crop", StringComparison.Ordinal) && w.Contains("fallback", StringComparison.Ordinal));
+        using var pdf = PdfDocument.Open(result.Pdf);
+        var title = pdf.GetPage(1).GetWords().First(w => w.Text == "Freddy");
+        Assert.All(title.Letters, letter => Assert.False(InColour(letter, "#FFEE00"), "the stale choice's colour was used"));
     }
 
     private static bool IsWhiteFill(UglyToad.PdfPig.Graphics.PdfPath path)

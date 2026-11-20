@@ -95,11 +95,11 @@ makes the thick black outline in the owner's close-up.
 
 *Changed while building:* none recorded in the brief.
 
-*Open (for the owner):*
+*Decided by the owner (2026-11-20, after the 16-cover sheet):*
 
-- The back Dino line sits over the characters' feet on about 8 books (it is a fixed bottom strip beside the barcode and
-  QR).
-- Text sizes still stop at 14 pt (Freddy pages 12 and 24 wrap).
+- The back Dino line sitting over the characters' feet on about 8 books is fine: "Is the Dino line over the characters'
+  feet on the back covers OK? yes."
+- Text sizes stop at 14 pt; Freddy pages 12 and 24 keep their one wrapped line: "14 pt is ok."
 
 *From review:* read `D:/print-the-damn-book-worktrees/reviews/pr-88-high.md`, `pr-88-medium.md` and `pr-88-check.md`
 (all three in that folder). Applied: high 1, 2, 3, 7; medium 1, 3, 5, 7; check 1, 2, 7.

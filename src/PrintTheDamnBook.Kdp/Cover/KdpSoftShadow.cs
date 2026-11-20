@@ -1,4 +1,5 @@
 using PrintTheDamnBook.Core.Text;
+using QuestPDF.Drawing.Exceptions;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
 using SkiaSharp;
@@ -32,13 +33,27 @@ internal static class KdpSoftShadow
 
     private static byte[]? Words(double widthInches, double heightInches, Action<IContainer, string> draw, string color)
     {
+        try
+        {
+            return Render(widthInches, heightInches, draw, color);
+        }
+        catch (DocumentLayoutException)
+        {
+            // Words that overflow the box cannot be laid out in it. A looser layout would align them differently from the real words (the shadow would sit off the
+            // letters), so there is no shadow; the caller reports that in a warning.
+            return null;
+        }
+    }
+
+    private static byte[]? Render(double widthInches, double heightInches, Action<IContainer, string> draw, string color)
+    {
         var document = Document.Create(container => container.Page(page =>
         {
             page.Size((float)widthInches, (float)heightInches, Unit.Inch);
             page.Margin(0);
             page.DefaultTextStyle(s => s.FontFamily(StoryFont.Andika).LineHeight(LineHeight));
-            // Unconstrained: words that overflow the box are drawn past the page's edge (and clipped) instead of making a second page or a layout error.
-            page.Content().Unconstrained().Width((float)widthInches, Unit.Inch).MinHeight((float)heightInches, Unit.Inch).Element(content => draw(content, color));
+            // The same exact-size box the real words get (KdpInteriorDocument.InBox), so AlignMiddle and the like place the shadow words exactly where the letters are.
+            page.Content().Width((float)widthInches, Unit.Inch).Height((float)heightInches, Unit.Inch).Element(words => draw(words, color));
         }));
         var settings = new ImageGenerationSettings { ImageFormat = ImageFormat.Png, RasterDpi = Dpi, UseTransparentBackground = true };
         return document.GenerateImages(settings).FirstOrDefault();

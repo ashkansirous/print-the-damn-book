@@ -25,11 +25,16 @@ public sealed record KdpTextColors(
     [property: JsonPropertyName("color"), JsonRequired] string Color,
     [property: JsonPropertyName("shadow"), JsonRequired] string Shadow);
 
-/// <summary>What the crop agent chose for the words of one cover: the empty space they go in, the text colour and the shadow colour.</summary>
+/// <summary>
+/// What the crop agent chose for the words of one cover: the empty space they go in, the text colour and the shadow colour. The box is measured against the
+/// crop window the agent saw, so <see cref="ForOffsetPx"/> records the cover's crop offset it was decided for; a different offset today makes the choice
+/// stale (see <see cref="KdpBookSettings.CoverTextStale"/>). Null (an entry written before the field existed) counts as made for the saved offset.
+/// </summary>
 public sealed record KdpCoverText(
     [property: JsonPropertyName("box"), JsonRequired] KdpTextBox Box,
     [property: JsonPropertyName("color"), JsonRequired] string Color,
-    [property: JsonPropertyName("shadow"), JsonRequired] string Shadow)
+    [property: JsonPropertyName("shadow"), JsonRequired] string Shadow,
+    [property: JsonPropertyName("forOffsetPx"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? ForOffsetPx = null)
 {
     [JsonIgnore]
     public KdpTextColors Colors => new(Color, Shadow);
@@ -101,18 +106,20 @@ public static class KdpTextBoxMaths
     }
 
     /// <summary>
-    /// The box in inches on the cover: the fractions of <paramref name="trim"/>, cut to the safe margin and, when it meets the barcode (with its clearance),
+    /// The box in inches on the cover: the fractions of <paramref name="window"/> (the whole panel picture including bleed, as the agent sees it; the trim when null), cut to the safe margin and, when it meets the barcode (with its clearance),
     /// cut to whichever of the part above it or the part beside it is larger. Null when what is left is under <see cref="MinWidthInches"/> by
     /// <see cref="MinHeightInches"/>, or has lost more than half its height to the clearance (or the fractions are not a valid box); the caller warns and falls back.
     /// </summary>
-    public static RectD? Resolve(KdpTextBox fractions, RectD trim, RectD? barcode, RectD? qrStrip = null)
+    public static RectD? Resolve(KdpTextBox fractions, RectD trim, RectD? barcode, RectD? qrStrip = null, RectD? window = null)
     {
         if (!fractions.IsValid)
         {
             return null;
         }
 
-        var raw = new RectD(trim.X + fractions.Left * trim.Width, trim.Y + fractions.Top * trim.Height, fractions.Width * trim.Width, fractions.Height * trim.Height);
+        // The agent sees the whole picture of the panel (trim plus bleed), so its fractions are measured against that window when the caller gives it.
+        var frame = window ?? trim;
+        var raw = new RectD(frame.X + fractions.Left * frame.Width, frame.Y + fractions.Top * frame.Height, fractions.Width * frame.Width, fractions.Height * frame.Height);
         var safe = new RectD(trim.X + SafeMarginInches, trim.Y + SafeMarginInches, trim.Width - 2 * SafeMarginInches, trim.Height - 2 * SafeMarginInches);
         var box = Intersect(raw, safe);
         var keptHeight = box?.Height ?? 0;

@@ -65,13 +65,24 @@ the window then keeps, `480 px` tall on the copy), from what you see inside it.
   lines; and the colours of the **Dino line** (the one short paragraph next to the QR code).
 - **A box is empty space**: calm sky, wall, floor or ground, with no face, hand, animal or strong drawing line under it. Give it as fractions of
   the window: `left`, `top`, `width`, `height`, each 0 to 1 (`left` and `top` from the window's top-left corner; `left + width` and
-  `top + height` at most 1). Titles are wide and short (about `width` 0.6 to 0.85, `height` 0.15 to 0.25); credits are narrower and
+  `top + height` at most 1). The window is the whole picture of that cover panel, the area inside the red outline **including** its 0.125 in
+  of bleed on the top, bottom and outer edge: 8.625 by 8.75 in, which on the 480 px wide copy is 480 by about 487 px (480 / 8.625 = 55.65 px per
+  inch; 8.75 x 55.65 = 487). The offset in the label is in pixels of the original 1792 px wide picture, but your box is measured on the 480 px copy, so
+  first convert the offset to copy pixels: `windowTop = offset * 480 / 1792` (the red outline's top edge on the copy). Then for a box whose top-left
+  corner is at (`x`, `y`) pixels in the copy and whose size is `w` by `h` pixels: `left = x / 480`, `top = (y - windowTop) / 487`,
+  `width = w / 480`, `height = h / 487`. Worked example: label `back y=520/...`, so `windowTop = 520 * 480 / 1792 = 139` (the outline's top edge); a
+  box whose top-left corner is at (60, 200) on the copy and which is 300 by 90 px gives `left = 0.125`, `top = (200 - 139) / 487 = 0.125`,
+  `width = 0.625`, `height = 0.185`. Never subtract the label's `y=` value itself from a copy pixel. The
+  code measures the fractions against exactly that area, so never use 480 as the window's height and never subtract the bleed. The box
+  belongs to the window at that offset: if the offset is changed later the box is dropped and the words are decided again. Titles are wide and short (about `width` 0.6 to 0.85, `height` 0.15 to 0.25); credits are narrower and
   taller. The tool shrinks the words to fit the box, so make the box as roomy as the empty space allows, never bigger.
-- **Keep clear of**: the outer 6 percent of the window on every side (the safe margin, the tool cuts a box back to it), and on the back the
-  barcode box (lower right corner of the window, 2 in wide and 1.2 in tall: about `left` 0.72 to 0.96 and `top` 0.81 to 0.96; the lower
-  **left** for a right-to-left book) and the strip at the bottom of the back where the QR code and the Dino line sit (the code's `KdpTextBoxMaths.QrStrip`:
-  full width, from about `top` 0.82 (6.95 in of the 8.5 in trim: 0.5 in inset + 0.8 in QR + 0.25 in clearance above it) down to the bottom of the panel, so keep every
-  words box above `top` 0.82; the same for a right-to-left book). The words may be moved sideways or up or down to avoid drawing lines, but
+- **Keep clear of**: the outer 7 percent of the window on every side (the safe margin is 0.5 in inside the trim edge, so about 0.625 in
+  from the window's outer edges; the tool cuts a box back to it), and on the back the
+  barcode box (lower right corner of the window, 2 in wide and 1.2 in tall, with 0.25 in clearance all round: about `left` 0.70 to 0.96
+  and `top` 0.78 to 0.95; the lower **left** for a right-to-left book, about `left` 0.01 to 0.30) and the strip at the bottom of the back where the QR
+  code and the Dino line sit (the code's `KdpTextBoxMaths.QrStrip`: full width, from `top` 0.8086 (7.075 in of the 8.75 in window: 0.125 in
+  bleed + 0.5 in inset + 0.8 in QR + 0.25 in clearance above it, i.e. 6.95 in of the 8.5 in trim) down to the bottom of the panel, so keep
+  the bottom edge of every words box (`top + height`) at most 0.80; the same for a right-to-left book). The words may be moved sideways or up or down to avoid drawing lines, but
   never over those two places.
 - **Text colour and shadow colour** are `#RRGGBB`. The text must read clearly on what is under the box (aim for strong contrast: white or a
   very pale tint on a dark or mid area, a very dark tint on a pale one); the shadow is the opposite end of the brightness scale from the

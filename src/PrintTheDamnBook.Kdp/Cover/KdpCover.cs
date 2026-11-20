@@ -61,6 +61,8 @@ public static class KdpCover
         }
 
         warnings.AddRange(new[] { KdpInterior.OffsetWarning("Front cover", front), back is null ? null : KdpInterior.OffsetWarning("Back cover", back) }.OfType<string>());
+        settings = WithAppliedOffsets(settings, front, back);
+        AddStaleTextWarnings(settings, back is not null, warnings);
         var drawing = new KdpCoverDrawing(
             input.Title,
             input.Language,
@@ -69,8 +71,8 @@ public static class KdpCover
             back,
             input.PageCount,
             input.Direction,
-            settings.CoverText(KdpPictureKeys.Front),
-            back is null ? null : settings.CoverText(KdpPictureKeys.Back),
+            settings.UsableCoverText(KdpPictureKeys.Front),
+            back is null ? null : settings.UsableCoverText(KdpPictureKeys.Back),
             settings.DinoColors,
             warnings);
         var pdf = KdpCoverDocument.Render(drawing);
@@ -81,5 +83,24 @@ public static class KdpCover
         }
 
         return new KdpCoverResult(pdf, input.PageCount, KdpCoverSize.CoverWidth(input.PageCount), KdpCoverSize.CoverHeight, KdpCoverSize.SpineWidth(input.PageCount), KdpCoverSize.Barcode(input.PageCount, input.Direction), back is not null, input.Credits is not null, input.Direction, fonts, warnings, front, back);
+    }
+
+    /// <summary>The settings with each chosen cover offset replaced by the one drawn (an over-max request is cut back), so a text choice is judged stale against the crop really in use.</summary>
+    private static KdpBookSettings WithAppliedOffsets(KdpBookSettings settings, KdpPicture front, KdpPicture? back)
+    {
+        settings = settings.HasCoverOffset(KdpPictureKeys.Front) ? settings.WithCoverOffset(KdpPictureKeys.Front, front.AppliedOffsetPx) : settings;
+        return back is not null && settings.HasCoverOffset(KdpPictureKeys.Back) ? settings.WithCoverOffset(KdpPictureKeys.Back, back.AppliedOffsetPx) : settings;
+    }
+
+    /// <summary>A saved text choice made for another crop offset is not used (the fallback placement is); each such cover gets a warning that its words must be decided again.</summary>
+    private static void AddStaleTextWarnings(KdpBookSettings settings, bool hasBack, List<string> warnings)
+    {
+        foreach (var key in hasBack ? new[] { KdpPictureKeys.Front, KdpPictureKeys.Back } : [KdpPictureKeys.Front])
+        {
+            if (settings.CoverTextStale(key))
+            {
+                warnings.Add($"cover: the text choice saved for the {key} cover was made for another crop of its picture, so the fallback placement is used; decide the {key} words again with --text.");
+            }
+        }
     }
 }

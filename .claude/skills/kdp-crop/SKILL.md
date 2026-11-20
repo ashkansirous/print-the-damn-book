@@ -30,6 +30,11 @@ Output folder: the same one `kdp-build` uses, `<repo root>/tmp/kdp-out/<book>-<l
    earlier run of this skill) and is kept as it is. Decide only the other keys, unless the caller said to redo them all (then every key is
    undecided and the new offsets replace the saved ones). The cover words are kept the same way: a cover whose entry has `text` (and `dino` on
    the back) keeps its saved words choice, and a cover with an offset but no `text` still gets its words decided (a file from Slice 36 has none).
+   **A stale choice counts as undecided:** a cover whose saved `text.forOffsetPx` differs from its saved `cropOffsetPx` (the earlier run's warning
+   "made for another crop"; the tool does not use such a choice) is treated like a cover with no `text`: the agent decides its words again
+   and the skill passes a fresh `--text` for it (and `--dino-text` on the back), so the warning clears.
+   A cover with a saved offset keeps it, so the brief tells the agent that cover's offset is fixed and its words box is measured against the
+   window shown in the copy (the outline at the label's `y=`).
 3. **Dispatch `kdp-crop-check`** (Agent tool, subagent_type `kdp-crop-check`) with the output folder path, **one agent per book** (one agent
    hit an image limit at about 250 reads in the trial; a book is about 15 to 30 pictures). **The brief lists the expected keys**: the file names
    in `crop/` without `.png` (Glob `crop/*.png`, minus `sheet`), in the sheet's order, so the agent and the skill check "a line for every key"
@@ -49,9 +54,11 @@ Output folder: the same one `kdp-build` uses, `<repo root>/tmp/kdp-out/<book>-<l
    key with a saved offset is not decided at all and its saved choice is kept. For a key with none saved, `0` needs nothing. A key whose `max` is 0 needs nothing. Rerun with all the offsets, `--crop-sheet` and `--previews` so the folder is ready for the
    visual check. Pass each cover-words line the agent gave for a cover that has no saved choice as `--text <front|back>=<left>,<top>,<width>,<height>,<text>,<shadow>`
    (the numbers and the two `#RRGGBB` colours as the agent wrote them) and the `back dino` line as `--dino-text back=<text>,<shadow>`; a `no box` answer passes nothing
-   (the fallback stays). `--text <key>=clear` and `--dino-text back=clear` remove a saved choice, **only in redo-all mode**, and there **every
-   `--offset <key>=<pixels>` (including `=0`) that changes a cover's offset, and every cover whose new answer is `no box`, is issued together with `--text <key>=clear`** (for `back`, when the agent gave no `back dino` colours, also `--dino-text back=clear`), because `--offset` alone keeps the words
-   choice and a box chosen for the old window would stay; a key given a new `--text` line needs no `clear` (the new line replaces it), and `--dino-text back=clear` is left out when a new `back dino` line is given. Normal mode keeps saved words choices:
+   (the fallback stays; in redo-all mode that cover gets `--text <key>=clear`, and `back` also `--dino-text back=clear`, so an old choice does not stay).
+   Every saved words choice records the crop offset it was decided for (`forOffsetPx` in `kdp.json`; a `--text` is saved for the offset in effect
+   after that run's `--offset`s). The tool itself refuses a choice whose cover offset has since changed: it uses the fallback placement and warns
+   "made for another crop", so no ordering of offsets and words is managed here. The agent's box fractions are relative to the window shown in the
+   480 px copy (the outline at the offset in effect for that cover; see `kdp-crop-check`). Normal mode keeps saved words choices:
 
    ```powershell
    dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language <code> --offset 4=120 --offset back=582 --text "front=0.12,0.05,0.76,0.2,#FFF6D8,#1B2A4A" --text "back=0.3,0.06,0.62,0.24,#FFFFFF,#2A1A10" --dino-text "back=#FFFFFF,#2A1A10" --crop-sheet --previews --out tmp/kdp-out/<book>-<code>
@@ -59,7 +66,7 @@ Output folder: the same one `kdp-build` uses, `<repo root>/tmp/kdp-out/<book>-<l
 
    The offsets and the words choices are saved in `kdp.json` (written last), so every later run keeps them. A cover warning that a saved text box is
    unusable or the title does not fit it (the build says "fallback") means the agent's box was too small or too close to the margin or barcode: say so in the report; the
-   cover still builds with the fallback placement. A warning "no effect" or "more than the picture allows"
+   cover still builds with the fallback placement. A warning "made for another crop" means the saved words no longer match the cover's window: decide them again (`--text`). A warning "no effect" or "more than the picture allows"
    means the agent's number was wrong for that picture: use the `y=` the new label shows and say so in the report.
 5. **Confirm.** Open the new `crop/sheet.png` once (small) and check each label's `y=` equals what was asked and the outlines moved the way the
    agent's reasons say. Nothing else to look at for the crops; the cover words are looked at by the owner (a small render of the front title and

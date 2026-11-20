@@ -121,6 +121,12 @@ public sealed class KdpBookSettings
     /// <summary>The words' box and colours chosen for a cover; null when none were chosen (the Slice 36 rule places them).</summary>
     public KdpCoverText? CoverText(string coverKey) => _covers.TryGetValue(coverKey, out var cover) ? cover.Text : null;
 
+    /// <summary>True when the cover's saved text choice was decided for a different crop offset than the one in effect now, so its box no longer matches the picture.</summary>
+    public bool CoverTextStale(string coverKey) => CoverText(coverKey) is { ForOffsetPx: { } forOffset } && forOffset != CoverOffsetFor(coverKey);
+
+    /// <summary>The cover's saved text choice when it still fits the crop window; null when none is saved or it is <see cref="CoverTextStale"/>.</summary>
+    public KdpCoverText? UsableCoverText(string coverKey) => CoverTextStale(coverKey) ? null : CoverText(coverKey);
+
     /// <summary>A copy with the cover's text choice set.</summary>
     /// <exception cref="KdpSettingsException">The box or a colour is not valid.</exception>
     public KdpBookSettings WithCoverText(string coverKey, KdpCoverText text)

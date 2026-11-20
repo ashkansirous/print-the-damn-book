@@ -23,6 +23,18 @@ public class KdpCoverTextTests
     }
 
     [Fact]
+    public void Fractions_are_measured_against_the_whole_panel_picture_including_bleed_when_it_is_given()
+    {
+        var panel = new RectD(0, 0, 8.625, 8.75);
+        var box = KdpTextBoxMaths.Resolve(new KdpTextBox(0.2, 0.3, 0.6, 0.2), Trim, null, null, panel)!.Value;
+
+        Assert.Equal(0.2 * 8.625, box.X, 6);
+        Assert.Equal(0.3 * 8.75, box.Y, 6);
+        Assert.Equal(0.6 * 8.625, box.Width, 6);
+        Assert.Equal(0.2 * 8.75, box.Height, 6);
+    }
+
+    [Fact]
     public void A_box_that_reaches_the_edge_is_kept_inside_the_safe_margin()
     {
         var box = KdpTextBoxMaths.Resolve(new KdpTextBox(0, 0, 1, 0.5), Trim, null)!.Value;
@@ -186,6 +198,45 @@ public class KdpCoverTextTests
         Assert.DoesNotContain("Colors", json, StringComparison.Ordinal);
         Assert.DoesNotContain("IsValid", json, StringComparison.Ordinal);
         Assert.Equal(text, KdpBookSettings.Parse(json).CoverText(KdpPictureKeys.Front));
+    }
+
+    [Fact]
+    public void A_text_choice_is_usable_while_the_offset_matches_the_one_it_was_made_for()
+    {
+        var text = new KdpCoverText(new KdpTextBox(0.1, 0.05, 0.7, 0.2), "#FFFFFF", "#000000", ForOffsetPx: 300);
+        var settings = KdpBookSettings.Empty.WithCoverOffset(KdpPictureKeys.Back, 300).WithCoverText(KdpPictureKeys.Back, text);
+
+        Assert.False(settings.CoverTextStale(KdpPictureKeys.Back));
+        Assert.Equal(text, KdpBookSettings.Parse(settings.ToJson()).UsableCoverText(KdpPictureKeys.Back));
+        Assert.Contains("\"forOffsetPx\": 300", settings.ToJson(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_text_choice_is_stale_and_unused_once_the_offset_differs_or_is_cleared()
+    {
+        var text = new KdpCoverText(new KdpTextBox(0.1, 0.05, 0.7, 0.2), "#FFFFFF", "#000000", ForOffsetPx: 300);
+        var settings = KdpBookSettings.Empty.WithCoverOffset(KdpPictureKeys.Back, 300).WithCoverText(KdpPictureKeys.Back, text);
+
+        var moved = settings.WithCoverOffset(KdpPictureKeys.Back, 120);
+        var cleared = settings.WithoutCover(KdpPictureKeys.Back);
+
+        Assert.True(moved.CoverTextStale(KdpPictureKeys.Back));
+        Assert.Null(moved.UsableCoverText(KdpPictureKeys.Back));
+        Assert.NotNull(moved.CoverText(KdpPictureKeys.Back));
+        Assert.True(cleared.CoverTextStale(KdpPictureKeys.Back));
+    }
+
+    [Fact]
+    public void An_old_text_entry_without_the_field_reads_and_counts_as_made_for_the_saved_offset()
+    {
+        const string json = """{"covers":{"front":{"cropOffsetPx":90,"text":{"box":{"left":0.1,"top":0.05,"width":0.7,"height":0.2},"color":"#FFFFFF","shadow":"#000000"}}}}""";
+
+        var settings = KdpBookSettings.Parse(json);
+
+        Assert.Null(settings.CoverText(KdpPictureKeys.Front)!.ForOffsetPx);
+        Assert.False(settings.CoverTextStale(KdpPictureKeys.Front));
+        Assert.NotNull(settings.UsableCoverText(KdpPictureKeys.Front));
+        Assert.DoesNotContain("forOffsetPx", settings.ToJson(), StringComparison.Ordinal);
     }
 
     [Fact]

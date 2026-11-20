@@ -120,11 +120,10 @@ The 27 keys where the sheet and the 480 px copy differ by more than 60 px (sheet
   `kdp-linux` still builds); ZXing.Net is a test-only package and decodes it to `https://dinoreader.sirous.uk/`.
 - Work E's trial changed the plan: the default is 480 px copies, one agent per book (see *Trial 2026-11-20*).
 
-#### Open (desk choices, for the owner to confirm or change)
+#### Settled after building
 
-- Back-cover words on a light picture use dark ink with a white halo; the front stays white with a stronger shadow on
-  light skies. Not decided by the owner.
-- Text sizes stop at 14 pt, so Freddy pages 12 and 24 still wrap on one line. Not decided by the owner.
+- Back-cover and front text colours: replaced by Slice 37 (the crop agent picks text and shadow colours per cover).
+- Text sizes stop at 14 pt, so Freddy pages 12 and 24 keep one wrapped line: owner, 2026-11-20, "14 pt is ok."
 
 #### For CLAUDE.md (lifted 2026-11-20)
 

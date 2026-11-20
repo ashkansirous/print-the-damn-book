@@ -209,7 +209,7 @@ public static class KdpExporter
                 settings = pixels == 0 ? settings.WithoutCover(key) : settings.WithCoverOffset(key, pixels);
             }
 
-            return ApplyText(settings, request, all.Back is not null);
+            return ApplyText(settings, request, all.Back is not null, key => UsedCoverOffset(key, settings, all));
         }
         catch (KdpSettingsException ex)
         {
@@ -217,8 +217,29 @@ public static class KdpExporter
         }
     }
 
+    /// <summary>The crop offset a cover picture is really drawn at: the requested one, cut back to what the picture allows (0 when it has no spare height).</summary>
+    private static int UsedCoverOffset(string key, KdpBookSettings settings, BookPictures all)
+    {
+        var bytes = key == KdpPictureKeys.Back ? all.Back : all.Cover ?? all.Pages.FirstOrDefault();
+        var requested = settings.CoverOffsetFor(key);
+        if (bytes is null || requested == 0)
+        {
+            return requested;
+        }
+
+        using var bitmap = KdpImageDecoder.DecodeUpright(bytes);
+        return Math.Min(requested, KdpPictureCrop.MaxOffset(bitmap.Width, bitmap.Height));
+    }
+
+    /// <summary>The crop offset the built cover really used for a picture (the saved one cut back to what the picture allows), the same value the render path judges a text choice against.</summary>
+    private static int AppliedCoverOffset(string key, KdpBookSettings settings, KdpCoverResult cover)
+    {
+        var picture = key == KdpPictureKeys.Front ? cover.FrontPrepared : cover.BackPrepared;
+        return picture is not null && settings.HasCoverOffset(key) ? picture.AppliedOffsetPx : settings.CoverOffsetFor(key);
+    }
+
     /// <summary>This run's <c>--text</c> and <c>--dino-text</c> choices added to the settings (a clear removes the choice). A back-cover choice for a book with no back cover is refused.</summary>
-    private static KdpBookSettings ApplyText(KdpBookSettings settings, KdpExportRequest request, bool hasBack)
+    private static KdpBookSettings ApplyText(KdpBookSettings settings, KdpExportRequest request, bool hasBack, Func<string, int> usedOffset)
     {
         foreach (var (key, text) in request.CoverText ?? new Dictionary<string, KdpCoverText?>())
         {
@@ -227,7 +248,7 @@ public static class KdpExporter
                 throw new KdpException("--text back names the back cover, but the book has none.");
             }
 
-            settings = text is null ? settings.WithoutCoverText(key) : settings.WithCoverText(key, text);
+            settings = text is null ? settings.WithoutCoverText(key) : settings.WithCoverText(key, text with { ForOffsetPx = usedOffset(key) });
         }
 
         if (request.DinoText is { } dino)
@@ -297,7 +318,7 @@ public static class KdpExporter
             }
 
             settings = CoverOffsetsToSave(request, settings, cover);
-            settings = cover is null ? settings : ApplyText(settings, request, cover.BackPictureRead);
+            settings = cover is null ? settings : ApplyText(settings, request, cover.BackPictureRead, key => AppliedCoverOffset(key, settings, cover));
             return settings.ToJson() == before.ToJson() ? null : settings.ForBook(book.Id, book.Title);
         }
         catch (KdpSettingsException ex)

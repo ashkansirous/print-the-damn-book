@@ -134,7 +134,7 @@ internal static class KdpCoverDocument
         var png = KdpSoftShadow.Png(box.Width, box.Height, pt, draw, shadow);
         if (png is null)
         {
-            Note(drawing, "cover: the soft shadow under some cover words could not be made; those words have no shadow");
+            Note(drawing, "cover: the soft shadow under some cover words could not be made (the words do not fit their box); those words have no shadow");
             return;
         }
 
@@ -168,7 +168,7 @@ internal static class KdpCoverDocument
         }
 
         var trim = KdpCoverSize.FrontTrim(drawing.PageCount, drawing.Direction);
-        if (KdpTextBoxMaths.Resolve(choice.Box, trim, null) is not { } box)
+        if (KdpTextBoxMaths.Resolve(choice.Box, trim, null, null, KdpCoverSize.FrontPanel(drawing.PageCount, drawing.Direction)) is not { } box)
         {
             Note(drawing, UnusableBox(KdpPictureKeys.Front));
             return null;
@@ -298,7 +298,7 @@ internal static class KdpCoverDocument
         }
 
         var barcode = KdpCoverSize.Barcode(drawing.PageCount, drawing.Direction);
-        if (KdpTextBoxMaths.Resolve(choice.Box, trim, barcode, KdpTextBoxMaths.QrStrip(trim)) is not { } box)
+        if (KdpTextBoxMaths.Resolve(choice.Box, trim, barcode, KdpTextBoxMaths.QrStrip(trim), KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction)) is not { } box)
         {
             Note(drawing, UnusableBox(KdpPictureKeys.Back));
             return null;
