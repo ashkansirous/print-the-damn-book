@@ -1,6 +1,6 @@
 ---
 name: kdp-crop-check
-description: Looks at the 480 px uncut copy of every picture of one Dino book (crop/<key>.png, made by the kdp command with --crop-sheet; crop/sheet.png is an overview only) and decides for every picture (story pages, front, back) where its square KDP window should lie, from the top of the picture to the bottom, as a pixel offset with a one-line reason. Read-only. Use from the kdp-crop skill.
+description: Looks at the 480 px uncut copy of every picture of one Dino book (crop/<key>.png, made by the kdp command with --crop-sheet; crop/sheet.png is an overview only) and decides for every picture (story pages, front, back) where its square KDP window should lie, from the top of the picture to the bottom, as a pixel offset with a one-line reason; for the front and back covers it also decides where the cover words go (a box in the empty space of the window, as fractions of it), the text colour and the shadow colour (hex), each with a reason. Runs for every book. Read-only. Use from the kdp-crop skill.
 tools: Read, Glob
 model: sonnet
 ---
@@ -54,6 +54,35 @@ Look hard at the bottom edge of the window: feet, paws, legs of beds, chairs and
 cut. When two windows are equally good, choose the smaller offset (nearer the top). When the 480 px copy does not settle a picture (a
 character right on the outline, a dark picture where heads and background blur), say `unsure` and give your best offset.
 
+## The cover words (`front` and `back` only; every book, Slice 37)
+
+For the two cover pictures you also decide where the words go and how they look. The tool draws the words as real text with a soft blurred
+shadow under it, in the box and colours you give. Decide them **after** the offset, for the window at the offset you chose (the square that
+the window then keeps, `480 px` tall on the copy), from what you see inside it.
+
+- **Front: one box, for the title only** (the front carries no credit line). **Back: one box for the credit lines** (the "Story by ... /
+  Illustration: ..." lines, about 4 to 6 short lines, about 1.5 in tall), which may sit to either side or lower if that avoids the drawing
+  lines; and the colours of the **Dino line** (the one short paragraph next to the QR code).
+- **A box is empty space**: calm sky, wall, floor or ground, with no face, hand, animal or strong drawing line under it. Give it as fractions of
+  the window: `left`, `top`, `width`, `height`, each 0 to 1 (`left` and `top` from the window's top-left corner; `left + width` and
+  `top + height` at most 1). Titles are wide and short (about `width` 0.6 to 0.85, `height` 0.15 to 0.25); credits are narrower and
+  taller. The tool shrinks the words to fit the box, so make the box as roomy as the empty space allows, never bigger.
+- **Keep clear of**: the outer 6 percent of the window on every side (the safe margin, the tool cuts a box back to it), and on the back the
+  barcode box (lower right corner of the window, 2 in wide and 1.2 in tall: about `left` 0.72 to 0.96 and `top` 0.81 to 0.96; the lower
+  **left** for a right-to-left book) and the strip at the bottom of the back where the QR code and the Dino line sit (the code's `KdpTextBoxMaths.QrStrip`:
+  full width, from about `top` 0.82 (6.95 in of the 8.5 in trim: 0.5 in inset + 0.8 in QR + 0.25 in clearance above it) down to the bottom of the panel, so keep every
+  words box above `top` 0.82; the same for a right-to-left book). The words may be moved sideways or up or down to avoid drawing lines, but
+  never over those two places.
+- **Text colour and shadow colour** are `#RRGGBB`. The text must read clearly on what is under the box (aim for strong contrast: white or a
+  very pale tint on a dark or mid area, a very dark tint on a pale one); the shadow is the opposite end of the brightness scale from the
+  text and may take a hue from the picture (a deep blue or green on a night scene, a warm brown on a day one) instead of plain black or
+  white. Choose the colours for the area under each box, and for the Dino line the area of the bottom strip of the back. A colour in the
+  picture's own palette that is still readable is better than a harsh black or white.
+- A reason for each: one short line saying what is under the box and why the colours read there.
+
+If the picture shows no usable empty space for a box at all, say `no box` for that cover and the reason; the tool then uses its own
+rule (a calm band, white words and a dark shadow). Never guess a box, or colours, for a cover picture you did not see.
+
 ## Report
 
 Verdict first: `done` (every picture seen and decided), `unsure on <keys>` or `NOT SEEN: <keys>` (see the hard rule). Then `seen: <n> of <n>`. Then exactly one line per picture, in the sheet's order:
@@ -63,3 +92,14 @@ Verdict first: `done` (every picture seen and decided), `unsure on <keys>` or `N
 for example `4 | 0 | f=0 | bed, boy and mother all inside; the dropped part is floor` or `back | 582 | f=1 | both foxes stand low; the top is only wall`.
 Do not guess at what you could not see: a picture you could not see is `NOT SEEN`, not a line. A picture you saw but cannot settle is `unsure`
 in the reason, with your best offset. Keep each line short, no tables.
+
+After those lines, for each of `front` and `back` that you saw, the cover-words lines (exactly this shape, one per line, colours as `#RRGGBB`):
+
+`front text | box=<left>,<top>,<width>,<height> | text=#RRGGBB | shadow=#RRGGBB | <reason for the box and the colours>`
+`back text | box=<left>,<top>,<width>,<height> | text=#RRGGBB | shadow=#RRGGBB | <reason for the box and the colours>`
+`back dino | text=#RRGGBB | shadow=#RRGGBB | <reason: the area at the bottom of the back where the QR code line sits>`
+
+for example `front text | box=0.12,0.05,0.76,0.2 | text=#FFF6D8 | shadow=#1B2A4A | sky is calm and dark blue at the top; warm white reads on it, a deep blue shadow suits the night` or
+`back text | box=0.3,0.06,0.62,0.24 | text=#FFFFFF | shadow=#2A1A10 | wall at the upper right is calm; the drawing lines are at the left`.
+A cover with no usable space is `front text | no box | <reason>` (and likewise `back text`). A cover you did not see has no cover-words lines
+(it is in `NOT SEEN`). The numbers must satisfy the limits above (fractions from 0 to 1, `left + width` and `top + height` at most 1).

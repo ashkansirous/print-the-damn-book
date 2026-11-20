@@ -53,6 +53,13 @@ public static class KdpCoverSize
     /// <summary>The front cover: on the right for left-to-right books, on the left for right-to-left ones.</summary>
     public static RectD FrontPanel(int pageCount, ReadingDirection direction) => IsRtl(direction) ? LeftPanel : RightPanel(pageCount);
 
+    /// <summary>The trim box of the front cover: inside the bleed, which is on its outside edge.</summary>
+    public static RectD FrontTrim(int pageCount, ReadingDirection direction)
+    {
+        var front = FrontPanel(pageCount, direction);
+        return new RectD(IsRtl(direction) ? front.X + BleedInches : front.X, BleedInches, KdpTrim.TrimInches, KdpTrim.TrimInches);
+    }
+
     /// <summary>The trim box of the back cover: inside the bleed, which is on its outside edge.</summary>
     public static RectD BackTrim(int pageCount, ReadingDirection direction)
     {

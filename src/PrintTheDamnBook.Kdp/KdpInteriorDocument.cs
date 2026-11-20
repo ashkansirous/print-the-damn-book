@@ -25,6 +25,8 @@ internal static class KdpInteriorDocument
     public const string Ink = "#2B2540";
 
     private const float LineHeight = 1.35f;
+    private const double AboutQrInches = 1.1;
+    private const double AboutGapInches = 0.3;
 
     /// <summary>
     /// Uncompressed so <see cref="KdpPdfInspector"/> can read the font descriptors. The raster dpi stays at QuestPDF's default (288): the page size is
@@ -104,9 +106,25 @@ internal static class KdpInteriorDocument
                 Lines(body, page, [new Line(matter.TheEnd, KdpTrim.TitlePt)]);
                 break;
             case KdpPageRole.About:
-                Lines(body, page, [new Line(matter.AboutHeading, KdpTrim.MatterPt), new Line(matter.AboutLine, KdpTrim.MatterPt)]);
+                About(body, page, matter.AboutLine);
                 break;
         }
+    }
+
+    /// <summary>The last page (Slice 37): the QR code to the Dino Reader page with the Dino line beside it, the pair centred in the text box.</summary>
+    private static void About(IContainer body, KdpPage page, string line)
+    {
+        var qr = Cover.KdpQrCode.Png(KdpCoverWording.DinoReaderUrl);
+        InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle().Row(row =>
+        {
+            row.ConstantItem((float)AboutQrInches, Unit.Inch).Image(qr).UseOriginalImage().FitWidth();
+            row.ConstantItem((float)AboutGapInches, Unit.Inch);
+            row.RelativeItem().AlignMiddle().Text(t =>
+            {
+                t.DefaultTextStyle(s => s.FontFamily(StoryFont.For(line)).FontSize((float)KdpTrim.MatterPt));
+                t.Span(line);
+            });
+        });
     }
 
     private static void StoryText(IContainer body, KdpPage page, KdpDrawing drawing)

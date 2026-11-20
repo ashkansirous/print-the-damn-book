@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 37: Amazon KDP: the crop agent also places the cover text and picks its colours ([slice](slices/37-kdp-cover-text-by-agent.md))
+
+- [owner] The owner looks at the 16 rebuilt covers (contact sheet) and says whether they look right.
+- [owner] KDP accepts the transparent soft shadow (its previewer and a printed proof).
+
 ### Slice 36: Amazon KDP: an agent picks every crop, cover without white boxes, tinted text pages ([slice](slices/36-kdp-crop-agent-and-cover.md))
 
 - [owner] The owner looks at the Freddy cover and text spreads (H, rebuilt in `D:\print-the-damn-book-worktrees\s36\tmp\freddy-final`) and says whether they look right; the first cover was rejected on 2026-11-20.

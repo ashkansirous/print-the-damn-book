@@ -61,7 +61,18 @@ public static class KdpCover
         }
 
         warnings.AddRange(new[] { KdpInterior.OffsetWarning("Front cover", front), back is null ? null : KdpInterior.OffsetWarning("Back cover", back) }.OfType<string>());
-        var drawing = new KdpCoverDrawing(input.Title, input.Language, input.Credits, front, back, input.PageCount, input.Direction);
+        var drawing = new KdpCoverDrawing(
+            input.Title,
+            input.Language,
+            input.Credits,
+            front,
+            back,
+            input.PageCount,
+            input.Direction,
+            settings.CoverText(KdpPictureKeys.Front),
+            back is null ? null : settings.CoverText(KdpPictureKeys.Back),
+            settings.DinoColors,
+            warnings);
         var pdf = KdpCoverDocument.Render(drawing);
         var fonts = KdpPdfInspector.CheckFonts(pdf);
         if (!fonts.AllEmbedded)

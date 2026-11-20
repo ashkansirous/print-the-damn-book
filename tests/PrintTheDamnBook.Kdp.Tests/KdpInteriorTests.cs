@@ -35,11 +35,28 @@ public class KdpInteriorTests
                 Assert.Equal(KdpTrim.PictureWidthPx, image.WidthInSamples);
                 Assert.Equal(KdpTrim.PictureHeightPx, image.HeightInSamples);
             }
+            else if (planned.Role == KdpPageRole.About)
+            {
+                var qr = Assert.Single(images); // the QR code to the Dino Reader page (Slice 37)
+                Assert.Equal(KdpCoverWording.DinoReaderUrl, DecodeQr(qr));
+                var text = string.Join(' ', pdf.GetPage(planned.Position).GetWords().Select(w => w.Text));
+                Assert.Equal(KdpCoverWording.DinoLine, text);
+            }
             else
             {
                 Assert.Empty(images);
             }
         }
+    }
+
+    private static string? DecodeQr(UglyToad.PdfPig.Content.IPdfImage image)
+    {
+        Assert.True(image.TryGetPng(out var png));
+        using var bitmap = SkiaSharp.SKBitmap.Decode(png);
+        using var rgba = bitmap.Copy(SkiaSharp.SKColorType.Rgba8888);
+        var source = new ZXing.RGBLuminanceSource(rgba.Bytes, rgba.Width, rgba.Height, ZXing.RGBLuminanceSource.BitmapFormat.RGBA32);
+        var reader = new ZXing.BarcodeReaderGeneric { Options = new ZXing.Common.DecodingOptions { TryHarder = true, PossibleFormats = [ZXing.BarcodeFormat.QR_CODE] } };
+        return reader.Decode(source)?.Text;
     }
 
     [Fact]

@@ -32,6 +32,6 @@ public class KdpFrontMatterWordingTests
 
         Assert.Equal("This book belongs to", wording.DedicationHeading);
         Assert.Equal("The End", wording.TheEnd);
-        Assert.Equal("Dino: Kids Books & Stories", wording.AboutLine);
+        Assert.StartsWith("Listen to this story in Dino: Kids Books & Stories.", wording.AboutLine, StringComparison.Ordinal);
     }
 }

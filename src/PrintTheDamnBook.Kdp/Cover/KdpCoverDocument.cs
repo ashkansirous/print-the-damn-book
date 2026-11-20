@@ -10,55 +10,57 @@ using QuestPDF.Infrastructure;
 namespace PrintTheDamnBook.Kdp.Cover;
 
 /// <summary>Everything <see cref="KdpCoverDocument"/> draws.</summary>
-internal sealed record KdpCoverDrawing(string Title, string Language, DinoCredits? Credits, KdpPicture Front, KdpPicture? Back, int PageCount, ReadingDirection Direction);
+/// <param name="FrontText">The crop agent's box and colours for the front title (Slice 37); null uses the calm-band rule.</param>
+/// <param name="BackText">Likewise for the back credit lines.</param>
+/// <param name="Dino">The colours of the Dino line beside the QR code; null uses the backdrop rule.</param>
+/// <param name="Notes">Where a choice that could not be used is reported (the fallback is drawn instead); null when nobody listens.</param>
+internal sealed record KdpCoverDrawing(
+    string Title,
+    string Language,
+    DinoCredits? Credits,
+    KdpPicture Front,
+    KdpPicture? Back,
+    int PageCount,
+    ReadingDirection Direction,
+    KdpCoverText? FrontText = null,
+    KdpCoverText? BackText = null,
+    KdpTextColors? Dino = null,
+    ICollection<string>? Notes = null);
 
 /// <summary>
 /// The only drawing code for the KDP cover: one page of the whole wrap, the pictures full bleed, no spine text, the barcode box left clear (white, as KDP asks).
-/// Words sit straight on the pictures, white with a soft dark shadow and no box (Slice 36): the title and the credit line in the calmest band of the front,
-/// the credit lines at the top of the back and, at the bottom of the back on the side away from the barcode, the QR code with the Dino line beside it.
+/// Words sit straight on the pictures with a soft blurred shadow beneath and no box (Slice 36, 37): the title alone on the front, the credit lines on the back,
+/// each in the box and colours the crop agent chose (else the calmest band, white or ink) and, at the bottom of the back on the side away from the barcode,
+/// the QR code with the Dino line beside it.
 /// </summary>
 internal static class KdpCoverDocument
 {
     private static readonly double[] TitleStepsPt = [40, 36, 32, 28, 24, 20];
     private const double TitleBoxHeightInches = 1.6;
-    private const double FrontCreditHeightInches = 0.7;
-    private const double TitleCreditGapInches = 0.08;
-    private static readonly double[] CreditStepsPt = [15, 14, 13, 12, 11];
     private const double CreditPt = 14;
     private static readonly double[] BackCreditStepsPt = [14, 13, 12, 11, 10];
     private const double BackCreditSpacingPt = 4;
     private const double AppPt = 13;
     private static readonly double[] AppStepsPt = [13, 12, 11, 10, 9];
-    private const double PanelInsetInches = 0.5;
+    private const double PanelInsetInches = KdpTextBoxMaths.PanelInsetInches;
     private const double BackCreditsHeightInches = 1.5;
-    private const double QrInches = 0.8;
+    private const double QrInches = KdpTextBoxMaths.QrInches;
     private const double QrGapInches = 0.2;
     private const double MinAppWidthInches = 0.5;
-    private const double BarcodeClearInches = 0.25;
     private const float LineHeight = 1.3f;
     private const string SpineColor = "#F1EEF8";
-    private const string LetterColor = "#FFFFFF";
 
-    /// <summary>The same halo in white, around dark ink on a pale picture.</summary>
-    private const string HaloColor = "#99FFFFFF";
+    /// <summary>The words' colour and the colour of the soft shadow under them (null: no shadow, on the plain white panel).</summary>
+    private sealed record Look(string Color, string? Shadow);
 
-    /// <summary>A dark halo a little wider than the letters: rings of eight faint copies around them add up to a soft shadow that keeps white letters readable. A light band gets wider rings and a stronger shadow.</summary>
-    private static readonly double[] ShadowRadiiInches = [0.015, 0.03];
+    /// <summary>The fallback look on a dark or middling picture: white letters, dark shadow.</summary>
+    private static readonly Look OnDark = new("#FFFFFF", "#000000");
 
-    private static readonly double[] StrongShadowRadiiInches = [0.02, 0.04, 0.06];
-    private const int ShadowDirections = 8;
+    /// <summary>The fallback look on a pale picture: the book's ink, white shadow.</summary>
+    private static readonly Look OnLight = new(KdpInteriorDocument.Ink, "#FFFFFF");
 
-    private static readonly (double X, double Y)[] ShadowOffsets = Rings(ShadowRadiiInches);
-    private static readonly (double X, double Y)[] StrongShadowOffsets = Rings(StrongShadowRadiiInches);
-
-    private static (double X, double Y)[] Rings(double[] radii)
-    {
-        return radii
-            .SelectMany(radius => Enumerable.Range(0, ShadowDirections).Select(i => (radius * Math.Cos(2 * Math.PI * i / ShadowDirections), radius * Math.Sin(2 * Math.PI * i / ShadowDirections))))
-            .ToArray();
-    }
-
-    private static string ShadowColor(byte alpha) => $"#{alpha:X2}000000";
+    /// <summary>The fallback look on the plain white panel: the book's ink, no shadow.</summary>
+    private static readonly Look OnPlain = new(KdpInteriorDocument.Ink, null);
 
     private static readonly DocumentSettings Settings = new() { ImageCompressionQuality = ImageCompressionQuality.Best, CompressDocument = false };
 
@@ -113,78 +115,86 @@ internal static class KdpCoverDocument
     }
 
     /// <summary>
-    /// Draws <paramref name="draw"/> in <paramref name="box"/>: on a picture first as faint dark copies around the spot (the shadow), then in white; on a
-    /// plain white panel only once, in the book's dark ink.
+    /// Draws <paramref name="draw"/> in <paramref name="box"/>: with a shadow colour, first the soft shadow (one blurred image beneath, <see cref="KdpSoftShadow"/>), then the
+    /// words once as real text in the look's colour; with none (the plain white panel) only the words.
     /// </summary>
-    private static void Lettered(LayersDescriptor layers, RectD box, Backdrop backdrop, Action<IContainer, string> draw, double? bandBrightness = null)
+    private static void Lettered(LayersDescriptor layers, KdpCoverDrawing drawing, RectD box, Look look, double pt, Action<IContainer, string> draw)
     {
-        if (backdrop != Backdrop.Plain)
+        if (look.Shadow is { } shadow)
         {
-            var alpha = KdpCalmBand.ShadowAlpha(bandBrightness ?? 0);
-            var strong = alpha == KdpCalmBand.StrongShadowAlpha;
-            foreach (var (dx, dy) in strong ? StrongShadowOffsets : ShadowOffsets)
-            {
-                var shifted = new RectD(box.X + dx, box.Y + dy, box.Width, box.Height);
-                layers.Layer().Element(c => draw(KdpInteriorDocument.InBox(c, shifted), backdrop == Backdrop.Dark ? ShadowColor(alpha) : HaloColor));
-            }
+            AddShadow(layers, drawing, box, pt, draw, shadow);
         }
 
-        layers.Layer().Element(c => draw(KdpInteriorDocument.InBox(c, box), backdrop == Backdrop.Dark ? LetterColor : KdpInteriorDocument.Ink));
+        layers.Layer().Element(c => draw(KdpInteriorDocument.InBox(c, box), look.Color));
     }
 
-    /// <summary>What the words sit on: a dark picture (white letters, dark shadow), a pale one (the book's ink, white halo) or the plain white panel (ink, nothing around it).</summary>
-    private enum Backdrop
+    /// <summary>The soft shadow layer; when the shadow could not be made, no shadow and a warning (the words are still drawn).</summary>
+    private static void AddShadow(LayersDescriptor layers, KdpCoverDrawing drawing, RectD box, double pt, Action<IContainer, string> draw, string shadow)
     {
-        Dark,
-        Light,
-        Plain,
+        var png = KdpSoftShadow.Png(box.Width, box.Height, pt, draw, shadow);
+        if (png is null)
+        {
+            Note(drawing, "cover: the soft shadow under some cover words could not be made; those words have no shadow");
+            return;
+        }
+
+        var padded = new RectD(box.X - KdpSoftShadow.PadInches, box.Y - KdpSoftShadow.PadInches, box.Width + 2 * KdpSoftShadow.PadInches, box.Height + 2 * KdpSoftShadow.PadInches);
+        layers.Layer().Element(c => KdpInteriorDocument.InBox(c, padded).Image(png).UseOriginalImage().FitUnproportionally());
     }
 
-    /// <summary>The words' look for a box over <paramref name="picture"/>, whose grid covers <paramref name="panel"/> of the cover: white on a dark or middling band, ink on a pale one.</summary>
-    private static Backdrop BackdropOver(KdpPicture picture, RectD panel, RectD box)
+    /// <summary>The fallback look for a box over <paramref name="picture"/>, whose grid covers <paramref name="panel"/> of the cover: white with a dark shadow on a dark or middling band, ink with a white shadow on a pale one.</summary>
+    private static Look LookOver(KdpPicture picture, RectD panel, RectD box)
     {
-        return picture.Overview is { } luma && KdpCalmBand.IsLight(KdpCalmBand.Brightness(luma, box, (panel.X, panel.Y), (panel.Width, panel.Height))) ? Backdrop.Light : Backdrop.Dark;
+        return picture.Overview is { } luma && KdpCalmBand.IsLight(KdpCalmBand.Brightness(luma, box, (panel.X, panel.Y), (panel.Width, panel.Height))) ? OnLight : OnDark;
     }
 
-    /// <summary>The title and, under it, "Written by ... · Illustrated by ...", in the calmest band of the front picture.</summary>
+    private static Look LookOf(KdpTextColors colors) => new(colors.Color, colors.Shadow);
+
+    private static void Note(KdpCoverDrawing drawing, string message) => drawing.Notes?.Add(message);
+
+    /// <summary>The title alone on the front (Slice 37), in the box and colours the crop agent chose; with none (or none usable) in the calmest band of the front picture.</summary>
     private static void FrontWords(LayersDescriptor layers, KdpCoverDrawing drawing)
     {
-        var credit = KdpCoverWording.FrontCredit(drawing.Credits, drawing.Language);
         var rtl = drawing.Direction == ReadingDirection.RightToLeft;
+        var (box, pt, look) = ChosenFront(drawing, rtl) ?? FallbackFront(drawing, rtl);
+        Lettered(layers, drawing, box, look, pt, (c, color) => c.AlignMiddle().Element(words => KdpTextFit.Words(words, drawing.Title, StoryFont.For(drawing.Title), pt, rtl, color)));
+    }
+
+    private static (RectD Box, double Pt, Look Look)? ChosenFront(KdpCoverDrawing drawing, bool rtl)
+    {
+        if (drawing.FrontText is not { } choice)
+        {
+            return null;
+        }
+
+        var trim = KdpCoverSize.FrontTrim(drawing.PageCount, drawing.Direction);
+        if (KdpTextBoxMaths.Resolve(choice.Box, trim, null) is not { } box)
+        {
+            Note(drawing, UnusableBox(KdpPictureKeys.Front));
+            return null;
+        }
+
+        if (TryChooseTitlePt(drawing.Title, box, rtl) is not { } pt)
+        {
+            Note(drawing, $"cover: the title does not fit the text box saved for the front cover (even at {TitleStepsPt[^1]} pt); the calm-band placement is used instead");
+            return null;
+        }
+
+        return (box, pt, new Look(choice.Color, choice.Shadow));
+    }
+
+    private static string UnusableBox(string key) =>
+        $"cover: the text box saved for the {key} cover is too small (or loses more than half its height) once it is kept inside the safe margin and clear of the barcode and QR code; the fallback placement is used instead";
+
+    /// <summary>Slice 36's rule: the calmest band of the front picture, white letters with a dark shadow (ink with a white one on a pale band).</summary>
+    private static (RectD Box, double Pt, Look Look) FallbackFront(KdpCoverDrawing drawing, bool rtl)
+    {
         var width = KdpTrim.TrimInches - 2 * PanelInsetInches;
         var pt = ChooseTitlePt(drawing.Title, new RectD(0, 0, width, TitleBoxHeightInches), rtl);
         var titleHeight = TextHeight(drawing.Title, pt, width, TitleBoxHeightInches, rtl);
-        var creditPt = credit is null ? 0 : ChooseCreditPt(credit, width, rtl);
-        var creditHeight = credit is null ? 0 : TextHeight(credit, creditPt, width, FrontCreditHeightInches, rtl);
-        var band = FrontBand(drawing, titleHeight + creditHeight + (credit is null ? 0 : TitleCreditGapInches));
-        var titleBox = new RectD(band.X, band.Y, band.Width, titleHeight);
-        var panel = KdpCoverSize.FrontPanel(drawing.PageCount, drawing.Direction);
-        Lettered(layers, titleBox, Backdrop.Dark, (c, color) => c.AlignTop().Element(words => KdpTextFit.Words(words, drawing.Title, StoryFont.For(drawing.Title), pt, rtl, color)), MeanBrightness(drawing.Front, panel, titleBox));
-        if (credit is not null)
-        {
-            var creditBox = new RectD(band.X, band.Y + titleHeight + TitleCreditGapInches, band.Width, creditHeight);
-            Lettered(layers, creditBox, Backdrop.Dark, (c, color) => c.AlignTop().Element(words => KdpTextFit.Words(words, credit, StoryFont.For(credit), creditPt, rtl, color)), MeanBrightness(drawing.Front, panel, creditBox));
-        }
-    }
-
-    /// <summary>The mean brightness of the picture under a box; null when the picture has no brightness grid.</summary>
-    private static double? MeanBrightness(KdpPicture picture, RectD panel, RectD box)
-    {
-        return picture.Overview is { } luma ? KdpCalmBand.Brightness(luma, box, (panel.X, panel.Y), (panel.Width, panel.Height)) : null;
-    }
-
-    /// <summary>The largest size at which the credit line stays on one line; at none, the largest at which it wraps inside its box; at none, the cover stops with a plain message.</summary>
-    internal static double ChooseCreditPt(string credit, double width, bool rtl)
-    {
-        var box = new RectD(0, 0, width, FrontCreditHeightInches);
-        var whole = StoryTextLayout.Choose(CreditStepsPt, pt => KdpTextFit.LinesStayWhole(credit, StoryFont.For(credit), pt, box, rtl));
-        if (whole.Fits)
-        {
-            return whole.Pt;
-        }
-
-        var wrapped = StoryTextLayout.Choose(CreditStepsPt, pt => KdpTextFit.Fits(credit, StoryFont.For(credit), pt, box, rtl));
-        return wrapped.Fits ? wrapped.Pt : throw new KdpException($"The front credit does not fit the front cover even at {wrapped.Pt} pt; shorten the names.");
+        var band = FrontBand(drawing, titleHeight);
+        var box = new RectD(band.X, band.Y, band.Width, titleHeight);
+        return (box, pt, LookOver(drawing.Front, KdpCoverSize.FrontPanel(drawing.PageCount, drawing.Direction), box));
     }
 
     /// <summary>The height the words really take (their wrapped lines), at most the box they were chosen to fit.</summary>
@@ -197,8 +207,7 @@ internal static class KdpCoverDocument
     private static RectD FrontBand(KdpCoverDrawing drawing, double wordsHeight)
     {
         var panel = KdpCoverSize.FrontPanel(drawing.PageCount, drawing.Direction);
-        var trimX = drawing.Direction == ReadingDirection.RightToLeft ? panel.X + KdpCoverSize.BleedInches : panel.X;
-        var trim = new RectD(trimX, KdpCoverSize.BleedInches, KdpTrim.TrimInches, KdpTrim.TrimInches);
+        var trim = KdpCoverSize.FrontTrim(drawing.PageCount, drawing.Direction);
         var bands = KdpCalmBand.Candidates(trim, KdpTrim.TrimInches - 2 * PanelInsetInches, wordsHeight);
         var index = drawing.Front.Overview is { } luma ? KdpCalmBand.Choose(bands, luma, (panel.X, panel.Y), (panel.Width, panel.Height)) : 0;
         return bands[index];
@@ -222,6 +231,13 @@ internal static class KdpCoverDocument
         return chosen.Pt;
     }
 
+    /// <summary>The largest title size that fits the box, or null when it fits at none.</summary>
+    private static double? TryChooseTitlePt(string title, RectD box, bool rtl)
+    {
+        var chosen = StoryTextLayout.Choose(TitleStepsPt, pt => TitleFits(title, pt, box, rtl));
+        return chosen.Fits ? chosen.Pt : null;
+    }
+
     /// <summary>Sets the title in a one-page document of the box's size with <c>ShowEntire</c>, which throws when it overflows (see <see cref="KdpTextFit"/>).</summary>
     private static bool TitleFits(string title, double pt, RectD box, bool rtl)
     {
@@ -243,15 +259,15 @@ internal static class KdpCoverDocument
         }
     }
 
-    /// <summary>The credit lines at the top of the back cover; with no back picture, only the title on the white panel.</summary>
+    /// <summary>The credit lines on the back cover, in the box and colours the crop agent chose (else at the top); with no back picture, only the title on the white panel.</summary>
     private static void BackCredits(LayersDescriptor layers, KdpCoverDrawing drawing)
     {
         var trim = KdpCoverSize.BackTrim(drawing.PageCount, drawing.Direction);
-        var box = new RectD(trim.X + PanelInsetInches, trim.Y + PanelInsetInches, trim.Width - 2 * PanelInsetInches, BackCreditsHeightInches);
         var rtl = drawing.Direction == ReadingDirection.RightToLeft;
         if (drawing.Back is null)
         {
-            Lettered(layers, box, Backdrop.Plain, (c, color) => c.AlignTop().Text(t => Line(t, drawing.Title, CreditPt + 8, color)));
+            var box = DefaultCreditsBox(trim);
+            Lettered(layers, drawing, box, OnPlain, CreditPt + 8, (c, color) => c.AlignTop().Text(t => Line(t, drawing.Title, CreditPt + 8, color)));
             return;
         }
 
@@ -261,26 +277,68 @@ internal static class KdpCoverDocument
         }
 
         var lines = BackCoverWording.Lines(credits, drawing.Language);
-        var backdrop = BackdropOver(drawing.Back, KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction), box);
-        var creditPt = ChooseBackCreditPt(lines, box.Width, rtl);
-        Lettered(layers, box, backdrop, (c, color) => c.AlignTop().Column(column =>
+        var (creditsBox, pt, look) = ChosenBack(drawing, trim, lines, rtl) ?? FallbackBack(drawing, trim, lines, rtl);
+        Lettered(layers, drawing, creditsBox, look, pt, (c, color) => c.AlignTop().Column(column =>
         {
             column.Spacing((float)BackCreditSpacingPt);
             foreach (var line in lines)
             {
-                Aligned(column.Item(), rtl).Text(t => Line(t, line, creditPt, color));
+                Aligned(column.Item(), rtl).Text(t => Line(t, line, pt, color));
             }
         }));
     }
 
+    private static RectD DefaultCreditsBox(RectD trim) => new(trim.X + PanelInsetInches, trim.Y + PanelInsetInches, trim.Width - 2 * PanelInsetInches, BackCreditsHeightInches);
+
+    private static (RectD Box, double Pt, Look Look)? ChosenBack(KdpCoverDrawing drawing, RectD trim, IReadOnlyList<string> lines, bool rtl)
+    {
+        if (drawing.BackText is not { } choice)
+        {
+            return null;
+        }
+
+        var barcode = KdpCoverSize.Barcode(drawing.PageCount, drawing.Direction);
+        if (KdpTextBoxMaths.Resolve(choice.Box, trim, barcode, KdpTextBoxMaths.QrStrip(trim)) is not { } box)
+        {
+            Note(drawing, UnusableBox(KdpPictureKeys.Back));
+            return null;
+        }
+
+        if (TryChooseBackCreditPt(lines, box, rtl) is not { } pt)
+        {
+            Note(drawing, $"cover: the credit lines do not fit the text box saved for the back cover (even at {BackCreditStepsPt[^1]} pt); the fallback placement is used instead");
+            return null;
+        }
+
+        return (box, pt, new Look(choice.Color, choice.Shadow));
+    }
+
+    /// <summary>Slice 36's rule: the top of the back, white letters with a dark shadow (ink with a white one on a pale band).</summary>
+    private static (RectD Box, double Pt, Look Look) FallbackBack(KdpCoverDrawing drawing, RectD trim, IReadOnlyList<string> lines, bool rtl)
+    {
+        var box = DefaultCreditsBox(trim);
+        var look = LookOver(drawing.Back!, KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction), box);
+        return (box, ChooseBackCreditPt(lines, box, rtl), look);
+    }
+
     /// <summary>The largest size at which all the credit lines fit their box (with the gaps between them); at none the cover stops with a plain message.</summary>
-    private static double ChooseBackCreditPt(IReadOnlyList<string> lines, double width, bool rtl)
+    private static double ChooseBackCreditPt(IReadOnlyList<string> lines, RectD box, bool rtl)
+    {
+        return TryChooseBackCreditPt(lines, box, rtl) ?? throw new KdpException($"The credit lines do not fit the back cover even at {BackCreditStepsPt[^1]} pt; shorten the names.");
+    }
+
+    internal static double? TryChooseBackCreditPt(IReadOnlyList<string> lines, RectD box, bool rtl)
     {
         var text = string.Join('\n', lines);
         var gaps = Math.Max(0, lines.Count - 1) * BackCreditSpacingPt / KdpTrim.PointsPerInch;
-        var box = new RectD(0, 0, width, BackCreditsHeightInches - gaps);
-        var chosen = StoryTextLayout.Choose(BackCreditStepsPt, pt => KdpTextFit.Fits(text, StoryFont.For(text), pt, box, rtl));
-        return chosen.Fits ? chosen.Pt : throw new KdpException($"The credit lines do not fit the back cover even at {chosen.Pt} pt; shorten the names.");
+        if (box.Height - gaps <= 0)
+        {
+            return null;
+        }
+
+        var inner = new RectD(0, 0, box.Width, box.Height - gaps);
+        var chosen = StoryTextLayout.Choose(BackCreditStepsPt, pt => KdpTextFit.Fits(text, StoryFont.For(text), pt, inner, rtl));
+        return chosen.Fits ? chosen.Pt : null;
     }
 
     /// <summary>The largest size at which the Dino line fits beside the QR code; at none the cover stops with a plain message.</summary>
@@ -296,8 +354,8 @@ internal static class KdpCoverDocument
     }
 
     /// <summary>
-    /// The QR code to the Dino Reader page, about 0.8 in, at the bottom of the back cover on the side away from the barcode, with the Dino line beside it.
-    /// A cover with no back picture has neither (its panel is a plain white one).
+    /// The QR code to the Dino Reader page, about 0.8 in, at the bottom of the back cover on the side away from the barcode, with the Dino line beside it
+    /// (colours as the crop agent chose, else the backdrop rule). A cover with no back picture has neither (its panel is a plain white one).
     /// </summary>
     private static void BackQr(LayersDescriptor layers, KdpCoverDrawing drawing)
     {
@@ -311,14 +369,14 @@ internal static class KdpCoverDocument
         var barcode = KdpCoverSize.Barcode(drawing.PageCount, drawing.Direction);
         var y = trim.Y + trim.Height - PanelInsetInches - QrInches;
         var qrX = rtl ? trim.X + trim.Width - PanelInsetInches - QrInches : trim.X + PanelInsetInches;
-        var wordsX = rtl ? barcode.X + barcode.Width + BarcodeClearInches : qrX + QrInches + QrGapInches;
-        var wordsRight = rtl ? qrX - QrGapInches : barcode.X - BarcodeClearInches;
+        var wordsX = rtl ? barcode.X + barcode.Width + KdpTextBoxMaths.BarcodeClearInches : qrX + QrInches + QrGapInches;
+        var wordsRight = rtl ? qrX - QrGapInches : barcode.X - KdpTextBoxMaths.BarcodeClearInches;
         var png = KdpQrCode.Png(KdpCoverWording.DinoReaderUrl);
         layers.Layer().Element(c => KdpInteriorDocument.InBox(c, new RectD(qrX, y, QrInches, QrInches)).Image(png).UseOriginalImage().FitUnproportionally());
         var wordsBox = new RectD(wordsX, y, wordsRight - wordsX, QrInches);
-        var backdrop = BackdropOver(drawing.Back, KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction), wordsBox);
+        var look = drawing.Dino is { } colors ? LookOf(colors) : LookOver(drawing.Back, KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction), wordsBox);
         var appPt = ChooseAppPt(KdpCoverWording.DinoLine, wordsBox, rtl);
-        Lettered(layers, wordsBox, backdrop, (c, color) => c.AlignMiddle().Element(words => Aligned(words, rtl).Text(t => Line(t, KdpCoverWording.DinoLine, appPt, color))));
+        Lettered(layers, drawing, wordsBox, look, appPt, (c, color) => c.AlignMiddle().Element(words => Aligned(words, rtl).Text(t => Line(t, KdpCoverWording.DinoLine, appPt, color))));
     }
 
     /// <summary>Right-to-left content for a right-to-left book, as the interior does.</summary>

@@ -31,8 +31,9 @@ removes the previews of an earlier run.
 2. **Read `check-report.md`**: page count (even, at least 24), fonts embedded, text pages facing their pictures, the `## Cover` section
    and every warning at the end.
 3. **Choose the crops first: run the `kdp-crop` skill** (once per build, before any visual check; Slice 36). It makes the crop sheet, has the
-   `kdp-crop-check` agent decide every picture's window (story pages, `front`, `back`) from small uncut copies, saves the offsets in `kdp.json`
-   and reruns with `--previews`. Its two runs are not counted in the 4 below. Never cut a book and look afterwards instead.
+   `kdp-crop-check` agent decide every picture's window (story pages, `front`, `back`) from small uncut copies, and (Slice 37, for every book) the
+   cover words too: the title's box and colours on the front, the credit lines' box and colours on the back, and the colours of the Dino line beside the
+   QR code; it saves the offsets and the words choices (`--text`, `--dino-text`) in `kdp.json` and reruns with `--previews`. Its two runs are not counted in the 4 below. Never cut a book and look afterwards instead.
    **Dispatch `kdp-visual-check`** (Agent tool, subagent_type `kdp-visual-check`) with the output folder path. It reads only the contact
    sheet and small page PNGs. Never open a full-size picture or the PDF's pages yourself.
 4. **Sort what is left** into fixable and owner questions:

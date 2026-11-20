@@ -1,76 +1,22 @@
-using PrintTheDamnBook.Core.Dino;
 using PrintTheDamnBook.Core.Kdp;
 using PrintTheDamnBook.Core.Layout;
 
 namespace PrintTheDamnBook.Core.Tests.Kdp;
 
-/// <summary>Slice 36 F: the cover's credit line and the choice of the calmest band for the title.</summary>
+/// <summary>Slice 36 F and 37: the Dino line and the choice of the calmest band for the title.</summary>
 public class KdpCoverWordingAndBandTests
 {
     [Fact]
-    public void The_front_credit_names_the_writers_and_the_illustrator()
-    {
-        var credits = new DinoCredits("Elham Shafiei Gol; Ashkan Sirous", false, "Ashkan Sirous", 2026, 10);
-
-        Assert.Equal("Written by Elham Shafiei Gol and Ashkan Sirous · Illustrated by Ashkan Sirous", KdpCoverWording.FrontCredit(credits, "en"));
-    }
-
-    [Fact]
-    public void Three_writers_are_listed_with_commas_and_a_last_and()
-    {
-        var credits = new DinoCredits("A; B; C", false, "D", 2026, 10);
-
-        Assert.Equal("Written by A, B and C · Illustrated by D", KdpCoverWording.FrontCredit(credits, "en"));
-    }
-
-    [Fact]
-    public void A_traditional_tale_has_only_the_illustrator()
-    {
-        var credits = new DinoCredits("traditional", false, "Ashkan Sirous", 2026, 10);
-
-        Assert.Equal("Illustrated by Ashkan Sirous", KdpCoverWording.FrontCredit(credits, "en"));
-    }
-
-    [Fact]
-    public void A_retold_book_credits_the_original_story_like_the_back_cover()
-    {
-        var credits = new DinoCredits("Aesop", true, "Ashkan Sirous", 2026, 10);
-
-        Assert.Equal("Original story by Aesop · Illustrated by Ashkan Sirous", KdpCoverWording.FrontCredit(credits, "en"));
-        Assert.Equal(BackCoverWording.Lines(credits, "en")[0] + " · Illustrated by Ashkan Sirous", KdpCoverWording.FrontCredit(credits, "en"));
-    }
-
-    [Theory]
-    [InlineData(80, KdpCalmBand.NormalShadowAlpha)]
-    [InlineData(169, KdpCalmBand.NormalShadowAlpha)]
-    [InlineData(170, KdpCalmBand.StrongShadowAlpha)]
-    [InlineData(230, KdpCalmBand.StrongShadowAlpha)]
-    public void The_shadow_behind_white_letters_is_stronger_on_a_light_band(double brightness, byte expected)
-    {
-        Assert.Equal(expected, KdpCalmBand.ShadowAlpha(brightness));
-    }
-
-    [Fact]
-    public void A_book_without_credits_has_no_front_credit()
-    {
-        Assert.Null(KdpCoverWording.FrontCredit(null, "en"));
-    }
-
-    [Fact]
-    public void Another_language_uses_its_own_story_by_and_illustration_words()
-    {
-        var credits = new DinoCredits("Aesop", false, "Ashkan Sirous", 2026, 10);
-
-        var line = KdpCoverWording.FrontCredit(credits, "de");
-
-        Assert.Equal("Geschichte von Aesop · Illustration: Ashkan Sirous", line);
-    }
-
-    [Fact]
     public void The_dino_line_and_the_site_are_the_ones_the_owner_asked_for()
     {
-        Assert.Equal("Hear this story in Dino: Kids Books & Stories, and speak as the characters yourself!", KdpCoverWording.DinoLine);
+        Assert.Equal("Listen to this story in Dino: Kids Books & Stories. Want to join in? Pick a character and speak their lines yourself!", KdpCoverWording.DinoLine);
         Assert.Equal("https://dinoreader.sirous.uk/", KdpCoverWording.DinoReaderUrl);
+    }
+
+    [Fact]
+    public void The_cover_and_the_last_interior_page_use_the_same_dino_line()
+    {
+        Assert.Equal(KdpCoverWording.DinoLine, KdpFrontMatterWording.For("T", null, 2026).AboutLine);
     }
 
     [Fact]

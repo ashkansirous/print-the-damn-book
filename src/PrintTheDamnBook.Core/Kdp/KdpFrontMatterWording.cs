@@ -8,7 +8,6 @@ public sealed record KdpFrontMatter(
     IReadOnlyList<string> CopyrightLines,
     string DedicationHeading,
     string TheEnd,
-    string AboutHeading,
     string AboutLine);
 
 /// <summary>Where the title, copyright, dedication, end and about wording comes from; the Kdp project only draws it.</summary>
@@ -17,8 +16,9 @@ public static class KdpFrontMatterWording
     public const string English = "en";
     public const string DedicationHeading = "This book belongs to";
     public const string TheEnd = "The End";
-    public const string AboutHeading = "Hear this story in";
-    public const string AboutLine = "Dino: Kids Books & Stories";
+
+    /// <summary>The Dino line, on the last interior page next to its QR code and on the back cover (Slice 37: one text for both).</summary>
+    public const string DinoLine = "Listen to this story in Dino: Kids Books & Stories. Want to join in? Pick a character and speak their lines yourself!";
     public const string AllRightsReserved = "All rights reserved.";
 
     /// <summary>
@@ -35,6 +35,6 @@ public static class KdpFrontMatterWording
 
         var year = credits?.Year ?? fallbackYear;
         lines.Add($"© {year} {DinoCredits.Maker}. {AllRightsReserved}");
-        return new KdpFrontMatter(title, lines, DedicationHeading, TheEnd, AboutHeading, AboutLine);
+        return new KdpFrontMatter(title, lines, DedicationHeading, TheEnd, DinoLine);
     }
 }

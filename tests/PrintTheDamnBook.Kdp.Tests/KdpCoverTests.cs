@@ -37,7 +37,7 @@ public class KdpCoverTests
 
         using var pdf = PdfDocument.Open(result.Pdf);
         var page = pdf.GetPage(1);
-        Assert.Equal(3, page.GetImages().Count()); // front, back and the QR code
+        Assert.Equal(6, page.GetImages().Count()); // front, back, the QR code and a soft shadow each for the title, the credits and the Dino line
         var text = string.Join(' ', page.GetWords().Select(w => w.Text));
         foreach (var line in BackCoverWording.Lines(Credits, "en"))
         {
@@ -90,7 +90,7 @@ public class KdpCoverTests
         Assert.True(back.X > KdpCoverSize.Spine(24).X);
         Assert.Equal(ReadingDirection.RightToLeft, result.Direction);
         using var pdf = PdfDocument.Open(result.Pdf);
-        Assert.Equal(3, pdf.GetPage(1).GetImages().Count()); // front, back and the QR code
+        Assert.Equal(6, pdf.GetPage(1).GetImages().Count()); // front, back, the QR code and a soft shadow each for the title, the credits and the Dino line
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public class KdpCoverTests
         Assert.False(result.BackPictureRead);
         Assert.Equal([KdpCover.NoBackCoverWarning], result.Warnings);
         using var pdf = PdfDocument.Open(result.Pdf);
-        Assert.Single(pdf.GetPage(1).GetImages());
+        Assert.Equal(2, pdf.GetPage(1).GetImages().Count()); // the front picture and its title's soft shadow
     }
 
     [Fact]
