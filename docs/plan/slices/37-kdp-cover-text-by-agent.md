@@ -1,0 +1,68 @@
+### Slice 37 — Amazon KDP: the crop agent also places the cover text and picks its colours
+
+*Planned 2026-11-20 with the owner (interactive session), from the owner's look at Slice 36's Freddy cover.*
+
+**Touches:** `src/PrintTheDamnBook.Core/Kdp/`, `src/PrintTheDamnBook.Kdp/`, `src/PrintTheDamnBook.Cli/`,
+`tests/PrintTheDamnBook.Kdp.Tests/`, `tests/PrintTheDamnBook.Core.Tests/`, `.claude/skills/kdp-crop/`,
+`.claude/agents/kdp-crop-check.md`, `.claude/skills/kdp-build/`, `CLAUDE.md`,
+`docs/plan/slices/37-kdp-cover-text-by-agent.md`
+
+**Migrations:** none
+
+**Depends on:** Slice 36 (merged, PR #85). Slice 35 overlaps (`src/PrintTheDamnBook.Kdp/`): run it after this one.
+
+#### Why
+
+Owner, 2026-11-20, on two close-ups of Slice 36's Freddy cover (front title with its thick black shadow; back credits
+over the kitchen's drawing lines): "look how horrible they look! it is bad! the agent that is deciding where to cut on
+the images, should come back with more information about the front and back than just the cut position. it should also
+say where there is empty space to write text and what color should be the text and what color should be the shadow of
+it. for example in the case, I think the top text for the back cover on top could have been decided to go a bit to the
+right to have less overlap with the drawing lines. or the book title and written by should have another shadow color.
+aside these updates, drop the illustration and written by from the front cover. it is enough that it is written in the
+back."
+
+Cause (desk): Slice 36 places cover text with a fixed rule (`KdpCalmBand`, a calm horizontal band; back credits at the
+top on the barcode-free side) and one colour pair (white with a dark shadow on the front, dark with a white halo on a
+light back). The shadow is drawn as many hard offset copies of the text (Slice 36 high-review #6, skipped then), which
+makes the thick black outline in the owner's close-up.
+
+#### Decisions (owner, 2026-11-20)
+
+- **Front cover shows the title only.** The "Written by ... · Illustrated by ..." line is dropped from the front; the
+  credits stay on the back.
+- **The crop agent decides the cover text, not a fixed rule.** For the front and the back cover, `kdp-crop-check`
+  returns, besides the crop offset: where the empty space for the text is (a box inside the kept window), the text
+  colour and the shadow colour. Front: one box, for the title. Back: one box, for the credit lines (it may move them
+  sideways, e.g. to the right of drawing lines). The QR code and its line stay in the barcode-free bottom corner; the
+  agent picks their text and shadow colours.
+- The agent decides from the same 480 px uncut copies as the crop (Slice 36's trial: 480 px).
+
+#### Decisions (desk, 2026-11-20)
+
+- The agent's text choices are applied through the `kdp` command and saved in `kdp.json` under each cover key with the
+  crop offset (the tool writes `kdp.json`, never the skill). A cover with no saved text choice uses Slice 36's rule as
+  the fallback.
+- The shadow is soft (blurred, drawn once beneath the vector text), not stacked hard copies.
+- The text box is given in fractions of the trim panel (left, top, width, height), so it survives a crop change; the
+  tool still shrinks the text to fit the box and keeps it inside the safe margin and clear of the barcode.
+
+#### Work
+
+- [ ] **A — Front title only.** Remove the front credit line; the title alone in its box.
+- [ ] **B — Text choices in `kdp.json` and on the CLI.** Per cover key: text box, text colour, shadow colour (hex),
+  next to the crop offset; old `kdp.json` files still read. CLI options to set and clear them. Core holds the box
+  maths (fractions to points, safe margin, barcode clearance) with tests.
+- [ ] **C — Soft shadow.** One blurred shadow beneath the vector text in the chosen colour; test that the text layer
+  holds each line once.
+- [ ] **D — Agent and skill.** `kdp-crop-check` returns, for `front` and `back`, the text box(es) and the two colours
+  with a one-line reason each; `kdp-crop` applies them with the CLI and reruns; the agent's never-decide-unseen rule
+  covers them too.
+- [ ] **E — Freddy rebuild.** Run `kdp-crop` and `kdp-build` on `D:\high-res-books\Freddy and the Slipper v10.hd.dino`;
+  show the owner small renders of the front title and the back credits next to Slice 36's.
+
+#### Verification
+
+- `dotnet test PrintTheDamnBook.slnx` green; Core tests for the box maths; Kdp tests for a saved text choice being drawn
+  where and in the colours saved, the soft shadow, and the front with no credit line.
+- `[owner]` The owner looks at Freddy's new front title and back credits (E) and says whether they look right.
