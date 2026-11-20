@@ -46,7 +46,7 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 23 checks across 12 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 21 checks across 12 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
 - Amazon KDP spin-offs that belong to other repos (Scope Inbox doc of 2026-11-18, *Spin-offs*), not planned there yet: print-resolution art for Three Little Pigs, Town Mouse, Ugly Duckling and X Marks the Treasure, and author/credit fields per book (ReadTheStupidText / dino-reader); audiobook collections (dino-reader). Later here: hardcover treasury and 3-in-1 collection, agent upload to KDP through the owner's Chrome from the third book on ([slice 27](docs/plan/slices/27-kdp-interior-pdf.md)).
 - Slice 26, planned again by the feedback loop of night 2026-11-19-2055 (parked by the loop of 2026-11-18-1302): the unfixed last-pass review findings of Slices 23 and 25 (an Own page choice lost on retype, a language select left on the wrong language after a cancelled switch, a possible `book.json` write on open), the unexplained blank-line collapse, and the `$GuestChecks` list gap. The next night builds it ([slice 26](docs/plan/slices/26-s23-s25-review-followups.md)).
 - Seven ClaudeSkills tooling gaps from the feedback loop of night 2026-11-18-1302 are open (user files copied into public test data, check-pass rule vs global fix rule, timer-kill clash, "read in full" claims, unchecked branch-sweep, inline Python writes, host-window approval guard): see the note's *Open findings* ([note](docs/plan/notes/2026-11-18-1302-feedback-loop.md)).

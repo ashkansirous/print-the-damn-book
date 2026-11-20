@@ -9,7 +9,6 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 ### Slice 30: Amazon KDP: `kdp-build` skill and visual-check agent ([slice](slices/30-kdp-build-skill.md))
 
 - [session] A fresh Claude Code session runs `kdp-build` on two free books and ends with a clean report and the files. (live check 2026-11-20: failed, follow-up in Slice 35 item A)
-- [session] Run `kdp-build` on Freddy (English) from `D:\high-res-books\Freddy and the Slipper v10.hd.dino` (owner put the book there, 2026-11-20): https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/30-kdp-build-skill.md
 
 ### Slice 29: Amazon KDP: cover PDF ([slice](slices/29-kdp-cover-pdf.md))
 
@@ -18,7 +17,7 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 
 ### Slice 28: Amazon KDP: print-ready pictures ([slice](slices/28-kdp-print-ready-pictures.md))
 
-- [session] Run the kdp command over the 12 store books in `D:\high-res-books\` (owner, 2026-11-20; Slice 35 item G) | run `dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en --out <folder>` per book and check the cut-line flags at `CutLineCheck.FlagRatio` 2.5, so that the flag level is tuned on real books: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/28-kdp-print-ready-pictures.md
+- [session] Look at the previews of the 7 pictures flagged on the 12 store books (run 2026-11-20, counts in Slice 35 item G) and of the unflagged ones scoring 2.0-2.2, to tell whether `CutLineCheck.FlagRatio` 2.5 under-flags: rerun those books with `--previews`: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/28-kdp-print-ready-pictures.md
 - [owner] The printed proof decides whether an AI upscaler is needed (settles the upscaler question).
 
 ### Slice 31: Amazon KDP: listing pack and `kdp-listing` skill ([slice](slices/31-kdp-listing-pack.md))
@@ -28,7 +27,6 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 
 ### Slice 27: Amazon KDP interior PDF for one Dino book ([slice](slices/27-kdp-interior-pdf.md))
 
-- [session] Build Freddy and the Slipper's interior | from `D:\high-res-books\Freddy and the Slipper v10.hd.dino` (owner, 2026-11-20) with the kdp command; this also gives the real page count Slice 31's listing assumed (34): https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/27-kdp-interior-pdf.md
 - [owner] **You:** upload the interior PDF as a KDP paperback draft | at https://kdp.amazon.com/en_US/bookshelf upload `interior.pdf` in the paperback content step and note the previewer warnings in the slice file: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/27-kdp-interior-pdf.md
 
 ### Slice 23: Text that doesn't fit gets its own page, no empty lines, Dino back cover ([slice](slices/23-fit-and-back-cover.md))
