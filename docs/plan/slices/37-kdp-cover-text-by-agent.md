@@ -1,6 +1,6 @@
 ### Slice 37 — Amazon KDP: the crop agent also places the cover text and picks its colours
 
-*Built 2026-11-20 (PR #88, not merged), 904 tests pass. The owner has not yet looked at the 16 covers; KDP's acceptance of the transparent shadow is not yet verified.*
+*Built 2026-11-20, merged as PR #88 (2b111ea), 904 tests pass. The owner has not yet looked at the 16 covers; KDP's acceptance of the transparent shadow is not yet verified.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/`, `src/PrintTheDamnBook.Kdp/`, `src/PrintTheDamnBook.Cli/`,
 `tests/PrintTheDamnBook.Kdp.Tests/`, `tests/PrintTheDamnBook.Core.Tests/`, `.claude/skills/kdp-crop/`,
