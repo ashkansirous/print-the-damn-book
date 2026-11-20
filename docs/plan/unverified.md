@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 30: Amazon KDP: `kdp-build` skill and visual-check agent ([slice](slices/30-kdp-build-skill.md))
+
+- [session] A fresh Claude Code session runs `kdp-build` on two free books and ends with a clean report and the files.
+- [owner] **You:** run `kdp-build` on Freddy (English) | with your paid copy of the book, start a Claude Code session in the repo and ask it to run `kdp-build` on it; see https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/30-kdp-build-skill.md
+
 ### Slice 29: Amazon KDP: cover PDF ([slice](slices/29-kdp-cover-pdf.md))
 
 - [owner] **You:** upload Freddy's cover with the interior | at https://kdp.amazon.com/en_US/bookshelf upload `cover.pdf` and `interior.pdf` from the `kdp` command's output, pass KDP's cover check (watch the 0.0012 in page-size rounding) and order a proof.
