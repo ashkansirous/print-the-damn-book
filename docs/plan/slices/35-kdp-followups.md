@@ -48,6 +48,14 @@ build every line of that list unless the item says otherwise (the source slice f
   31's assumed 34. Never commit book content.
   **Owner, 2026-11-20:** the hd `.dino` of all 12 store books (Freddy included) are in `D:\high-res-books\`, and the
   `kdp-build` skill now looks there first. The BookBuilder script is no longer needed: run the kdp command on those files.
+  **Run 2026-11-20** (kdp command at main 5356004, `--language en`, all exit 0): Freddy 34 pages (matches Slice 31's
+  34), 14 pictures, 0 flagged, `kdp-build` verdict clean, no offsets; output kept in
+  `D:\print-the-damn-book-worktrees\kdprun\tmp\kdp-out\freddy-en\`. Flags per book (pictures flagged / pictures, story
+  pages): Goldilocks 1/14 (14), Jack 1/15 (2), Little Red Riding Hood 1/14 (9), Seagull Island 0/16, Elves 0/15, Lion
+  0/15, Little Red Hen 0/15, Billy Goats Gruff 2/14 (3, 12), Town Mouse 1/15 (9), Ugly Duckling 0/14, X Marks the
+  Treasure 1/17 (16) plus a cover warning (back picture may be cut at the trim edge). Total 7 of 178 (free books in
+  Slice 28: 9 of 62); highest unflagged score 2.2. Every book: all pictures 1792 px, about 208 dpi (KDP asks 300), and
+  the back cover has no credit lines (Slice 34, parked). Still open: look at the flagged previews (unverified.md, Slice 28).
 
 - [ ] **H. Confirm the KDP limits no Amazon page confirmed yet** ([Slice 31](31-kdp-listing-pack.md) lines 44 and 61):
   the 8.5 x 8.5 in trim, the keyword character limit and the supported description HTML tags. Read Amazon's KDP help
