@@ -40,6 +40,21 @@ public sealed record KdpCoverText(
     public KdpTextColors Colors => new(Color, Shadow);
 }
 
+/// <summary>
+/// What the crop agent chose for the Dino block of the back cover (the QR code with the Dino line beside it, Slice 41): the colours and, optionally, the
+/// box the whole block sits in (fractions of the back panel, like <see cref="KdpCoverText"/>). A file from Slice 37 has colours only and keeps the bottom-corner
+/// placement. <see cref="ForOffsetPx"/> is the back crop offset the box was decided for; null counts as made for the saved offset.
+/// </summary>
+public sealed record KdpDinoText(
+    [property: JsonPropertyName("color"), JsonRequired] string Color,
+    [property: JsonPropertyName("shadow"), JsonRequired] string Shadow,
+    [property: JsonPropertyName("box"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] KdpTextBox? Box = null,
+    [property: JsonPropertyName("forOffsetPx"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? ForOffsetPx = null)
+{
+    [JsonIgnore]
+    public KdpTextColors Colors => new(Color, Shadow);
+}
+
 /// <summary>Reads and checks the <c>#RRGGBB</c> colours of the cover text choices.</summary>
 public static class KdpHexColor
 {
@@ -95,6 +110,48 @@ public static class KdpTextBoxMaths
     /// <summary>The QR code on the back cover is this wide and tall.</summary>
     public const double QrInches = 0.8;
 
+    /// <summary>The gap between the QR code and the Dino line beside it.</summary>
+    public const double QrGapInches = 0.2;
+
+    /// <summary>A placed Dino block is at least this wide (the QR code, its gap and room for the line) ...</summary>
+    public const double DinoBlockMinWidthInches = QrInches + QrGapInches + 1.5;
+
+    /// <summary>... and at least this tall (the QR code).</summary>
+    public const double DinoBlockMinHeightInches = QrInches;
+
+    private const double Tolerance = 1e-6;
+
+    /// <summary>
+    /// How a Dino block box is shared (Slice 41): the QR code at the box's edge on the reading side (the right for a right-to-left book), vertically centred,
+    /// the line filling the rest of the box beside it.
+    /// </summary>
+    public static (RectD Qr, RectD Words) SplitDinoBlock(RectD block, bool rtl)
+    {
+        var qr = new RectD(rtl ? block.X + block.Width - QrInches : block.X, block.Y + (block.Height - QrInches) / 2, QrInches, QrInches);
+        var words = new RectD(rtl ? block.X : block.X + QrInches + QrGapInches, block.Y, block.Width - QrInches - QrGapInches, block.Height);
+        return (qr, words);
+    }
+
+    /// <summary>
+    /// The bottom-corner Dino block of Slice 36 and 37: the QR code on the side away from the barcode (left for a left-to-right book), the line beside it up to
+    /// <see cref="BarcodeClearInches"/> from the barcode; the block is the box around both.
+    /// </summary>
+    public static (RectD Block, RectD Qr, RectD Words) CornerDinoBlock(RectD backTrim, RectD barcode, bool rtl)
+    {
+        var y = backTrim.Y + backTrim.Height - PanelInsetInches - QrInches;
+        var qrX = rtl ? backTrim.X + backTrim.Width - PanelInsetInches - QrInches : backTrim.X + PanelInsetInches;
+        var wordsX = rtl ? barcode.X + barcode.Width + BarcodeClearInches : qrX + QrInches + QrGapInches;
+        var wordsRight = rtl ? qrX - QrGapInches : barcode.X - BarcodeClearInches;
+        var qr = new RectD(qrX, y, QrInches, QrInches);
+        var words = new RectD(wordsX, y, wordsRight - wordsX, QrInches);
+        var left = Math.Min(qr.X, wordsX);
+        var block = new RectD(left, y, Math.Max(qr.X + QrInches, wordsRight) - left, QrInches);
+        return (block, qr, words);
+    }
+
+    /// <summary>True when a Dino block in a box the crop agent chose may stay there: it meets no credit lines (none placed means nothing to meet).</summary>
+    public static bool ChosenBlockClearOfCredits(RectD chosenBlock, RectD? creditsBox) => creditsBox is not { } credits || !Overlaps(chosenBlock, credits);
+
     /// <summary>
     /// The strip along the bottom of the back panel that holds the QR code and the Dino line (full width, with <see cref="BarcodeClearInches"/> above it),
     /// which words must stay clear of.
@@ -135,6 +192,31 @@ public static class KdpTextBoxMaths
 
         return box is { Width: >= MinWidthInches, Height: >= MinHeightInches } usable && usable.Height * 2 >= keptHeight ? box : null;
     }
+
+    /// <summary>
+    /// The box of a placed Dino block (QR code and line) in inches: the fractions of <paramref name="window"/> (the whole back panel picture; the trim when null) as they
+    /// are, never reshaped, because the QR code keeps its size. Null when the box is not valid, is not wholly inside the safe margin, is smaller than
+    /// <see cref="DinoBlockMinWidthInches"/> by <see cref="DinoBlockMinHeightInches"/>, or meets the barcode (with <see cref="BarcodeClearInches"/> around it); the caller warns
+    /// and keeps the bottom corner. Overlap with the credits is checked by <see cref="Overlaps"/>.
+    /// </summary>
+    public static RectD? ResolveBlock(KdpTextBox fractions, RectD trim, RectD? barcode, RectD? window = null)
+    {
+        if (!fractions.IsValid)
+        {
+            return null;
+        }
+
+        var frame = window ?? trim;
+        var box = new RectD(frame.X + fractions.Left * frame.Width, frame.Y + fractions.Top * frame.Height, fractions.Width * frame.Width, fractions.Height * frame.Height);
+        var safe = new RectD(trim.X + SafeMarginInches, trim.Y + SafeMarginInches, trim.Width - 2 * SafeMarginInches, trim.Height - 2 * SafeMarginInches);
+        var inside = box.X >= safe.X - Tolerance && box.Y >= safe.Y - Tolerance && box.X + box.Width <= safe.X + safe.Width + Tolerance && box.Y + box.Height <= safe.Y + safe.Height + Tolerance;
+        var big = box.Width >= DinoBlockMinWidthInches && box.Height >= DinoBlockMinHeightInches;
+        var clear = barcode is not { } code || !Overlaps(box, Inflate(code, BarcodeClearInches));
+        return inside && big && clear ? box : null;
+    }
+
+    /// <summary>True when the two boxes share any area.</summary>
+    public static bool Overlaps(RectD a, RectD b) => Intersect(a, b) is not null;
 
     /// <summary>The part of <paramref name="box"/> outside <paramref name="avoid"/>: the larger of the part above it and the part on the box's own side of it.</summary>
     internal static RectD? ClearOf(RectD box, RectD avoid)

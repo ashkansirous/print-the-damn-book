@@ -24,6 +24,12 @@ Uploading is the owner's step; the listing text is the `kdp-listing` skill's job
    dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language <code> --previews --out tmp/kdp-out/<book>-<code>
    ```
 
+   **Other books on the last page (Slice 41):** for every book add `--other-books D:/high-res-books --books-out <folder that holds each book's output folder>`
+   (this repo's `tmp/kdp-out` for a build here, or the folder of the rebuilt books). The last interior page then shows "More books by ..." with up to 15
+   other books' front covers (this book never; more than 15 are picked at random, seeded by this book's id, so a rebuild gives the same page) and the Dino
+   line with its QR code at the bottom. Each cover is titled as on that book's own `kdp.json`; without `--books-out` the output folder's parent is used.
+   Without `--other-books` the last page stays as before. The command prints the titles it used.
+
    Add `--offset <story page|front|back>=<pixels>` for each offset chosen so far in this run (they are saved in `kdp.json` in the output
    folder, so a later run keeps them). Exit 0 means the files were written; 1 means the book could not be made (read the `Error:` line; a
    cover or preview failure still leaves `interior.pdf`, the report and `kdp.json`); 2 is a wrong argument. A run without `--previews`

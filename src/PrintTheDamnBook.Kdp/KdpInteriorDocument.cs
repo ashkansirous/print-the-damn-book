@@ -17,7 +17,8 @@ internal sealed record KdpDrawing(
     ReadingDirection Direction,
     IReadOnlyList<KdpStoryPage> Stories,
     IReadOnlyList<KdpPicture> Pictures,
-    PageNumberDigits Digits);
+    PageNumberDigits Digits,
+    IReadOnlyList<byte[]>? OtherCovers = null);
 
 /// <summary>The only drawing code for the KDP interior (Slice 27): QuestPDF pages of the KDP page size, zero margin, the picture full bleed, words and numbers inside the safe margin.</summary>
 internal static class KdpInteriorDocument
@@ -106,16 +107,47 @@ internal static class KdpInteriorDocument
                 Lines(body, page, [new Line(matter.TheEnd, KdpTrim.TitlePt)]);
                 break;
             case KdpPageRole.About:
-                About(body, page, matter.AboutLine);
+                About(body, page, matter, drawing.OtherCovers ?? []);
                 break;
         }
     }
 
-    /// <summary>The last page (Slice 37): the QR code to the Dino Reader page with the Dino line beside it, the pair centred in the text box.</summary>
-    private static void About(IContainer body, KdpPage page, string line)
+    /// <summary>
+    /// The last page (Slice 37, 41): the QR code to the Dino Reader page with the Dino line beside it. With other books' covers (Slice 41) the heading and the grid of covers
+    /// come first and the pair last, all centred in the safe area; without, the pair alone is centred in the text box as before.
+    /// </summary>
+    private static void About(IContainer body, KdpPage page, KdpFrontMatter matter, IReadOnlyList<byte[]> otherCovers)
+    {
+        if (otherCovers.Count == 0)
+        {
+            DinoPair(InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle(), matter.AboutLine);
+            return;
+        }
+
+        InBox(body, SafeArea(page.IsRightHand)).AlignMiddle().Column(column =>
+        {
+            column.Spacing((float)KdpOtherBooks.BlockGapPt);
+            column.Item().AlignCenter().Text(t =>
+            {
+                t.DefaultTextStyle(s => s.FontFamily(StoryFont.For(matter.OtherBooksHeading)).FontSize((float)KdpOtherBooks.HeadingPt));
+                t.Span(matter.OtherBooksHeading);
+            });
+            column.Item().Element(grid => CoverGrid(grid, otherCovers));
+            DinoPair(column.Item(), matter.AboutLine);
+        });
+    }
+
+    /// <summary>The page inside the safe margin on every side.</summary>
+    private static RectD SafeArea(bool rightHandPage)
+    {
+        var trim = KdpTrim.TrimRect(rightHandPage);
+        return new RectD(trim.X + KdpTrim.SafeMarginInches, trim.Y + KdpTrim.SafeMarginInches, trim.Width - 2 * KdpTrim.SafeMarginInches, trim.Height - 2 * KdpTrim.SafeMarginInches);
+    }
+
+    private static void DinoPair(IContainer container, string line)
     {
         var qr = Cover.KdpQrCode.Png(KdpCoverWording.DinoReaderUrl);
-        InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle().Row(row =>
+        container.Row(row =>
         {
             row.ConstantItem((float)AboutQrInches, Unit.Inch).Image(qr).UseOriginalImage().FitWidth();
             row.ConstantItem((float)AboutGapInches, Unit.Inch);
@@ -125,6 +157,35 @@ internal static class KdpInteriorDocument
                 t.Span(line);
             });
         });
+    }
+
+    /// <summary>The covers in rows of <see cref="KdpOtherBooks.Columns"/>, square tiles with a thin light-grey border, each row centred.</summary>
+    private static void CoverGrid(IContainer grid, IReadOnlyList<byte[]> covers)
+    {
+        grid.Column(column =>
+        {
+            column.Spacing((float)KdpOtherBooks.TileGapPt);
+            var next = 0;
+            foreach (var size in KdpOtherBooks.RowSizes(covers.Count))
+            {
+                var row = covers.Skip(next).Take(size).ToList();
+                next += size;
+                column.Item().AlignCenter().Row(r => CoverRow(r, row));
+            }
+        });
+    }
+
+    private static void CoverRow(RowDescriptor row, IReadOnlyList<byte[]> covers)
+    {
+        row.Spacing((float)KdpOtherBooks.TileGapPt);
+        foreach (var cover in covers)
+        {
+            row.ConstantItem((float)KdpOtherBooks.TilePt)
+                .Height((float)KdpOtherBooks.TilePt)
+                .Border((float)KdpOtherBooks.TileBorderPt)
+                .BorderColor(KdpOtherBooks.TileBorderColor)
+                .Image(cover).UseOriginalImage().FitUnproportionally();
+        }
     }
 
     private static void StoryText(IContainer body, KdpPage page, KdpDrawing drawing)

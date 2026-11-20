@@ -25,7 +25,8 @@ internal sealed record KdpCoverDrawing(
     KdpCoverText? FrontText = null,
     KdpCoverText? BackText = null,
     KdpTextColors? Dino = null,
-    ICollection<string>? Notes = null);
+    ICollection<string>? Notes = null,
+    KdpTextBox? DinoBox = null);
 
 /// <summary>
 /// The only drawing code for the KDP cover: one page of the whole wrap, the pictures full bleed, no spine text, the barcode box left clear (white, as KDP asks).
@@ -45,7 +46,7 @@ internal static class KdpCoverDocument
     private const double PanelInsetInches = KdpTextBoxMaths.PanelInsetInches;
     private const double BackCreditsHeightInches = 1.5;
     private const double QrInches = KdpTextBoxMaths.QrInches;
-    private const double QrGapInches = 0.2;
+    private const double QrGapInches = KdpTextBoxMaths.QrGapInches;
     private const double MinAppWidthInches = 0.5;
     private const float LineHeight = 1.3f;
     private const string SpineColor = "#F1EEF8";
@@ -80,12 +81,13 @@ internal static class KdpCoverDocument
         p.Margin(0);
         p.PageColor(Colors.White);
         p.DefaultTextStyle(s => s.FontFamily(StoryFont.Andika).FontColor(KdpInteriorDocument.Ink).LineHeight(LineHeight));
+        var (credits, dino) = BackPlacements(drawing);
         p.Content().Layers(layers =>
         {
             layers.PrimaryLayer().Row(row => Panels(row, drawing));
             FrontWords(layers, drawing);
-            BackCredits(layers, drawing);
-            BackQr(layers, drawing);
+            BackCredits(layers, drawing, credits);
+            BackQr(layers, drawing, dino);
             layers.Layer().Element(c => Barcode(c, drawing));
         });
     }
@@ -150,7 +152,14 @@ internal static class KdpCoverDocument
 
     private static Look LookOf(KdpTextColors colors) => new(colors.Color, colors.Shadow);
 
-    private static void Note(KdpCoverDrawing drawing, string message) => drawing.Notes?.Add(message);
+    /// <summary>Adds a note once: a cover drawn twice (the front tile calls <c>Create</c> again) must not repeat a warning.</summary>
+    private static void Note(KdpCoverDrawing drawing, string message)
+    {
+        if (drawing.Notes is { } notes && !notes.Contains(message))
+        {
+            notes.Add(message);
+        }
+    }
 
     /// <summary>The title alone on the front (Slice 37), in the box and colours the crop agent chose; with none (or none usable) in the calmest band of the front picture.</summary>
     private static void FrontWords(LayersDescriptor layers, KdpCoverDrawing drawing)
@@ -260,37 +269,75 @@ internal static class KdpCoverDocument
     }
 
     /// <summary>The credit lines on the back cover, in the box and colours the crop agent chose (else at the top); with no back picture, only the title on the white panel.</summary>
-    private static void BackCredits(LayersDescriptor layers, KdpCoverDrawing drawing)
+    private static void BackCredits(LayersDescriptor layers, KdpCoverDrawing drawing, CreditsPlacement? placed)
     {
-        var trim = KdpCoverSize.BackTrim(drawing.PageCount, drawing.Direction);
         var rtl = drawing.Direction == ReadingDirection.RightToLeft;
         if (drawing.Back is null)
         {
-            var box = DefaultCreditsBox(trim);
+            var box = DefaultCreditsBox(KdpCoverSize.BackTrim(drawing.PageCount, drawing.Direction));
             Lettered(layers, drawing, box, OnPlain, CreditPt + 8, (c, color) => c.AlignTop().Text(t => Line(t, drawing.Title, CreditPt + 8, color)));
             return;
         }
 
-        if (drawing.Credits is not { } credits)
+        if (placed is null)
         {
             return;
         }
 
-        var lines = BackCoverWording.Lines(credits, drawing.Language);
-        var (creditsBox, pt, look) = ChosenBack(drawing, trim, lines, rtl) ?? FallbackBack(drawing, trim, lines, rtl);
-        Lettered(layers, drawing, creditsBox, look, pt, (c, color) => c.AlignTop().Column(column =>
+        Lettered(layers, drawing, placed.Box, placed.Look, placed.Pt, (c, color) => c.AlignTop().Column(column =>
         {
             column.Spacing((float)BackCreditSpacingPt);
-            foreach (var line in lines)
+            foreach (var line in placed.Lines)
             {
-                Aligned(column.Item(), rtl).Text(t => Line(t, line, pt, color));
+                Aligned(column.Item(), rtl).Text(t => Line(t, line, placed.Pt, color));
             }
         }));
     }
 
+    /// <summary>Where the credit lines go and how they look.</summary>
+    private sealed record CreditsPlacement(RectD Box, double Pt, Look Look, IReadOnlyList<string> Lines);
+
+    /// <summary>Where the QR code and the Dino line go: the whole block, the code, the line's box and size, and the look of the line.</summary>
+    private sealed record DinoPlacement(RectD Block, RectD Qr, RectD Words, double Pt, Look Look);
+
+    /// <summary>
+    /// The back's credits and Dino block, decided together (Slice 41): the Dino block goes in the box the crop agent chose when that box is usable and does not meet the
+    /// credits, else in the bottom corner (with a note saying why); the credits keep clear of the bottom strip only while the block is in the corner.
+    /// </summary>
+    private static (CreditsPlacement? Credits, DinoPlacement? Dino) BackPlacements(KdpCoverDrawing drawing)
+    {
+        if (drawing.Back is null)
+        {
+            return (null, null);
+        }
+
+        var rtl = drawing.Direction == ReadingDirection.RightToLeft;
+        var trim = KdpCoverSize.BackTrim(drawing.PageCount, drawing.Direction);
+        var lines = drawing.Credits is { } credits ? BackCoverWording.Lines(credits, drawing.Language) : null;
+        var placed = ChosenDino(drawing, trim, rtl);
+        var attempt = new List<string>();
+        var creditsPlacement = lines is null ? null : CreditsFor(drawing, trim, lines, rtl, placed is null, attempt);
+        if (placed is not null && !KdpTextBoxMaths.ChosenBlockClearOfCredits(placed.Block, creditsPlacement?.Box))
+        {
+            Note(drawing, "cover: the Dino block box saved for the back cover meets the credit lines; the QR code and line stay in the bottom corner (decide the Dino box again with --dino-text)");
+            placed = null;
+            attempt.Clear();
+            creditsPlacement = CreditsFor(drawing, trim, lines!, rtl, true, attempt);
+        }
+
+        attempt.ForEach(n => Note(drawing, n));
+        return (creditsPlacement, placed ?? CornerDino(drawing, trim, rtl));
+    }
+
+    private static CreditsPlacement CreditsFor(KdpCoverDrawing drawing, RectD trim, IReadOnlyList<string> lines, bool rtl, bool clearStrip, ICollection<string> notes)
+    {
+        var (box, pt, look) = ChosenBack(drawing, trim, lines, rtl, clearStrip, notes) ?? FallbackBack(drawing, trim, lines, rtl);
+        return new CreditsPlacement(box, pt, look, lines);
+    }
+
     private static RectD DefaultCreditsBox(RectD trim) => new(trim.X + PanelInsetInches, trim.Y + PanelInsetInches, trim.Width - 2 * PanelInsetInches, BackCreditsHeightInches);
 
-    private static (RectD Box, double Pt, Look Look)? ChosenBack(KdpCoverDrawing drawing, RectD trim, IReadOnlyList<string> lines, bool rtl)
+    private static (RectD Box, double Pt, Look Look)? ChosenBack(KdpCoverDrawing drawing, RectD trim, IReadOnlyList<string> lines, bool rtl, bool clearStrip, ICollection<string> notes)
     {
         if (drawing.BackText is not { } choice)
         {
@@ -298,15 +345,16 @@ internal static class KdpCoverDocument
         }
 
         var barcode = KdpCoverSize.Barcode(drawing.PageCount, drawing.Direction);
-        if (KdpTextBoxMaths.Resolve(choice.Box, trim, barcode, KdpTextBoxMaths.QrStrip(trim), KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction)) is not { } box)
+        var strip = clearStrip ? KdpTextBoxMaths.QrStrip(trim) : (RectD?)null;
+        if (KdpTextBoxMaths.Resolve(choice.Box, trim, barcode, strip, KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction)) is not { } box)
         {
-            Note(drawing, UnusableBox(KdpPictureKeys.Back));
+            notes.Add(UnusableBox(KdpPictureKeys.Back));
             return null;
         }
 
         if (TryChooseBackCreditPt(lines, box, rtl) is not { } pt)
         {
-            Note(drawing, $"cover: the credit lines do not fit the text box saved for the back cover (even at {BackCreditStepsPt[^1]} pt); the fallback placement is used instead");
+            notes.Add($"cover: the credit lines do not fit the text box saved for the back cover (even at {BackCreditStepsPt[^1]} pt); the fallback placement is used instead");
             return null;
         }
 
@@ -357,26 +405,70 @@ internal static class KdpCoverDocument
     /// The QR code to the Dino Reader page, about 0.8 in, at the bottom of the back cover on the side away from the barcode, with the Dino line beside it
     /// (colours as the crop agent chose, else the backdrop rule). A cover with no back picture has neither (its panel is a plain white one).
     /// </summary>
-    private static void BackQr(LayersDescriptor layers, KdpCoverDrawing drawing)
+    private static void BackQr(LayersDescriptor layers, KdpCoverDrawing drawing, DinoPlacement? placed)
     {
-        if (drawing.Back is null)
+        if (placed is null)
         {
             return;
         }
 
         var rtl = drawing.Direction == ReadingDirection.RightToLeft;
-        var trim = KdpCoverSize.BackTrim(drawing.PageCount, drawing.Direction);
-        var barcode = KdpCoverSize.Barcode(drawing.PageCount, drawing.Direction);
-        var y = trim.Y + trim.Height - PanelInsetInches - QrInches;
-        var qrX = rtl ? trim.X + trim.Width - PanelInsetInches - QrInches : trim.X + PanelInsetInches;
-        var wordsX = rtl ? barcode.X + barcode.Width + KdpTextBoxMaths.BarcodeClearInches : qrX + QrInches + QrGapInches;
-        var wordsRight = rtl ? qrX - QrGapInches : barcode.X - KdpTextBoxMaths.BarcodeClearInches;
         var png = KdpQrCode.Png(KdpCoverWording.DinoReaderUrl);
-        layers.Layer().Element(c => KdpInteriorDocument.InBox(c, new RectD(qrX, y, QrInches, QrInches)).Image(png).UseOriginalImage().FitUnproportionally());
-        var wordsBox = new RectD(wordsX, y, wordsRight - wordsX, QrInches);
-        var look = drawing.Dino is { } colors ? LookOf(colors) : LookOver(drawing.Back, KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction), wordsBox);
-        var appPt = ChooseAppPt(KdpCoverWording.DinoLine, wordsBox, rtl);
-        Lettered(layers, drawing, wordsBox, look, appPt, (c, color) => c.AlignMiddle().Element(words => Aligned(words, rtl).Text(t => Line(t, KdpCoverWording.DinoLine, appPt, color))));
+        layers.Layer().Element(c => KdpInteriorDocument.InBox(c, placed.Qr).Image(png).UseOriginalImage().FitUnproportionally());
+        Lettered(layers, drawing, placed.Words, placed.Look, placed.Pt, (c, color) => c.AlignMiddle().Element(words => Aligned(words, rtl).Text(t => Line(t, KdpCoverWording.DinoLine, placed.Pt, color))));
+    }
+
+    /// <summary>The look of the Dino line: the crop agent's colours, else the backdrop rule over the line's own box.</summary>
+    private static Look DinoLook(KdpCoverDrawing drawing, RectD wordsBox)
+    {
+        return drawing.Dino is { } colors ? LookOf(colors) : LookOver(drawing.Back!, KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction), wordsBox);
+    }
+
+    /// <summary>The bottom-corner placement of Slice 36 and 37: the QR code on the side away from the barcode, the line beside it.</summary>
+    private static DinoPlacement CornerDino(KdpCoverDrawing drawing, RectD trim, bool rtl)
+    {
+        var (block, qr, wordsBox) = KdpTextBoxMaths.CornerDinoBlock(trim, KdpCoverSize.Barcode(drawing.PageCount, drawing.Direction), rtl);
+        return new DinoPlacement(block, qr, wordsBox, ChooseAppPt(KdpCoverWording.DinoLine, wordsBox, rtl), DinoLook(drawing, wordsBox));
+    }
+
+    /// <summary>
+    /// The Dino block in the box the crop agent chose (Slice 41): the QR code at the box's edge on the reading side, vertically centred, the line filling the rest.
+    /// Null, with a note, when there is no usable box (none saved, too small, outside the safe margin, meeting the barcode) or the line does not fit it.
+    /// </summary>
+    private static DinoPlacement? ChosenDino(KdpCoverDrawing drawing, RectD trim, bool rtl)
+    {
+        if (drawing.DinoBox is not { } fractions)
+        {
+            return null;
+        }
+
+        var barcode = KdpCoverSize.Barcode(drawing.PageCount, drawing.Direction);
+        if (KdpTextBoxMaths.ResolveBlock(fractions, trim, barcode, KdpCoverSize.BackPanel(drawing.PageCount, drawing.Direction)) is not { } block)
+        {
+            Note(drawing, "cover: the Dino block box saved for the back cover is too small, outside the safe margin or meets the barcode; the QR code and line stay in the bottom corner");
+            return null;
+        }
+
+        var (qr, words) = KdpTextBoxMaths.SplitDinoBlock(block, rtl);
+        if (TryChooseAppPt(KdpCoverWording.DinoLine, words, rtl) is not { } pt)
+        {
+            Note(drawing, "cover: the Dino line does not fit beside the QR code in the Dino block box saved for the back cover; the QR code and line stay in the bottom corner");
+            return null;
+        }
+
+        return new DinoPlacement(block, qr, words, pt, DinoLook(drawing, words));
+    }
+
+    /// <summary>The largest size at which the Dino line fits beside the QR code, or null when it fits at none (or the box is too narrow).</summary>
+    internal static double? TryChooseAppPt(string text, RectD box, bool rtl)
+    {
+        if (box.Width < MinAppWidthInches || box.Height <= 0)
+        {
+            return null;
+        }
+
+        var chosen = StoryTextLayout.Choose(AppStepsPt, pt => KdpTextFit.Fits(text, StoryFont.For(text), pt, new RectD(0, 0, box.Width, box.Height), rtl));
+        return chosen.Fits ? chosen.Pt : null;
     }
 
     /// <summary>Right-to-left content for a right-to-left book, as the interior does.</summary>

@@ -14,7 +14,9 @@ namespace PrintTheDamnBook.Kdp;
 /// <param name="CoverOffsets">Crop offsets of the cover pictures (<see cref="KdpPictureKeys.Front"/> or <see cref="KdpPictureKeys.Back"/> to pixels) from <c>--offset front=...</c>; null when none were given.</param>
 /// <param name="CropSheet">True for <c>--crop-sheet</c> (Slice 36): also write the crop sheet and the larger uncut copies for the crop agent.</param>
 /// <param name="CoverText">The crop agent's text box and colours per cover key (<c>--text front=...</c>), saved to <c>kdp.json</c>; a null value clears the choice (<c>--text front=clear</c>); null when none were given (Slice 37).</param>
-/// <param name="DinoText">The colours of the Dino line beside the QR code (<c>--dino-text back=...</c>); a change with null colours clears them; null when not given (Slice 37).</param>
+/// <param name="DinoText">The colours (and, since Slice 41, the box) of the Dino line beside the QR code (<c>--dino-text back=...</c>); a change with null colours clears them; null when not given (Slice 37).</param>
+/// <param name="OtherBooksFolder">The folder of <c>.dino</c> files whose other books are shown on the last page (<c>--other-books</c>, Slice 41); null leaves the last page as it was.</param>
+/// <param name="BooksOutRoot">The folder that holds each book's output folder, where their <c>kdp.json</c> files are (<c>--books-out</c>); null means the parent of the output folder.</param>
 public sealed record KdpExportRequest(
     string DinoPath,
     string Language,
@@ -24,13 +26,15 @@ public sealed record KdpExportRequest(
     IReadOnlyDictionary<string, int>? CoverOffsets = null,
     bool CropSheet = false,
     IReadOnlyDictionary<string, KdpCoverText?>? CoverText = null,
-    KdpDinoTextChange? DinoText = null);
+    KdpDinoTextChange? DinoText = null,
+    string? OtherBooksFolder = null,
+    string? BooksOutRoot = null);
 
-/// <summary>A <c>--dino-text</c> request: the colours to save, or null to clear them.</summary>
-public sealed record KdpDinoTextChange(KdpTextColors? Colors);
+/// <summary>A <c>--dino-text</c> request: the colours to save, or null to clear the whole choice; with <paramref name="Box"/> also the box the Dino block (QR code and line) sits in (Slice 41).</summary>
+public sealed record KdpDinoTextChange(KdpTextColors? Colors, KdpTextBox? Box = null);
 
 /// <summary>The files written and what to tell the person who ran the command.</summary>
-public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null, string? CropSheetPath = null, string? CropSheetError = null);
+public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null, string? CropSheetPath = null, string? CropSheetError = null, IReadOnlyList<string>? OtherBookTitles = null);
 
 /// <summary>The pictures pulled out of a book: one per story page, the cover and the back cover (each null when the book has none).</summary>
 internal sealed record BookPictures(List<byte[]> Pages, byte[]? Cover, byte[]? Back);
@@ -53,18 +57,12 @@ public static class KdpExporter
         Directory.CreateDirectory(request.OutFolder);
         var storyPages = Math.Min(book.Pages.Count, pictures.Count);
         var settings = MergeOffsets(request, book, storyPages, all);
-        var input = new KdpBookInput(
-            book.In(book.Title, language.Code),
-            language.Code,
-            book.BackCover?.Credits,
-            DateTime.UtcNow.Year,
-            book.Pages.Select(p => StoryLines.Clean(book.In(p.Text, language.Code))).ToList(),
-            pictures,
-            settings);
+        var others = LoadOtherBooks(request, book, language);
+        var input = BookInput(book, language, pictures, settings, others);
         var built = Build(input);
         var (cover, coverError) = TryBuildCover(book, language, all, built.Plan.PageCount, settings);
         var coverPath = Path.Combine(request.OutFolder, CoverName);
-        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages, all.Back is not null), .. built.Warnings, .. cover?.Warnings ?? [], .. UnsavedCoverOffsetWarnings(request, cover)]);
+        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages, all.Back is not null), .. built.Warnings, .. cover?.Warnings ?? [], .. UnsavedCoverOffsetWarnings(request, cover), .. others?.Warnings ?? []]);
         var pdfPath = Path.Combine(request.OutFolder, PdfName);
         var reportPath = Path.Combine(request.OutFolder, ReportName);
         var result = built with { Warnings = warnings };
@@ -75,7 +73,49 @@ public static class KdpExporter
         SaveOffsets(request, toSave);
         var (sheet, previewError) = TryWritePreviews(request, input, result);
         var (cropSheet, cropSheetError) = TryWriteCropSheet(request, all, settings, storyPages);
-        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError);
+        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError, others?.Tiles.Select(t => t.Title).ToList());
+    }
+
+    private static KdpBookInput BookInput(DinoBook book, DinoLanguage language, List<byte[]> pictures, KdpBookSettings settings, KdpOtherBooksResult? others)
+    {
+        return new KdpBookInput(
+            book.In(book.Title, language.Code),
+            language.Code,
+            book.BackCover?.Credits,
+            DateTime.UtcNow.Year,
+            book.Pages.Select(p => StoryLines.Clean(book.In(p.Text, language.Code))).ToList(),
+            pictures,
+            settings,
+            others?.Tiles.Select(t => t.Jpeg).ToList());
+    }
+
+    /// <summary>
+    /// The other books for the last page (Slice 41); null without <c>--other-books</c>. The books' own <c>kdp.json</c> files are looked for in <c>--books-out</c>, else the parent of the output folder.
+    /// A folder that is missing or cannot be read never stops the export: it is a warning in the report and the last page is drawn without other books.
+    /// </summary>
+    private static KdpOtherBooksResult? LoadOtherBooks(KdpExportRequest request, DinoBook book, DinoLanguage language)
+    {
+        if (request.OtherBooksFolder is not { } folder)
+        {
+            return null;
+        }
+
+        var root = request.BooksOutRoot ?? OutputsRootOf(request.OutFolder);
+        try
+        {
+            return KdpOtherBooksLoader.Load(folder, root, book.Id, language.Code);
+        }
+        catch (Exception ex) when (ex is KdpException or IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return new KdpOtherBooksResult([], [$"other books: {ex.Message}; the last page shows the QR code and line only"]);
+        }
+    }
+
+    /// <summary>The folder that holds every book's output folder: the parent of <paramref name="outFolder"/>, whether or not it was given with a trailing separator.</summary>
+    internal static string OutputsRootOf(string outFolder)
+    {
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(outFolder));
+        return Path.GetDirectoryName(full) ?? full;
     }
 
     /// <summary>
@@ -258,7 +298,9 @@ public static class KdpExporter
                 throw new KdpException("--dino-text names the Dino line beside the back cover's QR code, but the book has no back cover.");
             }
 
-            settings = dino.Colors is null ? settings.WithoutDinoColors() : settings.WithDinoColors(dino.Colors);
+            settings = dino.Colors is null ? settings.WithoutDinoColors()
+                : dino.Box is null ? settings.WithDinoColors(dino.Colors)
+                : settings.WithDinoText(dino.Colors, dino.Box, usedOffset(KdpPictureKeys.Back));
         }
 
         return settings;
@@ -514,7 +556,7 @@ public static class KdpExporter
     }
 
     /// <summary>The pictures are pulled out through <see cref="DinoBookReader"/> (its caps and name checks) into a temporary folder that is removed afterwards.</summary>
-    private static BookPictures ReadPictures(string path, DinoBook book)
+    internal static BookPictures ReadPictures(string path, DinoBook book)
     {
         var folder = Path.Combine(Path.GetTempPath(), "ptdb-kdp-" + Guid.NewGuid().ToString("N"));
         try

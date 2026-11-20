@@ -16,7 +16,7 @@ public sealed record KdpPageSettings([property: JsonPropertyName("cropOffsetPx")
 public sealed record KdpCoverSettings(
     [property: JsonPropertyName("cropOffsetPx"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? CropOffsetPx = null,
     [property: JsonPropertyName("text"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] KdpCoverText? Text = null,
-    [property: JsonPropertyName("dino"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] KdpTextColors? Dino = null)
+    [property: JsonPropertyName("dino"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] KdpDinoText? Dino = null)
 {
     internal bool IsEmpty => CropOffsetPx is null && Text is null && Dino is null;
 }
@@ -25,7 +25,7 @@ public sealed record KdpCoverSettings(
 /// <c>kdp.json</c> beside a book's output (Slice 28): <c>{ "pages": { "7": { "cropOffsetPx": 60 } } }</c>, keyed by story page number (1-based, the
 /// number the check report lists); since Slice 36 also <c>"covers": { "front": { "cropOffsetPx": 60 }, "back": { ... } }</c> for the two cover pictures
 /// (a file without <c>covers</c> still reads) and since Slice 37 per cover <c>"text": { "box": {left, top, width, height}, "color": "#FFFFFF", "shadow": "#000000" }</c>
-/// and, on the back, <c>"dino": { "color", "shadow" }</c>. A picture with an entry is the owner's choice and is never flagged or changed again over it. Read and written only here.
+/// and, on the back, <c>"dino": { "color", "shadow" }</c> (since Slice 41 also <c>"box"</c> and <c>"forOffsetPx"</c>, the Dino block's place on the back). A picture with an entry is the owner's choice and is never flagged or changed again over it. Read and written only here.
 /// </summary>
 public sealed class KdpBookSettings
 {
@@ -142,16 +142,37 @@ public sealed class KdpBookSettings
     }
 
     /// <summary>The colours of the Dino line beside the back cover's QR code; null when none were chosen.</summary>
-    public KdpTextColors? DinoColors => _covers.TryGetValue(KdpPictureKeys.Back, out var cover) ? cover.Dino : null;
+    public KdpTextColors? DinoColors => DinoText?.Colors;
 
-    /// <summary>A copy with the Dino line's colours set (back cover only).</summary>
+    /// <summary>The Dino block's colours and, when chosen, its box (Slice 41); null when nothing was chosen.</summary>
+    public KdpDinoText? DinoText => _covers.TryGetValue(KdpPictureKeys.Back, out var cover) ? cover.Dino : null;
+
+    /// <summary>True when the Dino block's saved box was decided for a different back crop offset than the one in effect now.</summary>
+    public bool DinoBoxStale => DinoText is { Box: not null, ForOffsetPx: { } forOffset } && forOffset != CoverOffsetFor(KdpPictureKeys.Back);
+
+    /// <summary>The Dino text with its box dropped when that box is <see cref="DinoBoxStale"/> (the colours always stay); null when none was chosen.</summary>
+    public KdpDinoText? UsableDinoText => DinoBoxStale ? DinoText! with { Box = null, ForOffsetPx = null } : DinoText;
+
+    /// <summary>A copy with the Dino line's colours set (back cover only); a saved box stays.</summary>
     /// <exception cref="KdpSettingsException">A colour is not valid.</exception>
     public KdpBookSettings WithDinoColors(KdpTextColors colors)
     {
-        return WithCover(KdpPictureKeys.Back, cover => cover with { Dino = new KdpTextColors(Hex(colors.Color), Hex(colors.Shadow)) });
+        return WithCover(KdpPictureKeys.Back, cover => cover with { Dino = (cover.Dino ?? new KdpDinoText(colors.Color, colors.Shadow)) with { Color = Hex(colors.Color), Shadow = Hex(colors.Shadow) } });
     }
 
-    /// <summary>A copy with the Dino line's colours removed.</summary>
+    /// <summary>A copy with the Dino block's colours and box set (back cover only); the box is tied to <paramref name="forOffsetPx"/>.</summary>
+    /// <exception cref="KdpSettingsException">A colour or the box is not valid.</exception>
+    public KdpBookSettings WithDinoText(KdpTextColors colors, KdpTextBox box, int forOffsetPx)
+    {
+        if (!box.IsValid)
+        {
+            throw new KdpSettingsException("The Dino box of the back cover must lie inside the panel (fractions from 0 to 1, with a width and a height).");
+        }
+
+        return WithCover(KdpPictureKeys.Back, cover => cover with { Dino = new KdpDinoText(Hex(colors.Color), Hex(colors.Shadow), box, forOffsetPx) });
+    }
+
+    /// <summary>A copy with the Dino block's choice (colours and box) removed.</summary>
     public KdpBookSettings WithoutDinoColors()
     {
         return WithCover(KdpPictureKeys.Back, cover => cover with { Dino = null });
@@ -248,7 +269,7 @@ public sealed class KdpBookSettings
     private static bool IsValidCover(string key, KdpCoverSettings cover)
     {
         var textOk = cover.Text is null || (cover.Text.Box is { IsValid: true } && KdpHexColor.TryNormalize(cover.Text.Color, out _) && KdpHexColor.TryNormalize(cover.Text.Shadow, out _));
-        var dinoOk = cover.Dino is null || (key == KdpPictureKeys.Back && KdpHexColor.TryNormalize(cover.Dino.Color, out _) && KdpHexColor.TryNormalize(cover.Dino.Shadow, out _));
+        var dinoOk = cover.Dino is null || (key == KdpPictureKeys.Back && KdpHexColor.TryNormalize(cover.Dino.Color, out _) && KdpHexColor.TryNormalize(cover.Dino.Shadow, out _) && (cover.Dino.Box?.IsValid ?? true));
         return textOk && dinoOk;
     }
 
@@ -257,7 +278,7 @@ public sealed class KdpBookSettings
         return cover with
         {
             Text = cover.Text is null ? null : cover.Text with { Color = Hex(cover.Text.Color), Shadow = Hex(cover.Text.Shadow) },
-            Dino = cover.Dino is null ? null : new KdpTextColors(Hex(cover.Dino.Color), Hex(cover.Dino.Shadow)),
+            Dino = cover.Dino is null ? null : cover.Dino with { Color = Hex(cover.Dino.Color), Shadow = Hex(cover.Dino.Shadow) },
         };
     }
 

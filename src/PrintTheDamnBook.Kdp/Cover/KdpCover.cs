@@ -34,6 +34,20 @@ public static class KdpCover
 
     public static KdpCoverResult Build(KdpCoverInput input)
     {
+        var (drawing, front, back, warnings) = Prepare(input);
+        var pdf = KdpCoverDocument.Render(drawing);
+        var fonts = KdpPdfInspector.CheckFonts(pdf);
+        if (!fonts.AllEmbedded)
+        {
+            throw new KdpException($"{fonts.Fonts - fonts.Embedded} of {fonts.Fonts} fonts in the cover PDF are not embedded; KDP rejects that.");
+        }
+
+        return new KdpCoverResult(pdf, input.PageCount, KdpCoverSize.CoverWidth(input.PageCount), KdpCoverSize.CoverHeight, KdpCoverSize.SpineWidth(input.PageCount), KdpCoverSize.Barcode(input.PageCount, input.Direction), back is not null, input.Credits is not null, input.Direction, fonts, warnings, front, back);
+    }
+
+    /// <summary>The cover's drawing, its prepared pictures and the warnings found while preparing them; shared by the PDF (<see cref="Build"/>) and the small front tile of the last page's "More books" (Slice 41).</summary>
+    internal static (KdpCoverDrawing Drawing, KdpPicture Front, KdpPicture? Back, List<string> Warnings) Prepare(KdpCoverInput input)
+    {
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
         KdpFonts.EnsureRegistered();
         var warnings = new List<string>();
@@ -74,15 +88,9 @@ public static class KdpCover
             settings.UsableCoverText(KdpPictureKeys.Front),
             back is null ? null : settings.UsableCoverText(KdpPictureKeys.Back),
             settings.DinoColors,
-            warnings);
-        var pdf = KdpCoverDocument.Render(drawing);
-        var fonts = KdpPdfInspector.CheckFonts(pdf);
-        if (!fonts.AllEmbedded)
-        {
-            throw new KdpException($"{fonts.Fonts - fonts.Embedded} of {fonts.Fonts} fonts in the cover PDF are not embedded; KDP rejects that.");
-        }
-
-        return new KdpCoverResult(pdf, input.PageCount, KdpCoverSize.CoverWidth(input.PageCount), KdpCoverSize.CoverHeight, KdpCoverSize.SpineWidth(input.PageCount), KdpCoverSize.Barcode(input.PageCount, input.Direction), back is not null, input.Credits is not null, input.Direction, fonts, warnings, front, back);
+            warnings,
+            back is null ? null : settings.UsableDinoText?.Box);
+        return (drawing, front, back, warnings);
     }
 
     /// <summary>The settings with each chosen cover offset replaced by the one drawn (an over-max request is cut back), so a text choice is judged stale against the crop really in use.</summary>
@@ -101,6 +109,11 @@ public static class KdpCover
             {
                 warnings.Add($"cover: the text choice saved for the {key} cover was made for another crop of its picture, so the fallback placement is used; decide the {key} words again with --text.");
             }
+        }
+
+        if (hasBack && settings.DinoBoxStale)
+        {
+            warnings.Add("cover: the Dino block box saved for the back cover was made for another crop of its picture, so the QR code and line stay in the bottom corner; decide it again with --dino-text.");
         }
     }
 }
