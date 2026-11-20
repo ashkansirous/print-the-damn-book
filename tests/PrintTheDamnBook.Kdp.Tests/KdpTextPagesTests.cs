@@ -6,53 +6,118 @@ using UglyToad.PdfPig;
 
 namespace PrintTheDamnBook.Kdp.Tests;
 
-/// <summary>Slice 36 G: each of the book's own lines stays on one line (the size shrinks until it fits), and a text page takes a soft tint from its picture.</summary>
+/// <summary>Slice 42: every story text page is set at 24 pt and its lines wrap; a text page takes a soft tint from its picture (Slice 36 G).</summary>
 public class KdpTextPagesTests
 {
     private const string TwoLines = "Daddy made kebabs! Maybe one's there still, said Freddy\nHe searched every cupboard, each corner and nook, as he went";
 
     [Fact]
-    public void Lines_that_wrap_at_the_first_size_stay_whole_at_a_smaller_one()
-    {
-        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
-        KdpFonts.EnsureRegistered();
-        var box = KdpTrim.TextBox(rightHandPage: true);
-
-        Assert.False(KdpTextFit.LinesStayWhole(TwoLines, StoryFont.Andika, 24, box, rightToLeft: false));
-        Assert.True(KdpTextFit.LinesStayWhole(TwoLines, StoryFont.Andika, 16, box, rightToLeft: false));
-    }
-
-    [Fact]
-    public void A_short_page_stays_at_the_first_size()
+    public void A_short_page_is_set_at_24_pt()
     {
         var result = KdpInterior.Build(SyntheticBook.Input(2, longText: "Pip ran.\nPop hid."));
 
         Assert.All(result.Stories, s => Assert.Equal(24, s.Pt));
-        Assert.DoesNotContain(result.Warnings, w => w.Contains("wraps", StringComparison.Ordinal));
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("do not fit", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void The_size_shrinks_until_every_line_fits_on_one_line_and_the_page_has_exactly_those_lines()
+    public void Lines_too_long_for_one_line_wrap_at_24_pt_and_every_story_page_in_the_pdf_is_24_pt()
     {
-        var result = KdpInterior.Build(SyntheticBook.Input(2, longText: TwoLines));
+        var input = SyntheticBook.Input(3) with { Texts = ["Pip ran.\nPop hid.", TwoLines, "Pip ran.\nPop hid."] };
 
-        Assert.All(result.Stories, s => Assert.Equal(16, s.Pt));
+        var result = KdpInterior.Build(input);
+
+        Assert.All(result.Stories, s => Assert.Equal(24, s.Pt));
         using var pdf = PdfDocument.Open(result.Pdf);
-        foreach (var page in pdf.GetPages().Where(p => p.Letters.Any(l => Math.Abs(l.PointSize - 16) < 0.1)))
+        foreach (var story in result.Stories)
         {
-            var lines = page.Letters.Where(l => Math.Abs(l.PointSize - 16) < 0.1).GroupBy(l => Math.Round(l.StartBaseLine.Y)).ToList();
-            Assert.Equal(2, lines.Count);
+            var letters = pdf.GetPage(story.Position).Letters;
+            Assert.NotEmpty(letters);
+            Assert.All(letters, l => Assert.True(Math.Abs(l.PointSize - 24) < 0.1 || Math.Abs(l.PointSize - KdpTrim.NumberPt) < 0.1, $"unexpected size {l.PointSize} on page {story.Position}"));
+            Assert.Contains(letters, l => Math.Abs(l.PointSize - 24) < 0.1);
+        }
+
+        var wrapped = pdf.GetPage(result.Stories[1].Position).Letters.Where(l => Math.Abs(l.PointSize - 24) < 0.1).GroupBy(l => Math.Round(l.StartBaseLine.Y)).Count();
+        Assert.True(wrapped > 2);
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("do not fit", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Right_to_left_story_pages_are_set_at_24_pt_in_Vazirmatn()
+    {
+        var persian = "سلام دنیا، من فردی هستم.\nامروز هوا خیلی خوب است.";
+        var result = KdpInterior.Build(SyntheticBook.Input(2, language: "fa", longText: persian));
+
+        Assert.All(result.Stories, s => Assert.Equal(24, s.Pt));
+        Assert.All(result.Stories, s => Assert.True(s.Fits));
+        using var pdf = PdfDocument.Open(result.Pdf);
+        foreach (var story in result.Stories)
+        {
+            var letters = pdf.GetPage(story.Position).Letters.Where(l => Math.Abs(l.PointSize - 24) < 0.1).ToList();
+            Assert.NotEmpty(letters);
+            Assert.All(letters, l => Assert.Contains("Vazirmatn", l.FontName ?? string.Empty, StringComparison.OrdinalIgnoreCase));
         }
     }
 
     [Fact]
-    public void A_line_too_long_for_one_line_even_at_the_smallest_size_is_reported_and_set_wrapped()
+    public void The_report_says_once_that_all_story_text_is_24_pt()
     {
-        var text = string.Join(' ', Enumerable.Repeat("a long line of the story", 6));
+        var result = KdpInterior.Build(SyntheticBook.Input(2, longText: TwoLines));
 
-        var result = KdpInterior.Build(SyntheticBook.Input(2, longText: text));
+        var report = KdpCheckReport.Build("T", "en", result);
 
-        Assert.Contains(result.Warnings, w => w.Contains("does not fit on one line even at 14 pt", StringComparison.Ordinal));
+        Assert.Contains("Story text set at 24 pt on every page.", report, StringComparison.Ordinal);
+        Assert.DoesNotContain("set at 16 pt", report, StringComparison.Ordinal);
+    }
+
+    private static readonly string TooLong = string.Join(' ', Enumerable.Repeat("Pip and Pop played in the garden all day long.", 80));
+
+    [Fact]
+    public void A_page_that_overflows_keeps_the_planned_page_count_and_the_pdf_stays_valid()
+    {
+        var result = KdpInterior.Build(SyntheticBook.Input(1, longText: TooLong));
+
+        using var pdf = PdfDocument.Open(result.Pdf);
+        Assert.Equal(result.Plan.PageCount, pdf.NumberOfPages);
+        Assert.False(Assert.Single(result.Stories).Fits);
+    }
+
+    [Fact]
+    public void A_page_that_overflows_is_an_error_in_the_report_and_the_summary_does_not_claim_success()
+    {
+        var result = KdpInterior.Build(SyntheticBook.Input(1, longText: TooLong));
+        var position = Assert.Single(result.Stories).Position;
+
+        var report = KdpCheckReport.Build("T", "en", result);
+
+        Assert.Contains("## Errors", report, StringComparison.Ordinal);
+        Assert.Contains($"Page {position}: the words do not fit their box at 24 pt", report, StringComparison.Ordinal);
+        Assert.DoesNotContain("on every page.", report, StringComparison.Ordinal);
+        Assert.Contains($"do not fit their box on page(s) {position}", report, StringComparison.Ordinal);
+        Assert.Contains("24 pt (does not fit)", report, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_book_with_an_overflowing_page_still_writes_its_files_and_the_command_exits_1()
+    {
+        var folder = SyntheticBook.NewFolder();
+        try
+        {
+            var dino = SyntheticBook.WriteDino(Path.Combine(folder, "t.dino"), 3, pageText: TooLong);
+            var outFolder = Path.Combine(folder, "out");
+            var error = new StringWriter();
+
+            var code = PrintTheDamnBook.Cli.KdpRunner.Run(["kdp", dino, "--out", outFolder], new StringWriter(), error);
+
+            Assert.Equal(PrintTheDamnBook.Cli.KdpRunner.Failed, code);
+            Assert.Contains("Error: Page ", error.ToString(), StringComparison.Ordinal);
+            Assert.True(File.Exists(Path.Combine(outFolder, KdpExporter.PdfName)));
+            Assert.Contains("## Errors", File.ReadAllText(Path.Combine(outFolder, KdpExporter.ReportName)), StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
     }
 
     [Fact]
@@ -64,23 +129,11 @@ public class KdpTextPagesTests
     }
 
     [Fact]
-    public void A_font_whose_line_cannot_be_measured_never_passes_the_one_line_check()
+    public void A_font_whose_line_cannot_be_measured_is_an_error()
     {
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
         KdpFonts.EnsureRegistered();
-        var box = new PrintTheDamnBook.Core.Layout.RectD(0, 0, 0.5, 1);
 
-        var passed = false;
-        try
-        {
-            passed = KdpTextFit.LinesStayWhole("a very long line that must wrap in half an inch", "No Such Font Family", 14, box, false);
-        }
-        catch (Exception ex) when (ex is QuestPDF.Drawing.Exceptions.DocumentDrawingException or InvalidOperationException)
-        {
-            passed = false;
-        }
-
-        Assert.False(passed);
         Assert.ThrowsAny<Exception>(() => KdpTextFit.LineHeightPt("No Such Font Family", 14));
     }
 

@@ -44,8 +44,8 @@ public static class KdpTrim
 
     public const double PointsPerInch = 72;
 
-    /// <summary>The words' sizes, largest first (the KDP twin of <see cref="StoryTextLayout.PageStepsPt"/>, which knows only A4 and Letter).</summary>
-    public static readonly IReadOnlyList<double> TextStepsPt = [24, 22, 20, 18, 16, 14];
+    /// <summary>The size of the words on every story text page of every book (Slice 42); lines that do not fit on one line wrap.</summary>
+    public const double StoryTextPt = 24;
 
     /// <summary>The title on the title page.</summary>
     public const double TitlePt = 36;

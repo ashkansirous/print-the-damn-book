@@ -25,6 +25,7 @@ public static class KdpCheckReport
         text.AppendLine(CultureInfo.InvariantCulture, $"# KDP interior check: {title} ({language})");
         text.AppendLine();
         AppendSummary(text, result);
+        AppendErrors(text, result);
         if (cover is not null)
         {
             AppendCover(text, cover);
@@ -47,6 +48,32 @@ public static class KdpCheckReport
         text.AppendLine(CultureInfo.InvariantCulture, $"- Page size: {KdpTrim.PageWidthInches} x {KdpTrim.PageHeightInches} in on every page (trim {KdpTrim.TrimInches} x {KdpTrim.TrimInches} in plus bleed)");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Fonts embedded: {fonts.Embedded} of {fonts.Fonts} ({string.Join(", ", fonts.Names)})");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Text pages facing their pictures: {Facing(result.Plan)}");
+        text.AppendLine(CultureInfo.InvariantCulture, $"- {TextSizeLine(result)}");
+        text.AppendLine();
+    }
+
+    private static string TextSizeLine(KdpInteriorResult result)
+    {
+        var failed = result.Stories.Where(s => !s.Fits).Select(s => s.Position).Order().ToList();
+        return failed.Count == 0
+            ? $"Story text set at {KdpTrim.StoryTextPt} pt on every page."
+            : $"Story text set at {KdpTrim.StoryTextPt} pt, but the words do not fit their box on page(s) {string.Join(", ", failed)}.";
+    }
+
+    private static void AppendErrors(StringBuilder text, KdpInteriorResult result)
+    {
+        if (result.Errors.Count == 0)
+        {
+            return;
+        }
+
+        text.AppendLine("## Errors");
+        text.AppendLine();
+        foreach (var error in result.Errors)
+        {
+            text.AppendLine($"- {error}");
+        }
+
         text.AppendLine();
     }
 
@@ -104,8 +131,9 @@ public static class KdpCheckReport
         text.AppendLine("| --- | --- | --- | --- | --- | --- |");
         foreach (var page in result.Plan.Pages)
         {
-            var size = result.Stories.FirstOrDefault(s => page.Role == KdpPageRole.StoryText && s.StoryIndex == page.StoryIndex)?.Pt;
-            text.AppendLine(CultureInfo.InvariantCulture, $"| {page.Position} | {(page.IsRightHand ? "right" : "left")} | {page.Role} | {page.StoryIndex + 1} | {page.Number} | {(size is { } pt ? $"{pt} pt" : string.Empty)} |");
+            var story = result.Stories.FirstOrDefault(s => page.Role == KdpPageRole.StoryText && s.StoryIndex == page.StoryIndex);
+            var size = story is null ? string.Empty : $"{story.Pt} pt{(story.Fits ? string.Empty : " (does not fit)")}";
+            text.AppendLine(CultureInfo.InvariantCulture, $"| {page.Position} | {(page.IsRightHand ? "right" : "left")} | {page.Role} | {page.StoryIndex + 1} | {page.Number} | {size} |");
         }
 
         text.AppendLine();

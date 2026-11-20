@@ -114,22 +114,26 @@ public class KdpInteriorTests
     }
 
     [Fact]
-    public void Long_words_are_set_smaller_and_reported()
+    public void Long_words_wrap_at_24_pt_and_are_not_reported()
     {
-        var longText = string.Join(' ', Enumerable.Repeat("Pip and Pop played in the garden all day long.", 20));
+        var longText = string.Join(' ', Enumerable.Repeat("Pip and Pop played in the garden.", 6));
 
         var result = KdpInterior.Build(SyntheticBook.Input(pages: 1, longText: longText));
 
-        Assert.All(result.Stories, s => Assert.True(s.Shrunk));
-        Assert.Contains(result.Warnings, w => w.Contains("pt (smaller than", StringComparison.Ordinal));
+        Assert.All(result.Stories, s => Assert.Equal(24, s.Pt));
+        Assert.DoesNotContain(result.Warnings, w => w.Contains("do not fit", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void Words_that_fit_at_no_size_are_an_error()
+    public void Words_that_do_not_fit_the_box_at_24_pt_are_an_error_naming_the_page_and_are_not_shrunk()
     {
         var tooLong = string.Join(' ', Enumerable.Repeat("Pip and Pop played in the garden all day long.", 80));
 
-        Assert.Throws<KdpException>(() => KdpInterior.Build(SyntheticBook.Input(pages: 1, longText: tooLong)));
+        var result = KdpInterior.Build(SyntheticBook.Input(pages: 1, longText: tooLong));
+
+        var story = Assert.Single(result.Stories);
+        Assert.Equal(24, story.Pt);
+        Assert.Contains(result.Errors, e => e.StartsWith($"Page {story.Position}: the words do not fit their box at 24 pt", StringComparison.Ordinal));
     }
 
     [Fact]

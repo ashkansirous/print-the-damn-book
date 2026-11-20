@@ -34,7 +34,7 @@ public sealed record KdpExportRequest(
 public sealed record KdpDinoTextChange(KdpTextColors? Colors, KdpTextBox? Box = null);
 
 /// <summary>The files written and what to tell the person who ran the command.</summary>
-public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null, string? CropSheetPath = null, string? CropSheetError = null, IReadOnlyList<string>? OtherBookTitles = null);
+public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null, string? CropSheetPath = null, string? CropSheetError = null, IReadOnlyList<string>? OtherBookTitles = null, IReadOnlyList<string>? Errors = null);
 
 /// <summary>The pictures pulled out of a book: one per story page, the cover and the back cover (each null when the book has none).</summary>
 internal sealed record BookPictures(List<byte[]> Pages, byte[]? Cover, byte[]? Back);
@@ -73,7 +73,7 @@ public static class KdpExporter
         SaveOffsets(request, toSave);
         var (sheet, previewError) = TryWritePreviews(request, input, result);
         var (cropSheet, cropSheetError) = TryWriteCropSheet(request, all, settings, storyPages);
-        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError, others?.Tiles.Select(t => t.Title).ToList());
+        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError, others?.Tiles.Select(t => t.Title).ToList(), result.Errors);
     }
 
     private static KdpBookInput BookInput(DinoBook book, DinoLanguage language, List<byte[]> pictures, KdpBookSettings settings, KdpOtherBooksResult? others)

@@ -192,7 +192,7 @@ internal static class KdpInteriorDocument
     {
         var story = drawing.Stories[page.StoryIndex!.Value];
         var family = StoryFont.For(story.Text);
-        InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle().Element(words => KdpTextFit.Words(words, story.Text, family, story.Pt, drawing.Direction == ReadingDirection.RightToLeft));
+        InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle().StopPaging().Element(words => KdpTextFit.Words(words, story.Text, family, story.Pt, drawing.Direction == ReadingDirection.RightToLeft));
     }
 
     private sealed record Line(string Text, double Pt);
