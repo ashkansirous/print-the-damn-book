@@ -1,6 +1,6 @@
 ### Slice 22 — Dino follow-ups from Slice 20's reviews and tests
 
-*parked: feedback loop, waits for the user.* Found by the feedback loop of night 2026-11-01-2024, round 1
+*planned.* Park note: was `parked: feedback loop, waits for the user`; moved back to planned by the feedback loop of night 2026-11-19-2055 (user answer 2026-11-01: parked rows go back unless the reason names an interactive session). Found by the feedback loop of night 2026-11-01-2024, round 1
 ([note](../notes/2026-11-01-2024-feedback-loop-w1.md)). Nothing here is broken for users today. The
 user decides whether to build it, and the failed-state design (item 4) needs their Claude Design pass first.
 

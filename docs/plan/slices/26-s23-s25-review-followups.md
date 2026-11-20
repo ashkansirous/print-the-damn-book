@@ -1,6 +1,6 @@
 ### Slice 26 — Follow-ups from Slices 23 and 25 reviews
 
-*parked: feedback loop, waits for the user.* Found by the feedback loop of night 2026-11-18-1302
+*planned.* Park note: was `parked: feedback loop, waits for the user`; moved back to planned by the feedback loop of night 2026-11-19-2055 (user answer 2026-11-01: parked rows go back unless the reason names an interactive session). Found by the feedback loop of night 2026-11-18-1302
 ([note](../notes/2026-11-18-1302-feedback-loop.md)). These are the last review pass's findings that the wave
 left unfixed, plus test and harness gaps. The wave called none of them crash or data loss, but three come
 close and go first: Slice 23 #5 (a user's Own page choice is lost, against the rule Slice 23 lifted), Slice 25
@@ -81,3 +81,7 @@ Test harness:
   2026-11-18-1302). Fix: build the list from `tools/desktop-test/*.ps1` instead of a hand-kept array.
   Verify: `Invoke-DesktopTest.ps1 -Only back-cover-and-fit` runs that check. Until then
   `tools/desktop-test/CLAUDE.md` says a new check is added to both lists (feedback loop PR).
+- [ ] Missing desktop-test scripts (feedback loop of night 2026-11-19-2055; live checks of 2026-11-20 could not run five
+  `[session]` lines of Slices 17, 20, 23 and 25 because no script exists): add `tools/desktop-test` scripts for the
+  40+ page book, the IOException hand-over, two windows on one book, and Vazirmatn text, each in both check lists.
+  Verify: `Invoke-DesktopTest.ps1 -Only <name>` runs each.
