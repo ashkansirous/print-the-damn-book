@@ -68,7 +68,7 @@ public static class KdpInterior
             plan,
             KdpFrontMatterWording.For(book.Title, book.Credits, book.Year),
             TextDirection.ForLanguage(book.Language),
-            stories.Select(s => new KdpStoryPage(book.Texts[s.StoryIndex], s.Pt)).ToList(),
+            stories.Select(s => new KdpStoryPage(book.Texts[s.StoryIndex], s.Pt, pictures[s.StoryIndex].Tint)).ToList(),
             pictures,
             PageNumbering.DigitsFor(book.Language));
     }
@@ -82,12 +82,7 @@ public static class KdpInterior
             var box = KdpTrim.TextBox(page.IsRightHand);
             var family = StoryFont.For(text);
             var rtl = direction == ReadingDirection.RightToLeft;
-            var chosen = StoryTextLayout.Choose(KdpTrim.TextStepsPt, pt => KdpTextFit.Fits(text, family, pt, box, rtl));
-            if (!chosen.Fits)
-            {
-                throw new KdpException($"The words of page {page.Position} do not fit their box even at {chosen.Pt} pt.");
-            }
-
+            var chosen = ChooseSize(text, family, box, rtl, page.Position, warnings);
             if (chosen.Shrunk)
             {
                 warnings.Add($"Page {page.Position}: the words were set at {chosen.Pt} pt (smaller than the first size, {KdpTrim.TextStepsPt[0]} pt).");
@@ -97,6 +92,28 @@ public static class KdpInterior
         }
 
         return results.OrderBy(r => r.StoryIndex).ToList();
+    }
+
+    /// <summary>
+    /// The largest size at which every one of the book's own lines stays on one line (Slice 36). When no size does, even the smallest, the words are set at
+    /// the largest size that fits their box with wrapping and the page is reported; words that fit at none stop the build.
+    /// </summary>
+    private static TextFitResult ChooseSize(string text, string family, RectD box, bool rtl, int position, List<string> warnings)
+    {
+        var whole = StoryTextLayout.Choose(KdpTrim.TextStepsPt, pt => KdpTextFit.LinesStayWhole(text, family, pt, box, rtl));
+        if (whole.Fits)
+        {
+            return whole;
+        }
+
+        var wrapped = StoryTextLayout.Choose(KdpTrim.TextStepsPt, pt => KdpTextFit.Fits(text, family, pt, box, rtl));
+        if (!wrapped.Fits)
+        {
+            throw new KdpException($"The words of page {position} do not fit their box even at {wrapped.Pt} pt.");
+        }
+
+        warnings.Add($"Page {position}: a line of the words does not fit on one line even at {KdpTrim.TextStepsPt[^1]} pt, so it wraps (set at {wrapped.Pt} pt).");
+        return wrapped;
     }
 
     /// <summary>One line for the pages where art likely runs across the cut line, with the way to move the crop.</summary>
@@ -114,16 +131,22 @@ public static class KdpInterior
     {
         for (var i = 0; i < pictures.Count; i++)
         {
-            var p = pictures[i];
-            if (p.OffsetIgnored)
+            if (OffsetWarning($"Story page {i + 1}", pictures[i]) is { } warning)
             {
-                yield return $"Story page {i + 1}: the offset of {p.RequestedOffsetPx} px has no effect, because this picture has no spare height to move the crop (it is cropped at the sides, not the bottom). An --offset for it is not saved.";
-            }
-            else if (p.OffsetClamped)
-            {
-                yield return $"Story page {i + 1}: the offset of {p.RequestedOffsetPx} px is more than the picture allows; {p.AppliedOffsetPx} px was used.";
+                yield return warning;
             }
         }
+    }
+
+    /// <summary>The line for a picture whose chosen offset could not be applied as asked; null when it was. Shared with the cover pictures.</summary>
+    internal static string? OffsetWarning(string name, KdpPicture p)
+    {
+        if (p.OffsetIgnored)
+        {
+            return $"{name}: the offset of {p.RequestedOffsetPx} px has no effect, because this picture has no spare height to move the crop (it is cropped at the sides, not the bottom). An --offset for it is not saved.";
+        }
+
+        return p.OffsetClamped ? $"{name}: the offset of {p.RequestedOffsetPx} px is more than the picture allows; {p.AppliedOffsetPx} px was used." : null;
     }
 
     /// <summary>One line for all the pictures that are enlarged: how many, and the lowest resolution they end up with on the page.</summary>

@@ -82,14 +82,14 @@ public static class DinoBackCoverReader
             return null;
         }
 
-        var retold = element.TryGetProperty("retold", out var flag) && flag.ValueKind == JsonValueKind.True;
+        var retold = TryGet(element, "retold", out var flag) && flag.ValueKind == JsonValueKind.True;
         var illustration = TextOf(element, "illustration", MaxNameChars) ?? DinoCredits.Maker;
         return new DinoCredits(storyBy, retold, illustration, year, month, SpellingsOf(element));
     }
 
     private static string? TextOf(JsonElement element, string name, int maxChars)
     {
-        if (!element.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.String)
+        if (!TryGet(element, name, out var value) || value.ValueKind != JsonValueKind.String)
         {
             return null;
         }
@@ -98,10 +98,26 @@ public static class DinoBackCoverReader
         return string.IsNullOrEmpty(text) || text.Length > maxChars ? null : text;
     }
 
+    /// <summary>A property of <paramref name="element"/> whatever its case: the store writes <c>StoryBy</c>, older files <c>storyBy</c> (Slice 34).</summary>
+    private static bool TryGet(JsonElement element, string name, out JsonElement value)
+    {
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
+
     /// <summary>The per-language spellings of names; null (names as written) when the object is missing, malformed or over the caps.</summary>
     private static Dictionary<string, IReadOnlyDictionary<string, string>>? SpellingsOf(JsonElement element)
     {
-        if (!element.TryGetProperty("namesByLanguage", out var all) || all.ValueKind != JsonValueKind.Object)
+        if (!TryGet(element, "namesByLanguage", out var all) || all.ValueKind != JsonValueKind.Object)
         {
             return null;
         }

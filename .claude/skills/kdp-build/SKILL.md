@@ -24,19 +24,23 @@ Uploading is the owner's step; the listing text is the `kdp-listing` skill's job
    dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language <code> --previews --out tmp/kdp-out/<book>-<code>
    ```
 
-   Add `--offset <story page>=<pixels>` for each offset chosen so far in this run (they are saved in `kdp.json` in the output folder, so
-   a later run keeps them). Exit 0 means the files were written; 1 means the book could not be made (read the `Error:` line; a
+   Add `--offset <story page|front|back>=<pixels>` for each offset chosen so far in this run (they are saved in `kdp.json` in the output
+   folder, so a later run keeps them). Exit 0 means the files were written; 1 means the book could not be made (read the `Error:` line; a
    cover or preview failure still leaves `interior.pdf`, the report and `kdp.json`); 2 is a wrong argument. A run without `--previews`
 removes the previews of an earlier run.
 2. **Read `check-report.md`**: page count (even, at least 24), fonts embedded, text pages facing their pictures, the `## Cover` section
    and every warning at the end.
-3. **Dispatch `kdp-visual-check`** (Agent tool, subagent_type `kdp-visual-check`) with the output folder path. It reads only the contact
+3. **Choose the crops first: run the `kdp-crop` skill** (once per build, before any visual check; Slice 36). It makes the crop sheet, has the
+   `kdp-crop-check` agent decide every picture's window (story pages, `front`, `back`) from small uncut copies, saves the offsets in `kdp.json`
+   and reruns with `--previews`. Its two runs are not counted in the 4 below. Never cut a book and look afterwards instead.
+   **Dispatch `kdp-visual-check`** (Agent tool, subagent_type `kdp-visual-check`) with the output folder path. It reads only the contact
    sheet and small page PNGs. Never open a full-size picture or the PDF's pages yourself.
 4. **Sort what is left** into fixable and owner questions:
-   - *Fixable:* a picture cut through a character (report warning "may be cut through a character", or the agent says so). Open
-     `previews/page-NN.jpg` (small, red line on the cut), choose a pixel offset (steps of about 5 percent of the picture height, the
+   - *Fixable:* a picture still cut through a character after `kdp-crop` (report warning "may be cut through a character", or the agent says
+     so). Open `previews/page-NN.jpg` (small, red line on the cut), choose a pixel offset (steps of about 5 percent of the picture height, the
      report's `Kept` column shows the current crop; "clamped" in the report gives the most the picture allows), set it with `--offset`.
-     `--offset <page>=0` clears one.
+     `--offset <page|front|back>=0` clears one. A page whose offset `kdp-crop` saved is a choice already made: change it only with a reason
+     the agent can see in the preview.
    - *Owner questions, never fixed here:* low resolution ("pictures are enlarged ... dpi", the source art is what it is), words that
      do not fit, a missing back cover or credits, a language whose front matter is English only, a picture the agent says is out of
      story order, a cover that failed, a book under 24 pages' worth of pictures. Quote the report line.
@@ -53,4 +57,4 @@ removes the previews of an earlier run.
 ## Report (about 10 lines)
 
 Verdict first: `clean` or `owner questions left`. Then the output folder with `interior.pdf`, `cover.pdf`, `check-report.md`,
-`contact-sheet.png`; page count; the offsets set (`page=pixels`); each remaining owner question with its report line; how many runs it took.
+`contact-sheet.png`; page count; the offsets set (`page|front|back=pixels`, from `kdp-crop` and by hand); each remaining owner question with its report line; how many runs it took.

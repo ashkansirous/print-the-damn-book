@@ -7,8 +7,8 @@ using QuestPDF.Infrastructure;
 
 namespace PrintTheDamnBook.Kdp;
 
-/// <summary>What the drawing needs for one story page: its words and the size Core chose.</summary>
-internal sealed record KdpStoryPage(string Text, double Pt);
+/// <summary>What the drawing needs for one story page: its words, the size Core chose and the soft tint of the picture it faces (null: plain white).</summary>
+internal sealed record KdpStoryPage(string Text, double Pt, Rgb? Tint = null);
 
 /// <summary>Everything <see cref="KdpInteriorDocument"/> draws: the plan, the wording, the prepared pictures and the chosen story pages (both indexed by story index).</summary>
 internal sealed record KdpDrawing(
@@ -57,7 +57,7 @@ internal static class KdpInteriorDocument
     {
         p.Size((float)KdpTrim.PageWidthInches, (float)KdpTrim.PageHeightInches, Unit.Inch);
         p.Margin(0);
-        p.PageColor(Colors.White);
+        p.PageColor(PaperOf(page, drawing));
         p.DefaultTextStyle(s => s.FontFamily(StoryFont.Andika).FontColor(Ink).LineHeight(LineHeight));
         p.Content().Layers(layers =>
         {
@@ -67,6 +67,17 @@ internal static class KdpInteriorDocument
                 layers.Layer().Element(strip => Number(strip, page, PageNumbering.Format(number, drawing.Digits), drawing.Digits));
             }
         });
+    }
+
+    /// <summary>White paper, except a story text page, which takes the soft tint of the picture it faces (Slice 36).</summary>
+    private static string PaperOf(KdpPage page, KdpDrawing drawing)
+    {
+        if (page.Role == KdpPageRole.StoryText && drawing.Stories[page.StoryIndex!.Value].Tint is { } tint)
+        {
+            return $"#{tint.R:X2}{tint.G:X2}{tint.B:X2}";
+        }
+
+        return Colors.White;
     }
 
     private static void Body(IContainer body, KdpPage page, KdpDrawing drawing)

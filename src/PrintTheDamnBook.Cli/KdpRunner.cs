@@ -41,6 +41,11 @@ public static class KdpRunner
                 output.WriteLine($"Wrote the contact sheet {sheet} and small page previews beside it.");
             }
 
+            if (result.CropSheetPath is { } cropSheet)
+            {
+                output.WriteLine($"Wrote the crop sheet {cropSheet} and the larger uncut copies beside it.");
+            }
+
             foreach (var warning in result.Warnings)
             {
                 error.WriteLine($"Warning: {warning}");
@@ -61,7 +66,12 @@ public static class KdpRunner
                 error.WriteLine($"Error: the previews were not written: {previewError}");
             }
 
-            return result.CoverError is null && result.PreviewError is null ? Ok : Failed;
+            if (result.CropSheetError is { } cropSheetError)
+            {
+                error.WriteLine($"Error: the crop sheet was not written: {cropSheetError}");
+            }
+
+            return result.CoverError is null && result.PreviewError is null && result.CropSheetError is null ? Ok : Failed;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

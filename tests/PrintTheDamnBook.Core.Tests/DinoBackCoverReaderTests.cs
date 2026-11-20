@@ -57,6 +57,18 @@ public class DinoBackCoverReaderTests
     }
 
     [Fact]
+    public void TheStoresPascalCaseKeysReadLikeTheCamelCaseOnes()
+    {
+        const string pascal = """{"StoryBy":"Aesop","Retold":true,"Illustration":"Ashkan Sirous","Month":"2026-10","Picture":"cover-back.jpg","NamesByLanguage":{"fa":{"Aesop":"ازوپ"}}}""";
+        var book = DinoBookReader.Read(Package(StoryWith(BackPage(pascal, "cover-back.jpg")), "cover-1.jpg", "page-1.jpg", "page-2.jpg", "cover-back.jpg"));
+
+        Assert.Equal("cover-back.jpg", book.BackCover!.PictureFile);
+        var credits = book.BackCover.Credits!;
+        Assert.Equal(("Aesop", true, "Ashkan Sirous", 2026, 10), (credits.StoryBy, credits.Retold, credits.Illustration, credits.Year, credits.Month));
+        Assert.Equal("ازوپ", credits.NameIn("Aesop", "fa"));
+    }
+
+    [Fact]
     public void ABookWithoutABackCoverKeepsEveryPageAndHasNoBackCover()
     {
         var book = DinoBookReader.Read(WithPictures(StoryWith(string.Empty)));

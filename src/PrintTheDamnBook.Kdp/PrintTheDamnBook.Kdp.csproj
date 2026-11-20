@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="QRCoder" Version="1.9.0" />
     <PackageReference Include="QuestPDF" Version="2026.9.2" />
     <PackageReference Include="SkiaSharp" Version="4.157.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.157.0" />
