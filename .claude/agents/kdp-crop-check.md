@@ -1,6 +1,6 @@
 ---
 name: kdp-crop-check
-description: Looks at the 480 px uncut copy of every picture of one Dino book (crop/<key>.png, made by the kdp command with --crop-sheet; crop/sheet.png is an overview only) and decides for every picture (story pages, front, back) where its square KDP window should lie, from the top of the picture to the bottom, as a pixel offset with a one-line reason; for the front and back covers it also decides where the cover words go (a box in the empty space of the window, as fractions of it), the text colour and the shadow colour (hex), each with a reason. Runs for every book. Read-only. Use from the kdp-crop skill.
+description: Looks at the 480 px uncut copy of every picture of one Dino book (crop/<key>.png, made by the kdp command with --crop-sheet; crop/sheet.png is an overview only) and decides for every picture (story pages, front, back) where its square KDP window should lie, from the top of the picture to the bottom, as a pixel offset with a one-line reason; for the front and back covers it also decides where every block of cover words goes (front title, back credits, back Dino block with the QR code: each a box in the largest calm area of the window, as fractions of it, never over a character or animal), the text colour and the shadow colour (hex), each with a reason. Runs for every book. Read-only. Use from the kdp-crop skill.
 tools: Read, Glob
 model: sonnet
 ---
@@ -47,8 +47,8 @@ Prefer the window that:
 2. keeps the picture's main subject and what the story page's words are about (look at the neighbouring pictures: a character that moves
    from one picture to the next should stay where the eye expects it);
 3. leaves the least important part outside: empty floor, sky or ground rather than a face;
-4. for `front`: leaves calm sky or ground inside the window near its top or bottom, where the title will be set in white letters;
-5. for `back`: keeps the characters whole (they sit low in the picture), and calm space for the credit lines at its top.
+4. for `front`: leaves calm sky, ground or scenery (trees, foliage) inside the window for the title, never over a character or animal;
+5. for `back`: keeps the characters whole (they sit low in the picture), and leaves calm space (wherever it is, the middle included) for the credit lines and the Dino block.
 
 Look hard at the bottom edge of the window: feet, paws, legs of beds, chairs and tables, tails and small animals are the usual things that get
 cut. When two windows are equally good, choose the smaller offset (nearer the top). When the 480 px copy does not settle a picture (a
@@ -60,10 +60,21 @@ For the two cover pictures you also decide where the words go and how they look.
 shadow under it, in the box and colours you give. Decide them **after** the offset, for the window at the offset you chose (the square that
 the window then keeps, `480 px` tall on the copy), from what you see inside it.
 
-- **Front: one box, for the title only** (the front carries no credit line). **Back: one box for the credit lines** (the "Story by ... /
-  Illustration: ..." lines, about 4 to 6 short lines, about 1.5 in tall), which may sit to either side or lower if that avoids the drawing
-  lines; and the colours of the **Dino line** (the one short paragraph next to the QR code).
-- **A box is empty space**: calm sky, wall, floor or ground, with no face, hand, animal or strong drawing line under it. Give it as fractions of
+- **Three blocks, each with its own box** (Slice 41; the same rule for every one): **front: the title** (the front carries no credit line);
+  **back: the credit lines** (the "Story by ... / Illustration: ..." lines, about 4 to 6 short lines, about 1.5 in tall); **back: the Dino
+  block**, the QR code (0.8 in square, at the box's left edge, at the right edge for a right-to-left book) with the Dino line beside it (a short
+  paragraph that needs about 3 in of width beside the code). Size the Dino box about 4 to 5.5 in wide and 0.9 to 1.3 in tall (fractions about
+  `width` 0.47 to 0.64 and `height` 0.11 to 0.15), never smaller: the code keeps the QR at the size a phone scans, so the box must hold it plus the line.
+- **Where a block goes (the rule for all three).** Find the **largest calm area** that fits the block and put the block **in the middle of that
+  area**, not hugging the top or bottom of the window by habit. Prefer an area that is **completely empty** (plain sky, wall, floor, ground).
+  If none is completely empty, put the block over **scenery**: trees, foliage, sky, clouds, hills, a wall, the background. **Never put a block
+  over any character or animal, however small** (a bird in a tree, a mouse, a cat in a window all count; ask of every box "is anything
+  alive, or any face, hand or held thing, under it?"). The owner's words: text on top of trees is better than text on top of characters or
+  animals; and "why would we put the text and the QR code right on the lion and the mouse while there is big empty space right above them?".
+  The blocks must **not overlap each other**, and no block goes over a place the tool reserves (see "Keep clear of"). For a story with
+  characters low in the picture the calm area is often the middle or the upper part, so the credits and the Dino block may sit there, not at
+  the top edge or in the bottom corner.
+- **A box is empty space**: calm sky, wall, floor or ground, or at worst scenery (see above), with no face, hand, animal or strong drawing line under it. Give it as fractions of
   the window: `left`, `top`, `width`, `height`, each 0 to 1 (`left` and `top` from the window's top-left corner; `left + width` and
   `top + height` at most 1). The window is the whole picture of that cover panel, the area inside the red outline **including** its 0.125 in
   of bleed on the top, bottom and outer edge: 8.625 by 8.75 in, which on the 480 px wide copy is 480 by about 487 px (480 / 8.625 = 55.65 px per
@@ -79,15 +90,16 @@ the window then keeps, `480 px` tall on the copy), from what you see inside it.
 - **Keep clear of**: the outer 7 percent of the window on every side (the safe margin is 0.5 in inside the trim edge, so about 0.625 in
   from the window's outer edges; the tool cuts a box back to it), and on the back the
   barcode box (lower right corner of the window, 2 in wide and 1.2 in tall, with 0.25 in clearance all round: about `left` 0.70 to 0.96
-  and `top` 0.78 to 0.95; the lower **left** for a right-to-left book, about `left` 0.01 to 0.30) and the strip at the bottom of the back where the QR
-  code and the Dino line sit (the code's `KdpTextBoxMaths.QrStrip`: full width, from `top` 0.8086 (7.075 in of the 8.75 in window: 0.125 in
-  bleed + 0.5 in inset + 0.8 in QR + 0.25 in clearance above it, i.e. 6.95 in of the 8.5 in trim) down to the bottom of the panel, so keep
-  the bottom edge of every words box (`top + height`) at most 0.80; the same for a right-to-left book). The words may be moved sideways or up or down to avoid drawing lines, but
-  never over those two places.
+  and `top` 0.78 to 0.95; the lower **left** for a right-to-left book, about `left` 0.01 to 0.30). Every box, the Dino block's too, stays clear of it
+  and of the other boxes. **The bottom strip of the back** (the code's `KdpTextBoxMaths.QrStrip`: full width, from `top` 0.8086 down to the bottom of the
+  panel) is where the QR code and Dino line sit **only when you give no Dino box**: with a `back dino` box the tool does not reserve the strip and the
+  credits may use it; with no Dino box (colours only) keep the bottom edge of every other box (`top + height`) at most 0.80, as before. The Dino
+  box must lie wholly inside the safe margin and clear of the barcode and the credits box, or the tool puts the QR code and line back in the bottom
+  corner and warns. The words may be moved sideways or up or down, but never over a reserved place.
 - **Text colour and shadow colour** are `#RRGGBB`. The text must read clearly on what is under the box (aim for strong contrast: white or a
   very pale tint on a dark or mid area, a very dark tint on a pale one); the shadow is the opposite end of the brightness scale from the
   text and may take a hue from the picture (a deep blue or green on a night scene, a warm brown on a day one) instead of plain black or
-  white. Choose the colours for the area under each box, and for the Dino line the area of the bottom strip of the back. A colour in the
+  white. Choose the colours for the area under each box, and for the Dino block the area of its own box. A colour in the
   picture's own palette that is still readable is better than a harsh black or white.
 - A reason for each: one short line saying what is under the box and why the colours read there.
 
@@ -108,9 +120,9 @@ After those lines, for each of `front` and `back` that you saw, the cover-words 
 
 `front text | box=<left>,<top>,<width>,<height> | text=#RRGGBB | shadow=#RRGGBB | <reason for the box and the colours>`
 `back text | box=<left>,<top>,<width>,<height> | text=#RRGGBB | shadow=#RRGGBB | <reason for the box and the colours>`
-`back dino | text=#RRGGBB | shadow=#RRGGBB | <reason: the area at the bottom of the back where the QR code line sits>`
+`back dino | box=<left>,<top>,<width>,<height> | text=#RRGGBB | shadow=#RRGGBB | <reason for the box and the colours>`
 
 for example `front text | box=0.12,0.05,0.76,0.2 | text=#FFF6D8 | shadow=#1B2A4A | sky is calm and dark blue at the top; warm white reads on it, a deep blue shadow suits the night` or
 `back text | box=0.3,0.06,0.62,0.24 | text=#FFFFFF | shadow=#2A1A10 | wall at the upper right is calm; the drawing lines are at the left`.
-A cover with no usable space is `front text | no box | <reason>` (and likewise `back text`). A cover you did not see has no cover-words lines
+A cover with no usable space is `front text | no box | <reason>` (and likewise `back text`; and `back dino | text=... | shadow=... | no box, <reason>` when the Dino block has no free area: the colours still apply to the bottom corner). The `back dino` box and the `back text` box must not overlap. A cover you did not see has no cover-words lines
 (it is in `NOT SEEN`). The numbers must satisfy the limits above (fractions from 0 to 1, `left + width` and `top + height` at most 1).

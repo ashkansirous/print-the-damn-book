@@ -46,6 +46,11 @@ public static class KdpRunner
                 output.WriteLine($"Wrote the crop sheet {cropSheet} and the larger uncut copies beside it.");
             }
 
+            if (result.OtherBookTitles is { Count: > 0 } others)
+            {
+                output.WriteLine($"Other books on the last page ({others.Count}): {string.Join("; ", others)}.");
+            }
+
             foreach (var warning in result.Warnings)
             {
                 error.WriteLine($"Warning: {warning}");

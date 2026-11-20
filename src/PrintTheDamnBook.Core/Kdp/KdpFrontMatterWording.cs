@@ -8,7 +8,8 @@ public sealed record KdpFrontMatter(
     IReadOnlyList<string> CopyrightLines,
     string DedicationHeading,
     string TheEnd,
-    string AboutLine);
+    string AboutLine,
+    string OtherBooksHeading = KdpFrontMatterWording.OtherBooksHeadingText);
 
 /// <summary>Where the title, copyright, dedication, end and about wording comes from; the Kdp project only draws it.</summary>
 public static class KdpFrontMatterWording
@@ -20,6 +21,9 @@ public static class KdpFrontMatterWording
     /// <summary>The Dino line, on the last interior page next to its QR code and on the back cover (Slice 37: one text for both).</summary>
     public const string DinoLine = "Listen to this story in Dino: Kids Books & Stories. Want to join in? Pick a character and speak their lines yourself!";
     public const string AllRightsReserved = "All rights reserved.";
+
+    /// <summary>The heading above the other books' covers on the last page (Slice 41): "More books by Ashkan Sirous".</summary>
+    public const string OtherBooksHeadingText = "More books by " + DinoCredits.Maker;
 
     /// <summary>
     /// The wording for a book. The credit lines come from <see cref="BackCoverWording"/> (English) when the book has credits; the copyright

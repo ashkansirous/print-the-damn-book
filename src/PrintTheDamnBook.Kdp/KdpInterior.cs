@@ -14,7 +14,8 @@ public sealed record KdpBookInput(
     int Year,
     IReadOnlyList<string> Texts,
     IReadOnlyList<byte[]> Pictures,
-    KdpBookSettings? Settings = null);
+    KdpBookSettings? Settings = null,
+    IReadOnlyList<byte[]>? OtherCovers = null);
 
 /// <summary>The words of one story page and what was chosen for them.</summary>
 public sealed record KdpStoryResult(int StoryIndex, int Position, double Pt, bool Shrunk);
@@ -70,7 +71,8 @@ public static class KdpInterior
             TextDirection.ForLanguage(book.Language),
             stories.Select(s => new KdpStoryPage(book.Texts[s.StoryIndex], s.Pt, pictures[s.StoryIndex].Tint)).ToList(),
             pictures,
-            PageNumbering.DigitsFor(book.Language));
+            PageNumbering.DigitsFor(book.Language),
+            book.OtherCovers ?? []);
     }
 
     private static List<KdpStoryResult> ChooseSizes(KdpBookInput book, KdpPlan plan, ReadingDirection direction, List<string> warnings)
