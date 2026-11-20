@@ -1,6 +1,6 @@
 ### Slice 38 — Amazon KDP robot: the book catalog, and one paperback saved as a KDP draft
 
-*Built 2026-11-20, review gate passed (high, medium, six check passes), draft PR #90 to merge. `draft` stays blocked until the page maps are confirmed from real captures; `login`, `status`, `capture`, `catalog` and `draft --dry-run` work.*
+*Built 2026-11-20, review gate passed (high, medium, six check passes), merged as PR #90 (dea21a4). `draft` stays blocked until the page maps are confirmed from real captures; `login`, `status`, `capture`, `catalog` and `draft --dry-run` work.*
 
 *Planned 2026-11-20 with the owner (interactive session, RefineScope). First of three robot slices (38, 39, 40).*
 

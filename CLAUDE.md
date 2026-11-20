@@ -33,6 +33,7 @@ dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en -
 - `tests/PrintTheDamnBook.Kdp.Tests/` — xUnit v3 for Kdp (runs on Linux CI).
 - `tests/PrintTheDamnBook.Core.Tests/` — xUnit v3, covers everything in Core.
 - `tests/PrintTheDamnBook.App.Tests/` — xUnit v3, net10.0-windows, App view-model tests (`InternalsVisibleTo`).
+- `tools/kdp-robot/` — Playwright robot (plain ESM `.mjs`, `node --test`) that saves a book as a KDP draft; `kdp/catalog.json` is the per-book catalog it reads, `kdp/state/` what KDP held after each run.
 - `tools/store-assets/` — generates the Store/MSIX images from `docs/design`.
 - `site/` — Cloudflare Workers static landing site (`wrangler.jsonc`, `public/`).
 - `Book sample/` — the user's 12 sample pages, git-ignored; use it for hands-on checks.
