@@ -6,8 +6,14 @@ description: Build the Amazon KDP files of one Dino book and language (interior.
 # kdp-build
 
 Output folder: `<repo root>/tmp/kdp-out/<book>-<lang>/` (`<book>` is the `.dino` file's name without its extension), inside the repo or worktree you
-run from, in the git-ignored `tmp/` so no PDF is committed by accident and nothing is written outside the working directory (the command creates it). The book is a local `.dino` file; ask for the path only when it is
-not named and not under `Book sample/` or the owner's download folder. This skill never uploads, signs in or submits anything on KDP.
+run from, in the git-ignored `tmp/` so no PDF is committed by accident and nothing is written outside the working directory (the command creates it). The book is a local `.dino` file.
+
+**Where the books are:** the owner keeps the high-resolution `.dino` of every Dino store book, paid ones included, in
+`D:\high-res-books\` (`<Title> v<N>.hd.dino`, for example `Freddy and the Slipper v10.hd.dino`; owner, 2026-11-20). Whenever the
+owner names a book, look there first (match the title, take the highest `v<N>` if several), then `Book sample/`. Ask for a path only
+when neither has it. Read the folder in place; never copy, edit or commit a book from it.
+
+This skill never uploads, signs in or submits anything on KDP.
 Uploading is the owner's step; the listing text is the `kdp-listing` skill's job.
 
 ## Loop

@@ -46,6 +46,8 @@ build every line of that list unless the item says otherwise (the source slice f
   checked whether the audio packs are needed), then run the kdp command over Freddy and the 12 paid books and record the
   cut-line flag counts in this file. Verify: Freddy's `interior.pdf` exists and its page count is written next to Slice
   31's assumed 34. Never commit book content.
+  **Owner, 2026-11-20:** the hd `.dino` of all 12 store books (Freddy included) are in `D:\high-res-books\`, and the
+  `kdp-build` skill now looks there first. The BookBuilder script is no longer needed: run the kdp command on those files.
 
 - [ ] **H. Confirm the KDP limits no Amazon page confirmed yet** ([Slice 31](31-kdp-listing-pack.md) lines 44 and 61):
   the 8.5 x 8.5 in trim, the keyword character limit and the supported description HTML tags. Read Amazon's KDP help
