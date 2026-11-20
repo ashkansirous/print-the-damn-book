@@ -13,7 +13,21 @@ namespace PrintTheDamnBook.Kdp;
 /// <param name="Previews">True for <c>--previews</c> (Slice 30): also write small per-page PNGs of the interior and a contact sheet.</param>
 /// <param name="CoverOffsets">Crop offsets of the cover pictures (<see cref="KdpPictureKeys.Front"/> or <see cref="KdpPictureKeys.Back"/> to pixels) from <c>--offset front=...</c>; null when none were given.</param>
 /// <param name="CropSheet">True for <c>--crop-sheet</c> (Slice 36): also write the crop sheet and the larger uncut copies for the crop agent.</param>
-public sealed record KdpExportRequest(string DinoPath, string Language, string OutFolder, IReadOnlyDictionary<int, int>? Offsets = null, bool Previews = false, IReadOnlyDictionary<string, int>? CoverOffsets = null, bool CropSheet = false);
+/// <param name="CoverText">The crop agent's text box and colours per cover key (<c>--text front=...</c>), saved to <c>kdp.json</c>; a null value clears the choice (<c>--text front=clear</c>); null when none were given (Slice 37).</param>
+/// <param name="DinoText">The colours of the Dino line beside the QR code (<c>--dino-text back=...</c>); a change with null colours clears them; null when not given (Slice 37).</param>
+public sealed record KdpExportRequest(
+    string DinoPath,
+    string Language,
+    string OutFolder,
+    IReadOnlyDictionary<int, int>? Offsets = null,
+    bool Previews = false,
+    IReadOnlyDictionary<string, int>? CoverOffsets = null,
+    bool CropSheet = false,
+    IReadOnlyDictionary<string, KdpCoverText?>? CoverText = null,
+    KdpDinoTextChange? DinoText = null);
+
+/// <summary>A <c>--dino-text</c> request: the colours to save, or null to clear them.</summary>
+public sealed record KdpDinoTextChange(KdpTextColors? Colors);
 
 /// <summary>The files written and what to tell the person who ran the command.</summary>
 public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null, string? CropSheetPath = null, string? CropSheetError = null);
@@ -195,13 +209,62 @@ public static class KdpExporter
                 settings = pixels == 0 ? settings.WithoutCover(key) : settings.WithCoverOffset(key, pixels);
             }
 
-            return settings;
+            return ApplyText(settings, request, all.Back is not null, key => UsedCoverOffset(key, settings, all));
         }
         catch (KdpSettingsException ex)
         {
             throw new KdpException(ex.Message, ex);
         }
     }
+
+    /// <summary>The crop offset a cover picture is really drawn at: the requested one, cut back to what the picture allows (0 when it has no spare height).</summary>
+    private static int UsedCoverOffset(string key, KdpBookSettings settings, BookPictures all)
+    {
+        var bytes = key == KdpPictureKeys.Back ? all.Back : all.Cover ?? all.Pages.FirstOrDefault();
+        var requested = settings.CoverOffsetFor(key);
+        if (bytes is null || requested == 0)
+        {
+            return requested;
+        }
+
+        using var bitmap = KdpImageDecoder.DecodeUpright(bytes);
+        return Math.Min(requested, KdpPictureCrop.MaxOffset(bitmap.Width, bitmap.Height));
+    }
+
+    /// <summary>The crop offset the built cover really used for a picture (the saved one cut back to what the picture allows), the same value the render path judges a text choice against.</summary>
+    private static int AppliedCoverOffset(string key, KdpBookSettings settings, KdpCoverResult cover)
+    {
+        var picture = key == KdpPictureKeys.Front ? cover.FrontPrepared : cover.BackPrepared;
+        return picture is not null && settings.HasCoverOffset(key) ? picture.AppliedOffsetPx : settings.CoverOffsetFor(key);
+    }
+
+    /// <summary>This run's <c>--text</c> and <c>--dino-text</c> choices added to the settings (a clear removes the choice). A back-cover choice for a book with no back cover is refused.</summary>
+    private static KdpBookSettings ApplyText(KdpBookSettings settings, KdpExportRequest request, bool hasBack, Func<string, int> usedOffset)
+    {
+        foreach (var (key, text) in request.CoverText ?? new Dictionary<string, KdpCoverText?>())
+        {
+            if (key == KdpPictureKeys.Back && !hasBack && text is not null)
+            {
+                throw new KdpException("--text back names the back cover, but the book has none.");
+            }
+
+            settings = text is null ? settings.WithoutCoverText(key) : settings.WithCoverText(key, text with { ForOffsetPx = usedOffset(key) });
+        }
+
+        if (request.DinoText is { } dino)
+        {
+            if (dino.Colors is not null && !hasBack)
+            {
+                throw new KdpException("--dino-text names the Dino line beside the back cover's QR code, but the book has no back cover.");
+            }
+
+            settings = dino.Colors is null ? settings.WithoutDinoColors() : settings.WithDinoColors(dino.Colors);
+        }
+
+        return settings;
+    }
+
+    private static bool HasTextChanges(KdpExportRequest request) => request.CoverText is { Count: > 0 } || request.DinoText is not null;
 
     /// <summary>The file as it is on disk; one that was made for another book stops the run (<see cref="KdpSettingsException"/>) and is never overwritten.</summary>
     private static KdpBookSettings ReadStored(KdpExportRequest request, DinoBook book)
@@ -218,7 +281,7 @@ public static class KdpExporter
     {
         if (!hasBack && settings.Covers.Contains(KdpPictureKeys.Back))
         {
-            yield return $"{KdpBookSettings.FileName} has an offset for the back cover, but the book has no back cover picture; it is ignored (--offset back=0 clears it).";
+            yield return $"{KdpBookSettings.FileName} has choices for the back cover (offset, text), but the book has no back cover picture; they are ignored (--offset back=0 and --text back=clear remove them).";
         }
 
         foreach (var page in settings.Pages.Where(p => p > storyPages))
@@ -233,7 +296,7 @@ public static class KdpExporter
     /// </summary>
     private static KdpBookSettings? OffsetsToSave(KdpExportRequest request, DinoBook book, IReadOnlyList<KdpPicture> pictures, KdpCoverResult? cover)
     {
-        if (request.Offsets is not { Count: > 0 } && request.CoverOffsets is not { Count: > 0 })
+        if (request.Offsets is not { Count: > 0 } && request.CoverOffsets is not { Count: > 0 } && !HasTextChanges(request))
         {
             return null;
         }
@@ -255,6 +318,7 @@ public static class KdpExporter
             }
 
             settings = CoverOffsetsToSave(request, settings, cover);
+            settings = cover is null ? settings : ApplyText(settings, request, cover.BackPictureRead, key => AppliedCoverOffset(key, settings, cover));
             return settings.ToJson() == before.ToJson() ? null : settings.ForBook(book.Id, book.Title);
         }
         catch (KdpSettingsException ex)
@@ -269,6 +333,11 @@ public static class KdpExporter
         if (cover is not null)
         {
             yield break;
+        }
+
+        if (HasTextChanges(request))
+        {
+            yield return $"--text and --dino-text were not saved to {KdpBookSettings.FileName}, because the cover could not be made; run again once it can.";
         }
 
         foreach (var (key, pixels) in request.CoverOffsets ?? new Dictionary<string, int>())

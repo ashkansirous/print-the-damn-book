@@ -68,15 +68,6 @@ public static class KdpCalmBand
     /// <summary>True when white letters would be hard to read on a band this bright (see <see cref="LightBackdropMean"/>).</summary>
     public static bool IsLight(double meanBrightness) => meanBrightness >= LightBackdropMean;
 
-    /// <summary>The opacity (0 to 255) of each dark shadow copy behind white letters: faint on a dark band, strong on a light one so the white letters still read.</summary>
-    public static byte ShadowAlpha(double meanBrightness) => IsLight(meanBrightness) ? StrongShadowAlpha : NormalShadowAlpha;
-
-    /// <summary>The shadow opacity on a dark or middling band.</summary>
-    public const byte NormalShadowAlpha = 0x55;
-
-    /// <summary>The shadow opacity on a light band (see <see cref="IsLight"/>).</summary>
-    public const byte StrongShadowAlpha = 0xC0;
-
     private static (double Mean, double Spread) Measure(LumaImage luma, RectD band, (double X, double Y) pictureOrigin, (double Width, double Height) pictureSize)
     {
         var left = Cell(band.X - pictureOrigin.X, pictureSize.Width, luma.Width);

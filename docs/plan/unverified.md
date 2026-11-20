@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 37: Amazon KDP: the crop agent also places the cover text and picks its colours ([slice](slices/37-kdp-cover-text-by-agent.md))
+
+- [owner] The owner looks at the 16 rebuilt covers (contact sheet) and says whether they look right.
+- [owner] KDP accepts the transparent soft shadow (its previewer and a printed proof).
+
 ### Slice 38: Amazon KDP robot: the book catalog, and one paperback saved as a KDP draft ([slice](slices/38-kdp-robot-draft.md))
 
 - [session] With the owner signed in to KDP: `login`, then `status`, then `capture` saves the bookshelf and the page HTML and screenshots; the page maps are rewritten from them and marked `confirmed: true`.

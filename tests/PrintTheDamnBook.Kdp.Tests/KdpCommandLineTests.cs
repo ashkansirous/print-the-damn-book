@@ -1,4 +1,5 @@
 using PrintTheDamnBook.Cli;
+using PrintTheDamnBook.Core.Kdp;
 using PrintTheDamnBook.Kdp;
 using SkiaSharp;
 using UglyToad.PdfPig;
@@ -14,6 +15,60 @@ public class KdpCommandLineTests
 
         Assert.Null(parsed.Error);
         Assert.Equal(new KdpExportRequest("freddy.dino", "fa", "build"), parsed.Request);
+    }
+
+    [Fact]
+    public void A_text_choice_is_read_as_a_box_and_two_colours()
+    {
+        var parsed = KdpCommandLine.Parse(["a.dino", "--out", "o", "--text", "front=0.1,0.55,0.8,0.2,#ffffff,102030", "--text", "back=0.3,0.05,0.6,0.25,#000000,#FFFFFF"]);
+
+        Assert.Null(parsed.Error);
+        var texts = parsed.Request!.CoverText!;
+        Assert.Equal(new KdpCoverText(new KdpTextBox(0.1, 0.55, 0.8, 0.2), "#FFFFFF", "#102030"), texts["front"]);
+        Assert.Equal(new KdpCoverText(new KdpTextBox(0.3, 0.05, 0.6, 0.25), "#000000", "#FFFFFF"), texts["back"]);
+    }
+
+    [Fact]
+    public void Clear_removes_a_text_choice_and_the_dino_colours()
+    {
+        var parsed = KdpCommandLine.Parse(["a.dino", "--out", "o", "--text", "front=clear", "--dino-text", "back=clear"]);
+
+        Assert.Null(parsed.Error);
+        Assert.True(parsed.Request!.CoverText!.ContainsKey("front"));
+        Assert.Null(parsed.Request.CoverText["front"]);
+        Assert.Equal(new KdpDinoTextChange(null), parsed.Request.DinoText);
+    }
+
+    [Fact]
+    public void The_dino_colours_are_read()
+    {
+        var parsed = KdpCommandLine.Parse(["a.dino", "--out", "o", "--dino-text", "back=#101010,#fafafa"]);
+
+        Assert.Equal(new KdpDinoTextChange(new KdpTextColors("#101010", "#FAFAFA")), parsed.Request!.DinoText);
+    }
+
+    [Theory]
+    [InlineData("--text", "spine=0.1,0.1,0.5,0.2,#FFFFFF,#000000")]
+    [InlineData("--text", "front=0.1,0.1,0.5,0.2,#FFFFFF")]
+    [InlineData("--text", "front=0.1,0.1,0.5,0.2,white,#000000")]
+    [InlineData("--text", "front=0.6,0.1,0.5,0.2,#FFFFFF,#000000")]
+    [InlineData("--text", "front=a,0.1,0.5,0.2,#FFFFFF,#000000")]
+    [InlineData("--dino-text", "front=#FFFFFF,#000000")]
+    [InlineData("--dino-text", "back=#FFFFFF")]
+    [InlineData("--dino-text", "back=#FFFFFF,nope")]
+    public void A_wrong_text_choice_is_refused_with_the_usage(string option, string value)
+    {
+        var parsed = KdpCommandLine.Parse(["a.dino", "--out", "o", option, value]);
+
+        Assert.Null(parsed.Request);
+        Assert.NotNull(parsed.Error);
+    }
+
+    [Fact]
+    public void A_text_option_without_a_value_is_refused()
+    {
+        Assert.NotNull(KdpCommandLine.Parse(["a.dino", "--out", "o", "--text"]).Error);
+        Assert.NotNull(KdpCommandLine.Parse(["a.dino", "--out", "o", "--dino-text", "--previews"]).Error);
     }
 
     [Fact]
