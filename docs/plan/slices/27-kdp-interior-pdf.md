@@ -140,8 +140,8 @@ piece: `.dino` in, KDP interior PDF out, for Freddy and the Slipper in English, 
   size are an error (exit 1).
 - **Fonts embedded:** the PDF is written uncompressed (`CompressDocument = false`) and `KdpPdfInspector` counts `/FontDescriptor` entries with a
   `/FontFile`; the build throws when any is missing. Kdp.Tests also reads the PDF back with PdfPig (page count, size, image pixels, subset font names).
-- **Safe margin:** `KdpTrim.SafeMarginInches` is 0.5 in; the KDP help link in its comment (topic G201834190) was written from memory and not opened.
-- **Not run:** the `kdp-linux` job in `ci.yml` (no Docker daemon here, no Linux host); the same commands are green on Windows.
+- **Safe margin:** `KdpTrim.SafeMarginInches` is 0.5 in; after fix round 1 its comment cites KDP help topic GVBQ3CMEQW3W2VL6 (`src/PrintTheDamnBook.Core/Kdp/KdpTrim.cs:33`; corrected by the feedback loop of night 2026-11-19-2055, the earlier topic was written from memory).
+- **`kdp-linux`:** ran green on PR #67 (kdp-linux 47 s, build-test 2 min 29 s); an earlier draft of this line said it had not run.
 
 **Item E (Freddy draft), what was actually built.** Freddy and the Slipper is in the store catalog but `access` is `paid`: a plain GET of its
 download URL answers `402 Payment Required` (checked 2026-11-19), and so does every other `paid` book, Goldilocks (the first English entry) included.

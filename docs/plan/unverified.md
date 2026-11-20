@@ -2,9 +2,13 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 35: Amazon KDP follow-ups ([slice](slices/35-kdp-followups.md))
+
+- [session] Confirm on Amazon's KDP help pages the 8.5 x 8.5 in trim, the keyword character limit and the supported description HTML tags, and cite each in `listing-limits.mjs` (item H).
+
 ### Slice 30: Amazon KDP: `kdp-build` skill and visual-check agent ([slice](slices/30-kdp-build-skill.md))
 
-- [session] A fresh Claude Code session runs `kdp-build` on two free books and ends with a clean report and the files. (live check 2026-11-20: failed, follow-up in Slice 30)
+- [session] A fresh Claude Code session runs `kdp-build` on two free books and ends with a clean report and the files. (live check 2026-11-20: failed, follow-up in Slice 35 item A)
 - [owner] **You:** run `kdp-build` on Freddy (English) | with your paid copy of the book, start a Claude Code session in the repo and ask it to run `kdp-build` on it; see https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/30-kdp-build-skill.md
 
 ### Slice 29: Amazon KDP: cover PDF ([slice](slices/29-kdp-cover-pdf.md))
@@ -14,7 +18,7 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 
 ### Slice 28: Amazon KDP: print-ready pictures ([slice](slices/28-kdp-print-ready-pictures.md))
 
-- [owner] **You:** run the kdp command over your 12 paid books | with your own .dino copies run `dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en --out <folder>` per book and check the cut-line flags at `CutLineCheck.FlagRatio` 2.5, so that the flag level is tuned on real books: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/28-kdp-print-ready-pictures.md
+- [session] Run the kdp command over the 12 paid books (Slice 35 item G: build each `.dino` from `D:\ReadTheStupidText\content\dino\<book>` with ReadTheStupidText's BookBuilder after `git lfs pull` of its `high-res`; not checked whether audio LFS is needed) | run `dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en --out <folder>` per book and check the cut-line flags at `CutLineCheck.FlagRatio` 2.5, so that the flag level is tuned on real books: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/28-kdp-print-ready-pictures.md
 - [owner] The printed proof decides whether an AI upscaler is needed (settles the upscaler question).
 
 ### Slice 31: Amazon KDP: listing pack and `kdp-listing` skill ([slice](slices/31-kdp-listing-pack.md))
@@ -24,7 +28,7 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 
 ### Slice 27: Amazon KDP interior PDF for one Dino book ([slice](slices/27-kdp-interior-pdf.md))
 
-- [owner] **You:** build Freddy and the Slipper from your own copy | it is a paid store book (the download is refused without a purchase), so run the kdp command on your own `.dino`: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/27-kdp-interior-pdf.md
+- [session] Build Freddy and the Slipper's interior | the store download is refused (paid book), but its source is in `D:\ReadTheStupidText\content\dino\freddy-and-the-slipper`: build the `.dino` with ReadTheStupidText's BookBuilder (Slice 35 item G) and run the kdp command on it; this also gives the real page count Slice 31's listing assumed (34): https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/27-kdp-interior-pdf.md
 - [owner] **You:** upload the interior PDF as a KDP paperback draft | at https://kdp.amazon.com/en_US/bookshelf upload `interior.pdf` in the paperback content step and note the previewer warnings in the slice file: https://github.com/ashkansirous/print-the-damn-book/blob/main/docs/plan/slices/27-kdp-interior-pdf.md
 
 ### Slice 23: Text that doesn't fit gets its own page, no empty lines, Dino back cover ([slice](slices/23-fit-and-back-cover.md))

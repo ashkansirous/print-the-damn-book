@@ -68,7 +68,7 @@ where it has one, else `downloadUrl`; saved under the git-ignored `tmp/store/`).
 energy at least 6):*
 
 - *The Lion and the Mouse (HD, 15 pictures of 1792 x 2400): 0.3 to 1.6, none flagged.*
-- *X Marks the Treasure! (HD, 17 pictures of 1792 x 2400): 0.6 to 2.0, page 16 flagged at 2.9 (a real cut: props and feet cross the line, seen in the preview).*
+- *X Marks the Treasure! (HD, 17 pictures of 1792 x 2400): 0.6 to 2.0, page 16 flagged at 2.9 (called a real cut here; corrected 2026-11-20: the live check of Slice 30 looked at the same page and found the line runs through sand and sticks below everyone's feet, nothing cut, so this is a false flag; re-tuning is [Slice 35](35-kdp-followups.md) item A).*
 - *The Gingerbread Man (standard, 14 pictures of 896 x 1200): 0.3 to 2.0, pages 9, 10, 11, 12 flagged at 4.2, 4.8, 4.9, 3.3 (page 12 seen: the grandparents' feet cross the line).*
 - *The Three Little Pigs (standard, 16 pictures of 896 x 1200): 0.6 to 2.3, pages 1, 10, 11, 15 flagged at 3.2, 2.5, 2.8, 3.0 (page 10 seen: the wolf's feet are cut). Page 13 scores 2.3 and is clean (rug edge only, seen).*
 

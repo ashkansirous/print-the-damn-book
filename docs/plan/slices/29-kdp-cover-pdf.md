@@ -79,7 +79,7 @@ Findings files (outside the repo): `reviews/pr-76-high.md`, `pr-76-medium.md`, `
 - Skipped #6 (`reviews/pr-76-check3-medium.md`): "WriteAll moves interior, cover, report one at a time" - follow-up; each file is written atomically and `kdp.json` stays last.
 - Skipped #7 (`reviews/pr-76-check3-medium.md`): "A cover failure is not added to Warnings (only CoverError)" - follow-up; the failure shows in the CLI exit code and the report.
 
-Follow-ups for check pass 3 findings 1-7 are not yet in a planned slice.
+Follow-ups for check pass 3 findings 1-7 are planned as [Slice 35](35-kdp-followups.md) item C.
 
 #### For CLAUDE.md (lifted 2026-11-19)
 
