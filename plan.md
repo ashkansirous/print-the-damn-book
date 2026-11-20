@@ -32,6 +32,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 32 | Amazon KDP: Kindle edition | parked: starts only when the owner says in an interactive session that the first two paperbacks sold enough (doc's kill rule) | | | [32](docs/plan/slices/32-kdp-kindle-edition.md) |
 | 33 | Amazon KDP: other languages, right-to-left, Farsi/Arabic Kindle | parked: same gate as 32; starts only when the owner says in an interactive session that the first two paperbacks sold enough | | | [33](docs/plan/slices/33-kdp-other-languages.md) |
 | 35 | Amazon KDP follow-ups from Slices 27-31 reviews and the 2026-11-20 live check | planned | | | [35](docs/plan/slices/35-kdp-followups.md) |
+| 37 | Amazon KDP: the crop agent also places the cover text and picks its colours | planned | | | [37](docs/plan/slices/37-kdp-cover-text-by-agent.md) |
 
 Notes:
 
