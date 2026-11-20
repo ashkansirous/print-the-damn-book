@@ -31,8 +31,9 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 26 | Follow-ups from Slices 23 and 25 reviews | planned | | | [26](docs/plan/slices/26-s23-s25-review-followups.md) |
 | 32 | Amazon KDP: Kindle edition | parked: starts only when the owner says in an interactive session that the first two paperbacks sold enough (doc's kill rule) | | | [32](docs/plan/slices/32-kdp-kindle-edition.md) |
 | 33 | Amazon KDP: other languages, right-to-left, Farsi/Arabic Kindle | parked: same gate as 32; starts only when the owner says in an interactive session that the first two paperbacks sold enough | | | [33](docs/plan/slices/33-kdp-other-languages.md) |
-| 34 | Dino back cover: read the store's PascalCase keys | parked: the owner limited the 2026-11-19 night run to Amazon KDP; starts when the owner asks in an interactive session | | | [34](docs/plan/slices/34-backcover-key-case.md) |
+| 34 | Dino back cover: read the store's PascalCase keys | planned: built as part of Slice 36 (owner asked for back-cover credits, 2026-11-20) | | | [34](docs/plan/slices/34-backcover-key-case.md) |
 | 35 | Amazon KDP follow-ups from Slices 27-31 reviews and the 2026-11-20 live check | planned | | | [35](docs/plan/slices/35-kdp-followups.md) |
+| 36 | Amazon KDP: an agent picks every picture's crop, a cover without white boxes, tinted text pages | planned | | | [36](docs/plan/slices/36-kdp-crop-agent-and-cover.md) |
 
 Notes:
 
