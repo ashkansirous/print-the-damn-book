@@ -32,3 +32,5 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 28 | Amazon KDP: print-ready pictures (cut-line flags, per-page offset, upscaler) | built | #72 | | [28](../slices/28-kdp-print-ready-pictures.md) |
 | 29 | Amazon KDP: cover PDF (back, spine and front in one wrap) | built | #76 | | [29](../slices/29-kdp-cover-pdf.md) |
 | 30 | Amazon KDP: `kdp-build` skill and visual-check agent | built | #77 | | [30](../slices/30-kdp-build-skill.md) |
+| 34 | Dino back cover: read the store's PascalCase keys (built as part of Slice 36) | built | #85 | | [34](../slices/34-backcover-key-case.md) |
+| 36 | Amazon KDP: an agent picks every picture's crop, a cover without white boxes, tinted text pages | built | #85 | | [36](../slices/36-kdp-crop-agent-and-cover.md) |

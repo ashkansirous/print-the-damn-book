@@ -2,6 +2,11 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 36: Amazon KDP: an agent picks every crop, cover without white boxes, tinted text pages ([slice](slices/36-kdp-crop-agent-and-cover.md))
+
+- [owner] The owner looks at the Freddy cover and text spreads (H, rebuilt in `D:\print-the-damn-book-worktrees\s36\tmp\freddy-final`) and says whether they look right; the first cover was rejected on 2026-11-20.
+- [owner] A printed proof of the cover and interior.
+
 ### Slice 35: Amazon KDP follow-ups ([slice](slices/35-kdp-followups.md))
 
 - [session] Confirm on Amazon's KDP help pages the 8.5 x 8.5 in trim, the keyword character limit and the supported description HTML tags, and cite each in `listing-limits.mjs` (item H).
@@ -12,7 +17,7 @@ Every open "Not yet verified" check, one block per slice, newest first. Remove a
 
 ### Slice 29: Amazon KDP: cover PDF ([slice](slices/29-kdp-cover-pdf.md))
 
-- [owner] **You:** upload Freddy's cover with the interior | at https://kdp.amazon.com/en_US/bookshelf upload `cover.pdf` and `interior.pdf` from the `kdp` command's output, pass KDP's cover check (watch the 0.0012 in page-size rounding) and order a proof.
+- [owner] **You:** upload Freddy's cover with the interior (the owner rejected the first Freddy cover on 2026-11-20; the upload waits for the Slice 36 rebuild in `D:\print-the-damn-book-worktrees\s36\tmp\freddy-final` and the owner's answers to Slice 36's two open desk choices) | at https://kdp.amazon.com/en_US/bookshelf upload `cover.pdf` and `interior.pdf` from the `kdp` command's output, pass KDP's cover check (watch the 0.0012 in page-size rounding) and order a proof.
 - [owner] A real Farsi book's cover (no free book has Farsi text; the lion fa check was layout only).
 
 ### Slice 28: Amazon KDP: print-ready pictures ([slice](slices/28-kdp-print-ready-pictures.md))
