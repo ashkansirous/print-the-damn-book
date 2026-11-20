@@ -28,6 +28,7 @@ dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language en -
 - `src/PrintTheDamnBook.Core/Kdp/` — KDP layout maths (trim, bleed, page plan, crop).
 - `src/PrintTheDamnBook.Kdp/` — KDP PDF drawing and image decoding (`KdpImageDecoder`), cross-platform.
 - `src/PrintTheDamnBook.Cli/` — command-line `kdp` command; only parses arguments and calls Kdp.
+- `.claude/skills/kdp-build/` and `.claude/agents/kdp-visual-check.md` — the repo's own KDP build skill (runs the `kdp` command with `--previews`, reruns with `--offset`) and its read-only, Sonnet-pinned visual-check agent (reads the contact sheet and small page PNGs, never full-size pictures). (Slice 30: docs/plan/slices/30-kdp-build-skill.md)
 - `kdp/listings/<book>/<lang>.md` — KDP listing text per book; `.claude/skills/kdp-listing/` writes and checks it (`check-listing.mjs`).
 - `tests/PrintTheDamnBook.Kdp.Tests/` — xUnit v3 for Kdp (runs on Linux CI).
 - `tests/PrintTheDamnBook.Core.Tests/` — xUnit v3, covers everything in Core.

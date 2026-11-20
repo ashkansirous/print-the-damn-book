@@ -2,6 +2,7 @@ using PrintTheDamnBook.Core.Dino;
 using PrintTheDamnBook.Core.Kdp;
 using PrintTheDamnBook.Core.Layout;
 using PrintTheDamnBook.Core.Text;
+using QuestPDF.Fluent;
 
 namespace PrintTheDamnBook.Kdp;
 
@@ -49,15 +50,8 @@ public static class KdpInterior
         warnings.AddRange(CutWarnings(pictures));
         warnings.AddRange(OffsetWarnings(pictures));
 
-        var digits = PageNumbering.DigitsFor(book.Language);
-        var drawing = new KdpDrawing(
-            plan,
-            KdpFrontMatterWording.For(book.Title, book.Credits, book.Year),
-            direction,
-            stories.Select(s => new KdpStoryPage(book.Texts[s.StoryIndex], s.Pt)).ToList(),
-            pictures,
-            digits);
-        var pdf = KdpInteriorDocument.Render(drawing);
+        var drawing = DrawingFor(book, plan, pictures, stories);
+        var pdf = KdpInteriorDocument.CreateDocument(drawing).GeneratePdf();
         var fonts = KdpPdfInspector.CheckFonts(pdf);
         if (!fonts.AllEmbedded)
         {
@@ -65,6 +59,18 @@ public static class KdpInterior
         }
 
         return new KdpInteriorResult(pdf, plan, pictures, stories, fonts, warnings);
+    }
+
+    /// <summary>The one place the interior's drawing is put together; the PDF and the <c>--previews</c> pages (Slice 30) both come from it, so they cannot differ.</summary>
+    internal static KdpDrawing DrawingFor(KdpBookInput book, KdpPlan plan, IReadOnlyList<KdpPicture> pictures, IReadOnlyList<KdpStoryResult> stories)
+    {
+        return new KdpDrawing(
+            plan,
+            KdpFrontMatterWording.For(book.Title, book.Credits, book.Year),
+            TextDirection.ForLanguage(book.Language),
+            stories.Select(s => new KdpStoryPage(book.Texts[s.StoryIndex], s.Pt)).ToList(),
+            pictures,
+            PageNumbering.DigitsFor(book.Language));
     }
 
     private static List<KdpStoryResult> ChooseSizes(KdpBookInput book, KdpPlan plan, ReadingDirection direction, List<string> warnings)

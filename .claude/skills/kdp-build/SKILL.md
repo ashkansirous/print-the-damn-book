@@ -1,0 +1,50 @@
+---
+name: kdp-build
+description: Build the Amazon KDP files of one Dino book and language (interior.pdf, cover.pdf, check-report.md) with the repo's kdp command, read the check report, have the kdp-visual-check agent look at the page previews, fix what can be fixed (a crop offset for a cut picture) and rerun until the report is clean or only owner questions are left. Never uploads to KDP. Use when the user says "build the KDP files", "make the KDP book for <book>", or a slice asks for a proof-ready book.
+---
+
+# kdp-build
+
+Output folder: `<repo root>/tmp/kdp-out/<book>-<lang>/` (`<book>` is the `.dino` file's name without its extension), inside the repo or worktree you
+run from, in the git-ignored `tmp/` so no PDF is committed by accident and nothing is written outside the working directory (the command creates it). The book is a local `.dino` file; ask for the path only when it is
+not named and not under `Book sample/` or the owner's download folder. This skill never uploads, signs in or submits anything on KDP.
+Uploading is the owner's step; the listing text is the `kdp-listing` skill's job.
+
+## Loop
+
+1. **Run the command**, from the repo root (a worktree when one is in use):
+
+   ```powershell
+   dotnet run --project src/PrintTheDamnBook.Cli -- kdp <book.dino> --language <code> --previews --out tmp/kdp-out/<book>-<code>
+   ```
+
+   Add `--offset <story page>=<pixels>` for each offset chosen so far in this run (they are saved in `kdp.json` in the output folder, so
+   a later run keeps them). Exit 0 means the files were written; 1 means the book could not be made (read the `Error:` line; a
+   cover or preview failure still leaves `interior.pdf`, the report and `kdp.json`); 2 is a wrong argument. A run without `--previews`
+removes the previews of an earlier run.
+2. **Read `check-report.md`**: page count (even, at least 24), fonts embedded, text pages facing their pictures, the `## Cover` section
+   and every warning at the end.
+3. **Dispatch `kdp-visual-check`** (Agent tool, subagent_type `kdp-visual-check`) with the output folder path. It reads only the contact
+   sheet and small page PNGs. Never open a full-size picture or the PDF's pages yourself.
+4. **Sort what is left** into fixable and owner questions:
+   - *Fixable:* a picture cut through a character (report warning "may be cut through a character", or the agent says so). Open
+     `previews/page-NN.jpg` (small, red line on the cut), choose a pixel offset (steps of about 5 percent of the picture height, the
+     report's `Kept` column shows the current crop; "clamped" in the report gives the most the picture allows), set it with `--offset`.
+     `--offset <page>=0` clears one.
+   - *Owner questions, never fixed here:* low resolution ("pictures are enlarged ... dpi", the source art is what it is), words that
+     do not fit, a missing back cover or credits, a language whose front matter is English only, a picture the agent says is out of
+     story order, a cover that failed, a book under 24 pages' worth of pictures. Quote the report line.
+5. **Rerun** (step 1) after changing offsets. Compare the new report and agent verdict with the last one.
+
+## Stop rules
+
+- **Clean:** the report has no warning except the known owner-question kinds in step 4, and the agent says `clean`. Finish.
+- **At most 4 runs** in one skill call. Two offset tries on the same page that still flag it: stop trying that page and list it as an owner
+  question with the two previews.
+- A run that errors (exit 1) twice with the same message: stop and report the message; do not patch the book.
+- Never edit the `.dino`, the Core maths or the report by hand. A wrong result from the tool is a finding for a slice, not something to work around.
+
+## Report (about 10 lines)
+
+Verdict first: `clean` or `owner questions left`. Then the output folder with `interior.pdf`, `cover.pdf`, `check-report.md`,
+`contact-sheet.png`; page count; the offsets set (`page=pixels`); each remaining owner question with its report line; how many runs it took.
