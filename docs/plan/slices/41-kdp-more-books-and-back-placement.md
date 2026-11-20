@@ -1,6 +1,6 @@
 ### Slice 41 — Amazon KDP: "More books" on the last page, and the crop agent places the back-cover words and the Dino QR in the empty space
 
-*Built 2026-11-20 (PR #93), 977 tests pass. Item D (crop agent re-run and rebuild of all 16 books) runs after merge.*
+*Built 2026-11-20, merged as PR #93 (f27653f), 977 tests pass. Item D (crop agent re-run and rebuild of all 16 books) runs after merge.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/`, `src/PrintTheDamnBook.Kdp/`, `src/PrintTheDamnBook.Cli/`,
 `tests/PrintTheDamnBook.Kdp.Tests/`, `tests/PrintTheDamnBook.Core.Tests/`, `.claude/skills/kdp-crop/`,
@@ -96,7 +96,7 @@ code is fixed in the barcode-free bottom corner (`KdpTextBoxMaths.QrStrip`); the
 - A failure with the other-books folder or one tile is a warning in `check-report.md`, never an aborted export.
 - Hands-on: Freddy's last page shows 15 books; Lion with a hand-set Dino box above the lion.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-20)
 
 - The back Dino block's box (`covers.back.dino.box`) is set only by the CLI; its maths is Core `KdpTextBoxMaths`. The last interior page lists at most 15 other books, picked by Core `KdpOtherBooks` (seeded, never this book). Text goes over scenery, never over a character or animal (crop agent rule). (Slice 41: docs/plan/slices/41-kdp-more-books-and-back-placement.md)
 
