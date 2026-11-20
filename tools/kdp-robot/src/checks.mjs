@@ -13,6 +13,8 @@ const UPLOADED = {
 // Only an actual 978/979 number next to the ISBN label counts; the label "Free KDP ISBN" alone shows before any ISBN exists.
 const ISBN_ASSIGNED = /\bISBN(?:-13)?\b\s*[:\-]?\s*97[89][\d-]{10,}/i;
 const TRIM_SHOWN = /8\.5\s*x\s*8\.5/i;
+// KDP's known progress texts ("In Progress...", "Not Started...", "Processing"); they never block a success marker, any other unknown alert still does.
+const PROGRESS_TEXT = /^(in progress|not started|processing|uploading)\b[^\n]{0,20}$/i;
 
 export class KdpRejected extends Error {
   constructor(what, messages) {
@@ -29,20 +31,27 @@ export class KdpNoSignal extends Error {
   }
 }
 
-const verdict = (alerts, ok, okState) => {
+/**
+ * A visible alert that is neither an error nor the success marker being waited for, and was not already on the page before the
+ * action (`ignore`), blocks a success: fail closed, the run then ends with no signal and KDP's words in the summary.
+ */
+const verdict = (alerts, ok, okState, successRe, ignore) => {
   const errors = alerts.filter((a) => ERROR_WORDS.test(a));
   if (errors.length) return { state: 'error', messages: errors };
-  return { state: ok ? okState : 'pending', messages: [] };
+  const unknown = alerts.filter((a) => !successRe.test(a) && !PROGRESS_TEXT.test(a.trim()) && !ignore.includes(a));
+  return { state: ok && !unknown.length ? okState : 'pending', messages: [] };
 };
 
 /** After "Save as Draft": 'error' (KDP's alert texts), 'saved' (a success marker) or 'pending'. */
-export function judgeSave({ alerts = [], bodyText = '' }) {
-  return verdict(alerts, SAVED.test(`${alerts.join('\n')}\n${bodyText}`), 'saved');
+export function judgeSave({ alerts = [], bodyText = '', saving = false, ignore = [] }) {
+  if (saving) return { state: 'pending', messages: [] };
+  return verdict(alerts, SAVED.test(`${alerts.join('\n')}\n${bodyText}`), 'saved', SAVED, ignore);
 }
 
 /** After a file is handed to KDP: 'error', 'done' (a success marker for that kind of file) or 'pending'. */
-export function judgeFileCheck(kind, { alerts = [], bodyText = '' }) {
-  return verdict(alerts, UPLOADED[kind].test(`${alerts.join('\n')}\n${bodyText}`), 'done');
+export function judgeFileCheck(kind, { alerts = [], bodyText = '', saving = false, ignore = [] }) {
+  if (saving) return { state: 'pending', messages: [] };
+  return verdict(alerts, UPLOADED[kind].test(`${alerts.join('\n')}\n${bodyText}`), 'done', UPLOADED[kind], ignore);
 }
 
 /**
@@ -55,7 +64,7 @@ export async function waitForVerdict({ what, judge, read, timeoutMs, pollMs = 20
   for (;;) {
     const page = await read();
     onMessages(page.alerts);
-    const v = judge(page);
+    const v = judge({ ...page, ignore: baseline?.alerts ?? [] });
     if (v.state === 'error') throw new KdpRejected(what, v.messages);
     const stale = baseline && baseline.state !== 'pending' && baseline.key === page.alerts.join('|');
     if (v.state !== 'pending' && !stale) return v;
@@ -66,7 +75,11 @@ export async function waitForVerdict({ what, judge, read, timeoutMs, pollMs = 20
 }
 
 /** The verdict before an action, so a success marker that was already on the page never counts as the action's result. */
-export const baselineOf = (judge, page) => ({ ...judge(page), key: (page.alerts ?? []).join('|') });
+export const baselineOf = (judge, page) => {
+  const alerts = page.alerts ?? [];
+  // The page's own alerts are ignored here, so a harmless alert never turns a leftover success marker into 'pending' (which would switch the stale guard off).
+  return { ...judge({ ...page, ignore: alerts }), key: alerts.join('|'), alerts };
+};
 
 export class IdConflict extends Error {
   constructor(known, seen) {

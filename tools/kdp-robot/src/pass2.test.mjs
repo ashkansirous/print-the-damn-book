@@ -36,7 +36,7 @@ const kdpPage = (url, body = 'Paperback Details\nYour changes have been saved.')
   url: () => url,
   title: async () => 'Paperback Details',
   goto: async () => {},
-  locator: (sel) => (sel === 'body' ? { innerText: async () => body } : { allInnerTexts: async () => [] }),
+  locator: (sel) => (sel === 'body' ? { innerText: async () => body } : { count: async () => 0, allInnerTexts: async () => [] }),
   getByRole: () => ctl({ text: 'Create' }),
   screenshot: async () => {},
 });
@@ -47,7 +47,7 @@ function savedAfterClick(url) {
   const btn = ctl({ text: 'Save as Draft' });
   btn.click = async () => { clicked = true; };
   const body = () => (clicked ? 'Paperback Details\nYour changes have been saved.' : 'Paperback Details');
-  return { ...kdpPage(url), getByRole: () => btn, locator: (sel) => (sel === 'body' ? { innerText: async () => body() } : { allInnerTexts: async () => [] }) };
+  return { ...kdpPage(url), getByRole: () => btn, locator: (sel) => (sel === 'body' ? { innerText: async () => body() } : { count: async () => 0, allInnerTexts: async () => [] }) };
 }
 
 test('1: a "new" placeholder is never a KDP id and is not recorded after a save', async () => {
@@ -67,8 +67,9 @@ test('1c: with no id in the URL the id comes from the bookshelf row, and the sav
   const diff = [{ key: 'title', value: 'Fox', status: 'new' }];
   await savePage(savedAfterClick('https://kdp.amazon.com/en_US/title-setup/paperback/new/details'), 'details', ctx, diff);
   assert.equal(ctx.kdpId, 'ABCDE12345');
-  assert.deepEqual(recorded[0], { savedWithoutId: true, fields: recordableFields(diff) });
-  assert.deepEqual(recorded[1], { kdpId: 'ABCDE12345' });
+  assert.deepEqual(recorded[0], { savedWithoutId: true });
+  assert.deepEqual(recorded[1], { savedWithoutId: true, fields: recordableFields(diff) });
+  assert.deepEqual(recorded[2], { kdpId: 'ABCDE12345' });
 });
 
 test('1b: a title saved without an id blocks a second Create on the next run', async () => {
@@ -167,7 +168,7 @@ test('9: the KDP id is recorded as soon as the title exists, before any save', a
   const ctx = { kdpId: null, record: (p) => recorded.push(p), pollMs: 1, createIdWaitMs: 20 };
   await createTitle(kdpPage('https://kdp.amazon.com/en_US/title-setup/paperback/ABCDE12345/details', 'Bookshelf\n+ Create'), ctx);
   assert.equal(ctx.kdpId, 'ABCDE12345');
-  assert.deepEqual(recorded, [{ kdpId: 'ABCDE12345' }]);
+  assert.deepEqual(recorded, [{ savedWithoutId: true }, { kdpId: 'ABCDE12345' }]); // the marker is on disk before the Create click
 });
 
 test('9: a Create that lands on a page with no id in its URL (the new-details page has none; the Create flow itself was not captured): nothing is recorded, the id comes with the first save', async () => {
@@ -175,5 +176,5 @@ test('9: a Create that lands on a page with no id in its URL (the new-details pa
   const ctx = { kdpId: null, record: (p) => recorded.push(p), pollMs: 1, createIdWaitMs: 10 };
   await createTitle(kdpPage('https://kdp.amazon.com/en_US/title-setup/paperback/new/details', 'Bookshelf\n+ Create'), ctx);
   assert.equal(ctx.kdpId, null);
-  assert.deepEqual(recorded, []);
+  assert.deepEqual(recorded, [{ savedWithoutId: true }]); // no id recorded, but the marker blocks a second Create
 });
