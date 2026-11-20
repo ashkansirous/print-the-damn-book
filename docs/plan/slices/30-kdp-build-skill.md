@@ -4,7 +4,7 @@
 [2026-11-18-amazon-kdp-export.md](https://drive.google.com/file/d/16B6KoIGXtHRXaRS8VvQcopP5RyJhcUIM/view?usp=drivesdk)
 (milestone 4).*
 
-*Built 2026-11-20 (PR #77, not merged). Tests, build and hands-on `--previews` runs pass; the `kdp-build` loop itself has not run in a fresh session yet.*
+*Built 2026-11-20, merged as PR #77 (aa14be7). Tests, build and hands-on `--previews` runs pass; the `kdp-build` loop itself has not run in a fresh session yet.*
 
 **Touches:** `.claude/skills/kdp-build/**` (new), `.claude/agents/kdp-visual-check.md` (new),
 `src/PrintTheDamnBook.Cli/**` (new, from an earlier KDP slice) (page previews for the agent), `CLAUDE.md` (names the repo's agent),
@@ -69,7 +69,7 @@ Findings 1-5 and 7 of `reviews/pr-77-high.md` were applied; the skips are listed
 - Skipped #2 (`reviews/pr-77-medium.md`): "A preview-only failure exits 1, the same code as". - a preview failure must stop the loop because the visual check needs the previews; the skill's stop rule is the slice's Decision.
 - Skipped #3 (`reviews/pr-77-medium.md`): "ReplacePages deletes old page PNGs before writing new ones, and the contact sheet uses the default SKFont typeface." - the skill runs on the owner's Windows machine, where the default font exists, and previews are rebuilt each run; blank labels on Linux go to the follow-up list.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-20)
 
 - `kdp-build` skill and `kdp-visual-check` agent live in `.claude/`. Previews come only from the interior's own drawing (`KdpInterior.DrawingFor`), and a preview failure never stops the PDFs, report or `kdp.json`. (Slice 30: docs/plan/slices/30-kdp-build-skill.md)
 

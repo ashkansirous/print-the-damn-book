@@ -18,7 +18,7 @@ builds the exe on release, no Dockerfile.
 
 ## Status
 
-Every slice except 12, 13, 22, 24, 26, 30, 32, 33 and 34 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)); 12, 13, 22, 24, 26, 32, 33 and 34 are parked and 30 is planned (the table below). 29 merged 2026-11-19 (PR #76). 28 merged 2026-11-19 (PR #72). 31 merged 2026-11-19 (PR #70). 27 merged 2026-11-19 (PR #67). 25 merged 2026-11-18 (PR #58). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45). 23 merged 2026-11-18 (PR #59).
+Every slice except 12, 13, 22, 24, 26, 32, 33 and 34 is built (merge dates in [slices-done.md](docs/plan/notes/slices-done.md)); 12, 13, 22, 24, 26, 32, 33 and 34 are parked and no planned slice remains (the table below). 30 merged 2026-11-20 (PR #77). 29 merged 2026-11-19 (PR #76). 28 merged 2026-11-19 (PR #72). 31 merged 2026-11-19 (PR #70). 27 merged 2026-11-19 (PR #67). 25 merged 2026-11-18 (PR #58). The Microsoft Store submission was dropped by the user on 2026-10-22: the MSIX tooling from Slice 11 stays in place but dormant (it skips without the `MSIX_*` variables). 12 and 13 are parked. 21 merged 2026-11-01 (PR #44). 20 merged 2026-11-01 (PR #45). 23 merged 2026-11-18 (PR #59).
 
 The repo is public (2026-10-22), so the site and the app download from public GitHub releases. The landing site is live at https://print-the-damn-book.sirous.uk (deployed 2026-10-22 via local wrangler, all pages 200).
 
@@ -29,7 +29,6 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 22 | Dino follow-ups from Slice 20's reviews and tests | parked: feedback loop, waits for the user | | | [22](docs/plan/slices/22-dino-review-followups.md) |
 | 24 | Paid Dino books must be bought before they print ($0.99 print purchase, Store errors, test-build bypass) | parked: skipped by the user 2026-11-18; comes back only when the user asks in an interactive session | | | [24](docs/plan/slices/24-buy-to-print.md) |
 | 26 | Follow-ups from Slices 23 and 25 reviews | parked: feedback loop, waits for the user | | | [26](docs/plan/slices/26-s23-s25-review-followups.md) |
-| 30 | Amazon KDP: `kdp-build` skill and visual-check agent | planned (after 29) | | | [30](docs/plan/slices/30-kdp-build-skill.md) |
 | 32 | Amazon KDP: Kindle edition | parked: starts only when the owner says in an interactive session that the first two paperbacks sold enough (doc's kill rule) | | | [32](docs/plan/slices/32-kdp-kindle-edition.md) |
 | 33 | Amazon KDP: other languages, right-to-left, Farsi/Arabic Kindle | parked: same gate as 32; starts only when the owner says in an interactive session that the first two paperbacks sold enough | | | [33](docs/plan/slices/33-kdp-other-languages.md) |
 | 34 | Dino back cover: read the store's PascalCase keys | parked: the owner limited the 2026-11-19 night run to Amazon KDP; starts when the owner asks in an interactive session | | | [34](docs/plan/slices/34-backcover-key-case.md) |
@@ -45,7 +44,7 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 20 checks across 10 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 22 checks across 11 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
 - Amazon KDP spin-offs that belong to other repos (Scope Inbox doc of 2026-11-18, *Spin-offs*), not planned there yet: print-resolution art for Three Little Pigs, Town Mouse, Ugly Duckling and X Marks the Treasure, and author/credit fields per book (ReadTheStupidText / dino-reader); audiobook collections (dino-reader). Later here: hardcover treasury and 3-in-1 collection, agent upload to KDP through the owner's Chrome from the third book on ([slice 27](docs/plan/slices/27-kdp-interior-pdf.md)).
 - Slice 26, waiting on the user (parked by the feedback loop of night 2026-11-18-1302): the unfixed last-pass review findings of Slices 23 and 25 (an Own page choice lost on retype, a language select left on the wrong language after a cancelled switch, a possible `book.json` write on open), the unexplained blank-line collapse, and the `$GuestChecks` list gap. Decide whether to build it ([slice 26](docs/plan/slices/26-s23-s25-review-followups.md)).
 - Seven ClaudeSkills tooling gaps from the feedback loop of night 2026-11-18-1302 are open (user files copied into public test data, check-pass rule vs global fix rule, timer-kill clash, "read in full" claims, unchecked branch-sweep, inline Python writes, host-window approval guard): see the note's *Open findings* ([note](docs/plan/notes/2026-11-18-1302-feedback-loop.md)).

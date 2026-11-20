@@ -31,3 +31,4 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 31 | Amazon KDP: listing pack and `kdp-listing` skill | built | #70 | | [31](../slices/31-kdp-listing-pack.md) |
 | 28 | Amazon KDP: print-ready pictures (cut-line flags, per-page offset, upscaler) | built | #72 | | [28](../slices/28-kdp-print-ready-pictures.md) |
 | 29 | Amazon KDP: cover PDF (back, spine and front in one wrap) | built | #76 | | [29](../slices/29-kdp-cover-pdf.md) |
+| 30 | Amazon KDP: `kdp-build` skill and visual-check agent | built | #77 | | [30](../slices/30-kdp-build-skill.md) |
