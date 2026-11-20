@@ -18,6 +18,10 @@ KDP's Arabic page says paperback publishing for Arabic isn't currently available
 
 #### Decisions
 
+- Approved by the owner, 2026-11-20 (RefineScope for the KDP robot, answer 1, "agree. handles all languages"): the
+  paperback languages are no longer parked behind the sales gate; they are built for the robot (Slice 39). Farsi and
+  Arabic Kindle keep Slice 32's gate.
+
 - Approved (doc): KDP-supported languages first (es, fr, de, pt, ...); Farsi/Arabic as Kindle only; a bilingual
   English–Farsi print via IngramSpark is later and not in this slice.
 - Decided by this planning session, 2026-11-19: text comes from the `.dino` `Translations` through the same path as
