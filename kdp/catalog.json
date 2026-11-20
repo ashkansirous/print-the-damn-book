@@ -1,0 +1,33 @@
+{
+  "_note": "Only what no other file holds. Titles come from each book's titles.json (book.json for English), listing text from kdp/listings/<book>/<lang>.md. A book is publishable once languages is non-empty: then dino and contributors are required. price (USD) and finish are one value for every book, set only here (owner, 2026-11-20); a book may not override them. series is Slice 40.",
+  "price": 9.99,
+  "finish": "glossy",
+  "books": [
+    { "id": "billy-goats-gruff", "dino": "The Three Billy Goats Gruff v16.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "elves-and-shoemaker", "dino": "The Elves and the Shoemaker v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    {
+      "id": "freddy-and-the-slipper",
+      "dino": "Freddy and the Slipper v10.hd.dino",
+      "languages": ["en"],
+      "series": null,
+      "contributors": [
+        { "role": "Author", "name": "Elham Shafiei Gol" },
+        { "role": "Author", "name": "Ashkan Sirous" },
+        { "role": "Illustrator", "name": "Ashkan Sirous" }
+      ]
+    },
+    { "id": "gingerbread-man", "dino": "The Gingerbread Man v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "goldilocks", "dino": "Goldilocks and the Three Bears v16.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "good-enough", "dino": "Good Enough v14.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "jack-and-the-beanstalk", "dino": "Jack and the Beanstalk v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "lion-and-mouse", "dino": "The Lion and the Mouse v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "little-red-hen", "dino": "The Little Red Hen v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "love-from-seagull-island", "dino": "Love from Seagull Island v3.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "red-riding-hood", "dino": "Little Red Riding Hood v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "three-little-pigs", "dino": "The Three Little Pigs v19.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "tortoise-and-hare", "dino": "The Tortoise and the Hare v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "town-mouse-country-mouse", "dino": "The Town Mouse and the Country Mouse v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "ugly-duckling", "dino": "The Ugly Duckling v15.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "x-marks-the-treasure", "dino": "X Marks the Treasure! v16.hd.dino", "languages": [], "series": null, "contributors": [] }
+  ]
+}

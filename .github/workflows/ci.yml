@@ -35,3 +35,13 @@ jobs:
       # Other Core tests assert Windows paths (C:\...), which Path.GetFileName does not split on Linux; only the Kdp namespace runs here, the rest is covered by the Windows job.
       - run: dotnet test tests/PrintTheDamnBook.Core.Tests/PrintTheDamnBook.Core.Tests.csproj --configuration Release --no-build --filter-namespace "PrintTheDamnBook.Core.Tests.Kdp"
       - run: dotnet test tests/PrintTheDamnBook.Kdp.Tests/PrintTheDamnBook.Kdp.Tests.csproj --configuration Release --no-build
+
+  kdp-robot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # No browser and no npm install: the unit tests never open KDP and Playwright is imported only inside the browser commands.
+      - run: node --test "tools/kdp-robot/src/**/*.test.mjs"

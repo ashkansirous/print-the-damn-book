@@ -1,0 +1,17 @@
+{
+  "name": "kdp-robot",
+  "private": true,
+  "type": "module",
+  "description": "Playwright robot that fills Amazon KDP paperback drafts from kdp/catalog.json and kdp/listings. Never presses Publish.",
+  "scripts": {
+    "test": "node --test \"src/**/*.test.mjs\"",
+    "catalog": "node src/cli.mjs catalog",
+    "login": "node src/cli.mjs login",
+    "status": "node src/cli.mjs status",
+    "capture": "node src/cli.mjs capture",
+    "draft": "node src/cli.mjs draft"
+  },
+  "dependencies": {
+    "playwright": "1.64.1"
+  }
+}
