@@ -31,8 +31,11 @@ Uploading is the owner's step; the listing text is the `kdp-listing` skill's job
    Without `--other-books` the last page stays as before. The command prints the titles it used.
 
    Add `--offset <story page|front|back>=<pixels>` for each offset chosen so far in this run (they are saved in `kdp.json` in the output
-   folder, so a later run keeps them). Exit 0 means the files were written; 1 means the book could not be made (read the `Error:` line; a
-   cover or preview failure still leaves `interior.pdf`, the report and `kdp.json`); 2 is a wrong argument. A run without `--previews`
+   folder, so a later run keeps them). Exit 0 means the files were written; 1 means a failure: either the book could not be made (read the `Error:` line), or it was made but something is wrong. A story page whose words
+   do not fit their box at the one 24 pt size (Slice 42) writes every file and exits 1; `check-report.md` then has an `## Errors` section naming each page
+   ("Page N: the words do not fit their box ..."), and the same page is an `Error:` line on stderr. That book did build: do not count it as "the same
+   error twice, stop"; the fix is shorter words on that page (a text change by the owner, never a smaller size), so report the page to the owner. A cover or
+   preview failure also leaves `interior.pdf`, the report and `kdp.json`; 2 is a wrong argument. A run without `--previews`
 removes the previews of an earlier run.
 2. **Read `check-report.md`**: page count (even, at least 24), fonts embedded, text pages facing their pictures, the `## Cover` section
    and every warning at the end.

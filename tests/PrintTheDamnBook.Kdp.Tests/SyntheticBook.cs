@@ -34,10 +34,10 @@ internal static class SyntheticBook
     /// <param name="withoutPicture">How many of the last pages have no picture file in the archive (the reader skips them).</param>
     /// <param name="pictureWidth">Width of every picture in the archive.</param>
     /// <param name="pictureHeight">Height of every picture in the archive.</param>
-    public static string WriteDino(string path, int pages, int withoutPicture = 0, int pictureWidth = SourceWidth, int pictureHeight = SourceHeight, string id = "test1", string title = "Freddy and the Test", bool corruptBackCover = false)
+    public static string WriteDino(string path, int pages, int withoutPicture = 0, int pictureWidth = SourceWidth, int pictureHeight = SourceHeight, string id = "test1", string title = "Freddy and the Test", bool corruptBackCover = false, string? pageText = null)
     {
         var story = new StringBuilder($"{{\"Title\":\"{title}\",\"Language\":\"en\",\"Pages\":[");
-        story.AppendJoin(',', Enumerable.Range(1, pages).Select(i => $"{{\"Text\":\"Page {i} of the test.\",\"ImageFile\":\"page-{i}.jpg\"}}"));
+        story.AppendJoin(',', Enumerable.Range(1, pages).Select(i => $"{{\"Text\":\"{pageText ?? $"Page {i} of the test."}\",\"ImageFile\":\"page-{i}.jpg\"}}"));
         if (corruptBackCover)
         {
             story.Append(",{\"Text\":\"\",\"ImageFile\":\"back-cover.jpg\",\"BackCover\":{\"picture\":\"back-cover.jpg\"}}");

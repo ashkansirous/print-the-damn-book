@@ -76,7 +76,13 @@ public static class KdpRunner
                 error.WriteLine($"Error: the crop sheet was not written: {cropSheetError}");
             }
 
-            return result.CoverError is null && result.PreviewError is null && result.CropSheetError is null ? Ok : Failed;
+            var bookErrors = result.Errors ?? [];
+            foreach (var bookError in bookErrors)
+            {
+                error.WriteLine($"Error: {bookError}");
+            }
+
+            return result.CoverError is null && result.PreviewError is null && result.CropSheetError is null && bookErrors.Count == 0 ? Ok : Failed;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

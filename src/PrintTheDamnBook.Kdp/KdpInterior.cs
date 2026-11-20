@@ -18,7 +18,7 @@ public sealed record KdpBookInput(
     IReadOnlyList<byte[]>? OtherCovers = null);
 
 /// <summary>The words of one story page and what was chosen for them.</summary>
-public sealed record KdpStoryResult(int StoryIndex, int Position, double Pt, bool Shrunk);
+public sealed record KdpStoryResult(int StoryIndex, int Position, double Pt, bool Fits = true);
 
 /// <summary>What was made: the PDF and the facts the check report lists.</summary>
 public sealed record KdpInteriorResult(
@@ -27,7 +27,13 @@ public sealed record KdpInteriorResult(
     IReadOnlyList<KdpPicture> Pictures,
     IReadOnlyList<KdpStoryResult> Stories,
     KdpFontCheck Fonts,
-    IReadOnlyList<string> Warnings);
+    IReadOnlyList<string> Warnings)
+{
+    /// <summary>One line for each story text page whose words do not fit their box at the one text size. The build still writes everything, and the command exits non-zero.</summary>
+    public IReadOnlyList<string> Errors => Stories.Where(s => !s.Fits)
+        .Select(s => $"Page {s.Position}: the words do not fit their box at {KdpTrim.StoryTextPt} pt; the text runs past its box and is cut off at its edge.")
+        .ToList();
+}
 
 /// <summary>Makes the KDP interior PDF of a book: plan, pictures, text sizes, drawing and the checks on the result (Slice 27).</summary>
 public static class KdpInterior
@@ -46,7 +52,7 @@ public static class KdpInterior
         var settings = book.Settings ?? KdpBookSettings.Empty;
         var pictures = book.Pictures.Select((bytes, i) => KdpImageDecoder.Prepare(bytes, settings.OffsetFor(i + 1), settings.HasOffset(i + 1))).ToList();
         var warnings = new List<string>(plan.Warnings);
-        var stories = ChooseSizes(book, plan, direction, warnings);
+        var stories = ChooseSizes(book, plan, direction);
         warnings.AddRange(UpscaleWarnings(pictures));
         warnings.AddRange(CutWarnings(pictures));
         warnings.AddRange(OffsetWarnings(pictures));
@@ -75,47 +81,19 @@ public static class KdpInterior
             book.OtherCovers ?? []);
     }
 
-    private static List<KdpStoryResult> ChooseSizes(KdpBookInput book, KdpPlan plan, ReadingDirection direction, List<string> warnings)
+    /// <summary>Every story text page is set at <see cref="KdpTrim.StoryTextPt"/> and its lines wrap (Slice 42); a page whose words do not fit its box at that size is reported as an error, never shrunk.</summary>
+    private static List<KdpStoryResult> ChooseSizes(KdpBookInput book, KdpPlan plan, ReadingDirection direction)
     {
+        var rtl = direction == ReadingDirection.RightToLeft;
         var results = new List<KdpStoryResult>();
         foreach (var page in plan.Pages.Where(p => p.Role == KdpPageRole.StoryText))
         {
             var text = book.Texts[page.StoryIndex!.Value];
-            var box = KdpTrim.TextBox(page.IsRightHand);
-            var family = StoryFont.For(text);
-            var rtl = direction == ReadingDirection.RightToLeft;
-            var chosen = ChooseSize(text, family, box, rtl, page.Position, warnings);
-            if (chosen.Shrunk)
-            {
-                warnings.Add($"Page {page.Position}: the words were set at {chosen.Pt} pt (smaller than the first size, {KdpTrim.TextStepsPt[0]} pt).");
-            }
-
-            results.Add(new KdpStoryResult(page.StoryIndex.Value, page.Position, chosen.Pt, chosen.Shrunk));
+            var fits = KdpTextFit.Fits(text, StoryFont.For(text), KdpTrim.StoryTextPt, KdpTrim.TextBox(page.IsRightHand), rtl);
+            results.Add(new KdpStoryResult(page.StoryIndex.Value, page.Position, KdpTrim.StoryTextPt, fits));
         }
 
         return results.OrderBy(r => r.StoryIndex).ToList();
-    }
-
-    /// <summary>
-    /// The largest size at which every one of the book's own lines stays on one line (Slice 36). When no size does, even the smallest, the words are set at
-    /// the largest size that fits their box with wrapping and the page is reported; words that fit at none stop the build.
-    /// </summary>
-    private static TextFitResult ChooseSize(string text, string family, RectD box, bool rtl, int position, List<string> warnings)
-    {
-        var whole = StoryTextLayout.Choose(KdpTrim.TextStepsPt, pt => KdpTextFit.LinesStayWhole(text, family, pt, box, rtl));
-        if (whole.Fits)
-        {
-            return whole;
-        }
-
-        var wrapped = StoryTextLayout.Choose(KdpTrim.TextStepsPt, pt => KdpTextFit.Fits(text, family, pt, box, rtl));
-        if (!wrapped.Fits)
-        {
-            throw new KdpException($"The words of page {position} do not fit their box even at {wrapped.Pt} pt.");
-        }
-
-        warnings.Add($"Page {position}: a line of the words does not fit on one line even at {KdpTrim.TextStepsPt[^1]} pt, so it wraps (set at {wrapped.Pt} pt).");
-        return wrapped;
     }
 
     /// <summary>One line for the pages where art likely runs across the cut line, with the way to move the crop.</summary>

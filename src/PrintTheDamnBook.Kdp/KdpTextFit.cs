@@ -7,16 +7,14 @@ using QuestPDF.Infrastructure;
 namespace PrintTheDamnBook.Kdp;
 
 /// <summary>
-/// Measures whether words fit their box. QuestPDF has no measuring call, so the words are set in a one-page document of the box's size with
-/// <c>ShowEntire</c>, which throws when they overflow. The measuring page has the interior's exact page size and the same box, so QuestPDF's
-/// pixel snapping of the page size is the same in the measurement and the drawing; the same engine that draws the page breaks the lines, the way the App's painter measures
-/// and Core chooses (<see cref="StoryTextLayout.Choose"/>).
+/// Measures whether words fit their box, and sets them. Story text is always one size (<see cref="KdpTrim.StoryTextPt"/>, Slice 42) and its lines wrap; nothing here
+/// picks or shrinks a size. QuestPDF has no measuring call, so the words are set in a one-page document of the box's size with
+/// <c>ShowEntire</c>, which throws when they overflow; <see cref="Fits"/> then answers false and the build reports an error for that page. The drawing (<c>KdpInteriorDocument.StoryText</c>)
+/// uses <c>StopPaging</c> instead, so an overflowing page is still written, with its words clipped at the box edge (they are centred vertically, so the clip can fall at the top and the bottom). Both
+/// use the same page size, box, font, size and line height, so they wrap alike and "does not fit" in the probe means "runs past the box" in the drawing.
 /// </summary>
 internal static class KdpTextFit
 {
-    /// <summary>A line of the words is one line when its box is shorter than this many line heights (a second line would not fit, a first always does).</summary>
-    private const double OneLineAllowance = 1.5;
-
     private const double ProbePt = 100;
     private const string ProbeText = "Ag";
     private const double ProbeMinPt = 50;
@@ -28,33 +26,6 @@ internal static class KdpTextFit
     public static bool Fits(string text, string family, double pt, RectD boxInches, bool rightToLeft)
     {
         return Fits(boxInches, [text], family, pt, rightToLeft);
-    }
-
-    /// <summary>
-    /// True when the words fit the box and each of the book's own lines (the text's line breaks, Slice 36) stays on one line: every line is set alone in a
-    /// box one and a half lines tall, which a wrapped line overflows.
-    /// </summary>
-    public static bool LinesStayWhole(string text, string family, double pt, RectD boxInches, bool rightToLeft)
-    {
-        if (!Fits(text, family, pt, boxInches, rightToLeft))
-        {
-            return false;
-        }
-
-        double lineHeightPt;
-        try
-        {
-            lineHeightPt = LineHeightPt(family, pt);
-        }
-        catch (InvalidOperationException)
-        {
-            return false;
-        }
-
-        var lineHeightInches = lineHeightPt * OneLineAllowance / KdpTrim.PointsPerInch;
-        var oneLine = new RectD(boxInches.X, boxInches.Y, boxInches.Width, lineHeightInches);
-        var lines = text.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        return Fits(oneLine, lines, family, pt, rightToLeft);
     }
 
     /// <summary>The height the words really take: the smallest whole number of lines (plus a little slack) whose box they fit, at most <paramref name="maxHeightInches"/>.</summary>
