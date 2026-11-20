@@ -38,10 +38,10 @@ export function buildFields(listing, entry) {
     ...categoryFields(listing.categories),
     f('details', 'age-min', 'Minimum reading age', listing.ageMin),
     f('details', 'age-max', 'Maximum reading age', listing.ageMax),
-    f('details', 'ai-text', 'AI-generated text', listing.ai.text ? 'Yes' : 'No'),
-    f('details', 'ai-images', 'AI-generated images', listing.ai.images ? 'Yes' : 'No'),
-    f('details', 'ai-translations', 'AI-generated translations', listing.ai.translations ? 'Yes' : 'No'),
     f('details', 'explicit', 'Sexually explicit images or title', listing.explicit ? 'Yes' : 'No'),
+    f('content', 'ai-text', 'AI-generated text', listing.ai.text ? 'Yes' : 'No'),
+    f('content', 'ai-images', 'AI-generated images', listing.ai.images ? 'Yes' : 'No'),
+    f('content', 'ai-translations', 'AI-generated translations', listing.ai.translations ? 'Yes' : 'No'),
     f('content', 'isbn', 'ISBN', 'Free KDP ISBN'),
     f('content', 'ink', 'Interior and paper type', 'Premium color'),
     f('content', 'trim', 'Trim size', '8.5 x 8.5 in'),
@@ -52,11 +52,14 @@ export function buildFields(listing, entry) {
   ];
 }
 
+/** Whitespace-insensitive form: the rich editor wraps and re-spaces paragraphs, so only the words are compared. */
+const squash = (value) => normalize(value).replace(/\s+/g, ' ');
+
 /** Compare desired fields with what KDP shows now (live: key -> text). status: same | changed | new. */
 export function diffFields(desired, live) {
   return desired.map((d) => {
     const old = live[d.key];
-    const status = old == null || normalize(old) === '' ? 'new' : normalize(old) === d.value ? 'same' : 'changed';
+    const status = old == null || normalize(old) === '' ? 'new' : squash(old) === squash(d.value) ? 'same' : 'changed';
     return { ...d, old: old == null ? '' : normalize(old), status };
   });
 }

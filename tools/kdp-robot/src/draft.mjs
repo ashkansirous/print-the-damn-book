@@ -7,9 +7,10 @@ import { looksLikePublish, PublishRefused } from './guard.mjs';
 import { readListing } from './repo.mjs';
 import { nextState, readState, writeState } from './state.mjs';
 import { writeSummary } from './summary.mjs';
-import { clickButton, ensureKdpPage, guardField, log, openSession, pace, safeCheck, safeClick, safeUncheck, shot, sleep } from './browser.mjs';
-import { BOOKSHELF, BOOKSHELF_URL, PAGE as BOOKSHELF_PAGE, kdpIdFromUrl, titleUrl } from './pages/bookshelf.mjs';
-import { CATEGORY, CONTRIBUTOR, DETAILS_SPECS, PAGE as DETAILS_PAGE, contributorSpecs, keywordSpec, splitName } from './pages/details.mjs';
+import { clickAction, clickButton, ensureKdpPage, guardField, log, openSession, pace, safeCheck, safeClick, safeUncheck, shot, sleep } from './browser.mjs';
+import { capturePage, captureDir } from './capture.mjs';
+import { BOOKSHELF, BOOKSHELF_URL, CONTROL_CONFIRMED, PAGE as BOOKSHELF_PAGE, kdpIdFromUrl, titleUrl } from './pages/bookshelf.mjs';
+import { CATEGORY, CONTRIBUTOR, DETAILS_SPECS, PAGE as DETAILS_PAGE, PRIMARY_AUTHOR, contributorRowSelector, contributorSpecs, keywordSpec, splitName } from './pages/details.mjs';
 import { CONTENT, CONTENT_SPECS, PAGE as CONTENT_PAGE } from './pages/content.mjs';
 import { PRICING_SPECS, PAGE as PRICING_PAGE, formatPrice } from './pages/pricing.mjs';
 import { FieldNotFound, readField, readFields, single, writeField } from './fieldio.mjs';
@@ -17,11 +18,13 @@ import { readBookshelfRows } from './commands.mjs';
 import { matchRows, parseBookshelfRows } from './bookshelf.mjs';
 import {
   assertEditable, baselineOf, fileHash, hasIsbn, isbnPlan, judgeFileCheck, judgeSave, keepKdpId, liveCategories, liveTrim, needsUpload,
-  requireConfirmedPages, requireKdpId, singleRow, stateForTitle, waitForVerdict,
+  requireConfirmedPages, requireKdpId, singleRow, StoppedAtUnconfirmedPage, stateForTitle, waitForVerdict,
 } from './checks.mjs';
 
 /** Every page map `draft` needs; each carries `confirmed: false` until it was checked against a capture. */
 export const NEEDED_PAGES = [BOOKSHELF_PAGE, DETAILS_PAGE, CONTENT_PAGE, PRICING_PAGE];
+/** The maps checked before a browser opens; the rest of NEEDED_PAGES is checked by `runSteps` when the run reaches each page. */
+export const START_PAGES = [BOOKSHELF_PAGE];
 
 const SAVE_TIMEOUT_MS = 60 * 1000;
 const ID_TIMEOUT_MS = 10 * 1000;
@@ -34,7 +37,7 @@ export function planDraft(root, catalog, book, lang) {
   if (!entry) return { errors: [`book "${book}" is not in kdp/catalog.json`] };
   if (!entry.languages.includes(lang)) return { errors: [`"${book}" is not set to publish in "${lang}" in kdp/catalog.json`] };
   // The catalog checks that need no other book's folders: the price and finish, and this book's shape. Any error stops the run.
-  const catalogErrors = [...checkDefaults(catalog), ...checkEntryShape(entry, { bookIds: new Set([entry.id]) })];
+  const catalogErrors = [...checkDefaults(catalog), ...checkEntryShape(entry, { bookIds: new Set([entry.id]) }), ...primaryAuthorErrors(entry)];
   if (catalogErrors.length) return { errors: catalogErrors };
   const listing = readListing(root, book, lang);
   const folder = join(root, kdpOutFolder(entry, lang));
@@ -48,15 +51,33 @@ export function planDraft(root, catalog, book, lang) {
   return { entry, listing, files, fields: buildFields(listing, priced), folder, errors };
 }
 
+/** KDP's "Primary Author" boxes take the first contributor, so it must be an Author; checked here so a dry run and the plan see it, not mid-run. */
+export function primaryAuthorErrors(entry) {
+  const role = entry.contributors?.[0]?.role;
+  if (typeof role === 'string' && role.toLowerCase() === 'author') return [];
+  return [`the first contributor of "${entry.id}" must be an Author (KDP's primary author), not ${role ?? 'missing'}`];
+}
+
 const uploadsOf = (files) => [{ kind: 'interior.pdf (manuscript)', path: files.interior }, { kind: 'cover.pdf', path: files.cover }];
 
 const indexOf = (field) => Number(field.key.split('-')[1]) - 1;
 const isKind = (prefix) => (f) => f.key.startsWith(prefix);
 
+/** The first contributor must be an Author: KDP's "Primary Author" boxes. The others fill the rows below it, row 0 first. */
+function contributorTarget(field) {
+  const i = indexOf(field);
+  if (i === 0) {
+    if (field.role.toLowerCase() !== 'author') throw new Error(`the first contributor must be an Author (KDP's primary author), not ${field.role}`);
+    return { specs: PRIMARY_AUTHOR, row: null };
+  }
+  return { specs: contributorSpecs(i - 1), row: i - 1 };
+}
+
 async function readContributor(page, field) {
-  const specs = contributorSpecs(indexOf(field));
+  const { specs, row } = contributorTarget(field);
   try {
     const name = `${await readField(page, 'first', specs.first)} ${await readField(page, 'last', specs.last)}`;
+    if (row === null) return name;
     const role = await readField(page, 'role', specs.role);
     return role.toLowerCase() === field.role.toLowerCase() ? name : `${name} [role: ${role}]`;
   } catch (e) {
@@ -95,22 +116,21 @@ async function verifyCategories(page, todo, ctx) {
 }
 
 /** KDP shows one contributor row at first; a missing row is added with the guarded "Add another" button. */
-async function ensureContributorRow(page, i) {
-  for (let attempt = 0; attempt <= i; attempt++) {
-    if ((await page.getByLabel(CONTRIBUTOR.firstName).count()) > i) return;
+async function ensureContributorRow(page, row) {
+  for (let attempt = 0; attempt <= row; attempt++) {
+    if ((await page.locator(contributorRowSelector(row)).count()) > 0) return;
     await clickButton(page, CONTRIBUTOR.addButton);
   }
-  throw new FieldNotFound(`contributor row #${i + 1}`, await page.getByLabel(CONTRIBUTOR.firstName).count());
+  throw new FieldNotFound(`contributor row #${row + 1}`, await page.locator(contributorRowSelector(row)).count());
 }
 
 async function fillContributor(page, field) {
-  const i = indexOf(field);
-  await ensureContributorRow(page, i);
+  const { specs, row } = contributorTarget(field);
+  if (row !== null) await ensureContributorRow(page, row);
   const { first, last } = splitName(field.value);
-  const specs = contributorSpecs(i);
   await writeField(page, `${field.key} first name`, specs.first, first);
   await writeField(page, `${field.key} last name`, specs.last, last);
-  await writeField(page, `${field.key} role`, specs.role, field.role);
+  if (row !== null) await writeField(page, `${field.key} role`, specs.role, field.role);
 }
 
 /** One category: each branch of the path by exact text, then exactly one checkbox with the exact leaf name, ticked. */
@@ -169,7 +189,7 @@ function collectMessages(ctx, alerts) {
 }
 
 /** Save as Draft counts only when KDP shows a saved marker; an error alert or no marker stops the run with KDP's words. */
-export async function savePage(page, pageName, ctx) {
+export async function savePage(page, pageName, ctx, diff = null) {
   const baseline = baselineOf(judgeSave, await readPage(page)); // a marker already on the page never counts as this save
   await clickButton(page, 'Save as Draft');
   await waitForVerdict({
@@ -178,8 +198,22 @@ export async function savePage(page, pageName, ctx) {
   });
   await ensureKdpPage(page);
   await noteKdpId(page, ctx, ctx.idTimeoutMs ?? ID_TIMEOUT_MS);
-  requireKdpId(ctx.kdpId);
   ctx.screens.push(await shot(page, join(ctx.dir, 'shots'), pageName));
+  if (!ctx.kdpId) await recordUnnumberedSave(page, ctx, diff);
+  requireKdpId(ctx.kdpId);
+}
+
+/**
+ * The save worked, so the title now exists on KDP: with no id in the URL, kdp/state marks it (and the fields just saved) so the
+ * next run never creates a second one; then the id is looked up on the bookshelf row of this title (`ctx.findShelfId`).
+ */
+async function recordUnnumberedSave(page, ctx, diff) {
+  ctx.record?.({ savedWithoutId: true, ...(diff ? { fields: recordableFields(diff) } : {}) });
+  const id = ctx.findShelfId ? await ctx.findShelfId(page) : null;
+  if (!id) return;
+  ctx.kdpId = id;
+  ctx.record?.({ kdpId: id });
+  log(`KDP title id ${id} (from the bookshelf row)`);
 }
 
 /** The id has one owner and is set once: read from the URL (KDP redirects after a save, so it may take a moment) while none is known; a different id later is an IdConflict. */
@@ -197,24 +231,39 @@ export async function noteKdpId(page, ctx, waitMs) {
   log(`KDP title id ${keep}`);
 }
 
-/** The id is recorded the moment the title exists; a title that shows no id stops the run before any save, so a retry finds the draft on the bookshelf. */
+/**
+ * Capture 2026-11-20: the new-details page (.../paperback/new/details) has no id in its URL; the Create page was captured the same
+ * day (a "Create paperback" button) but the page after that click was not, so the first live run captures it. KDP may give the id
+ * only after the first Save as Draft (`savePage` records it and stops the run when none shows). An id that does show now is
+ * recorded at once. A title saved by an earlier run without an id is never followed by a second Create.
+ */
 export async function createTitle(page, ctx) {
+  if (ctx.savedWithoutId) throw new Error('an earlier run saved a new title on KDP without reading its id, and the bookshelf shows no single row matching it; no second title is created. Look at the bookshelf, then put its id in kdp/state as kdpId (or remove savedWithoutId if there is no such title)');
   log('create: no KDP id yet, creating a new paperback');
   await page.goto(BOOKSHELF_URL);
   await ensureKdpPage(page);
-  await clickButton(page, BOOKSHELF.createButton);
-  await clickButton(page, BOOKSHELF.paperbackChoice);
+  await clickAction(page, BOOKSHELF.createButton);
+  await clickAction(page, BOOKSHELF.paperbackChoice);
   await ensureKdpPage(page);
   await noteKdpId(page, ctx, ctx.createIdWaitMs ?? CREATE_ID_WAIT_MS);
-  if (!ctx.kdpId) throw new Error('KDP shows no title id after Create; run stopped before any save. Run status, then draft again: it finds the draft on the bookshelf');
+  if (!ctx.kdpId) log('create: the new title has no id yet; it comes with the first Save as Draft');
+}
+
+/** Reads the bookshelf and finds the one row matching this title (title + language + paperback); two matching rows is Ambiguous. */
+async function shelfRowOf(page, plan, { book, lang }) {
+  const raw = await readBookshelfRows(page);
+  const rows = parseBookshelfRows(raw);
+  const title = plan.fields.find((f) => f.key === 'title')?.value;
+  const { matched } = matchRows(rows, { books: [{ id: book, languages: [lang] }] }, () => title);
+  return { raw, rows, row: singleRow(matched, `${book} ${lang}`) };
 }
 
 /** The one bookshelf row of this title (title + language + paperback) fixes the id; its state must be draft or unknown. */
 export async function settleTitle(page, plan, ctx, { book, lang }) {
-  const rows = parseBookshelfRows(await readBookshelfRows(page));
-  const title = plan.fields.find((f) => f.key === 'title')?.value;
-  const { matched } = matchRows(rows, { books: [{ id: book, languages: [lang] }] }, () => title);
-  const row = singleRow(matched, `${book} ${lang}`);
+  const { raw, rows, row } = await shelfRowOf(page, plan, { book, lang });
+  if (!row && !ctx.kdpId && !CONTROL_CONFIRMED.titleLinks && raw.length > 0) {
+    throw new Error(`the bookshelf shows ${raw.length} title link(s) but none is this title, and kdp/state has no id for ${book} ${lang}. The bookshelf title-link selector is not confirmed against a non-empty shelf yet, so the robot cannot tell a missing title from a selector miss and creates nothing. Find this title on the bookshelf and put its id in kdp/state as kdpId, or empty the bookshelf`);
+  }
   const before = ctx.kdpId;
   ctx.kdpId = keepKdpId(ctx.kdpId, row?.kdpId ?? null);
   if (ctx.kdpId) assertEditable(stateForTitle(rows, ctx.kdpId));
@@ -230,10 +279,25 @@ async function runDetails(page, plan, state, ctx) {
     await applyDetail(page, f);
     await pace();
   }
-  if (todo.some(isKind('category-'))) await chooseCategories(page, plan.listing.categories);
-  await savePage(page, 'details', ctx);
-  await verifyCategories(page, todo, ctx);
+  const setCategories = categoriesAllowed(todo, ctx);
+  if (setCategories) await chooseCategories(page, plan.listing.categories);
+  await savePage(page, 'details', ctx, diff);
+  if (setCategories) await verifyCategories(page, todo, ctx);
   return diff;
+}
+
+/**
+ * Categories are set only when their dialog map is confirmed and the title already has an id (the "Choose categories" button is
+ * disabled on a new, unsaved title: capture 2026-11-20). Otherwise they are skipped, marked unset so kdp/state never records them,
+ * and the summary says so.
+ */
+export function categoriesAllowed(todo, ctx) {
+  const wanted = todo.filter(isKind('category-'));
+  if (!wanted.length) return false;
+  if (CATEGORY.confirmed && ctx.kdpId) return true;
+  for (const f of wanted) f.verified = false;
+  collectMessages(ctx, [CATEGORY.confirmed ? 'not set: categories wait for the first save of the title (the button is disabled before it)' : 'not set: categories dialog not captured']);
+  return false;
 }
 
 async function uploadFile(page, input, path, ctx, kind) {
@@ -354,7 +418,8 @@ async function liveState(page, ctx) {
   ctx.state = stateForTitle(parseBookshelfRows(await readBookshelfRows(page)), ctx.kdpId);
 }
 
-export async function runDraft(root, catalog, book, lang, { dryRun = false, pages = NEEDED_PAGES } = {}) {
+export async function runDraft(root, catalog, book, lang, { dryRun = false, pages = START_PAGES } = {}) {
+  // Only the bookshelf map is needed to start; each later page is checked when the run reaches it (`runSteps`).
   if (!dryRun) requireConfirmedPages(pages);
   const plan = planDraft(root, catalog, book, lang);
   const run = { book, lang, when: new Date().toISOString(), dryRun, kdpId: null, state: null, diff: [], uploads: [], messages: [], screenshots: [] };
@@ -388,25 +453,47 @@ async function browserRun(root, plan, state, run) {
 }
 
 function makeContext(root, run) {
-  const ctx = { kdpId: run.kdpId, screens: run.screenshots, messages: run.messages, dir: join(root, 'tmp', 'kdp-robot', `${run.book}-${run.lang}`), state: 'unknown' };
+  const ctx = { root, kdpId: run.kdpId, screens: run.screenshots, messages: run.messages, dir: join(root, 'tmp', 'kdp-robot', `${run.book}-${run.lang}`), state: 'unknown' };
   // Written the moment a fact is known (title id, ISBN assigned, file uploaded), so a later stop never loses it.
   ctx.record = (patch) => writeState(root, run.book, run.lang, nextState(readState(root, run.book, run.lang), { kdpId: ctx.kdpId, ...patch }));
   return ctx;
 }
 
 async function runPages(page, plan, state, ctx, run) {
+  ctx.savedWithoutId = Boolean(state?.savedWithoutId);
+  ctx.findShelfId = async (p) => (await shelfRowOf(p, plan, run)).row?.kdpId ?? null;
   await settleTitle(page, plan, ctx, run);
   if (ctx.kdpId) {
     await page.goto(titleUrl(ctx.kdpId, 'details'));
     await ensureKdpPage(page);
   } else await createTitle(page, ctx);
-  run.diff.push(...(await runDetails(page, plan, state, ctx)));
-  for (const [name, fn] of [['content', runContent], ['pricing', runPricing]]) {
-    await page.goto(titleUrl(ctx.kdpId, name));
-    await ensureKdpPage(page);
-    run.diff.push(...(await fn(page, plan, state, ctx)));
-  }
+  await runSteps(page, plan, state, ctx, run);
   await liveState(page, ctx);
+}
+
+export const DRAFT_STEPS = [
+  { page: DETAILS_PAGE, run: runDetails },
+  { page: CONTENT_PAGE, run: runContent },
+  { page: PRICING_PAGE, run: runPricing },
+];
+
+/**
+ * The pages in order. Each page whose map is confirmed is filled and saved; at the first unconfirmed one nothing more is saved:
+ * the page is captured (read-only) and the run stops, telling the owner to confirm that map. The page after "details" only exists
+ * once the draft is saved, so its capture can only be made here.
+ */
+export async function runSteps(page, plan, state, ctx, run, { steps = DRAFT_STEPS, capture = capturePage } = {}) {
+  for (const [i, step] of steps.entries()) {
+    if (i > 0) {
+      await page.goto(titleUrl(ctx.kdpId, step.page.name));
+      await ensureKdpPage(page);
+    }
+    if (!step.page.confirmed) {
+      const { html } = await capture(page, captureDir(ctx.root), `draft-${step.page.name}`);
+      throw new StoppedAtUnconfirmedPage(step.page.name, html);
+    }
+    run.diff.push(...(await step.run(page, plan, state, ctx)));
+  }
 }
 
 async function recordStopped(page, ctx, run, e) {
