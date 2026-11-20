@@ -36,6 +36,11 @@ public static class KdpRunner
             var result = KdpExporter.Export(request);
             var written = result.CoverError is null ? $"{result.PdfPath} ({result.PageCount} pages), {result.CoverPath} and {result.ReportPath}" : $"{result.PdfPath} ({result.PageCount} pages) and {result.ReportPath}";
             output.WriteLine($"Wrote {written}.");
+            if (result.ContactSheetPath is { } sheet)
+            {
+                output.WriteLine($"Wrote the contact sheet {sheet} and small page previews beside it.");
+            }
+
             foreach (var warning in result.Warnings)
             {
                 error.WriteLine($"Warning: {warning}");
@@ -49,10 +54,14 @@ public static class KdpRunner
                 }
 
                 error.WriteLine($"Error: cover.pdf was not written: {coverError}");
-                return Failed;
             }
 
-            return Ok;
+            if (result.PreviewError is { } previewError)
+            {
+                error.WriteLine($"Error: the previews were not written: {previewError}");
+            }
+
+            return result.CoverError is null && result.PreviewError is null ? Ok : Failed;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

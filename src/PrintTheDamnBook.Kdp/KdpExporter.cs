@@ -3,15 +3,17 @@ using PrintTheDamnBook.Core.Kdp;
 using PrintTheDamnBook.Core.Text;
 using PrintTheDamnBook.Kdp.Cover;
 using PrintTheDamnBook.Kdp.Pictures;
+using PrintTheDamnBook.Kdp.Previews;
 
 namespace PrintTheDamnBook.Kdp;
 
 /// <summary>What the command line asked for: one local <c>.dino</c>, the language to print it in and the folder to write to.</summary>
 /// <param name="Offsets">Crop offsets (story page number to pixels) from <c>--offset</c>, saved to <c>kdp.json</c>; null when none were given.</param>
-public sealed record KdpExportRequest(string DinoPath, string Language, string OutFolder, IReadOnlyDictionary<int, int>? Offsets = null);
+/// <param name="Previews">True for <c>--previews</c> (Slice 30): also write small per-page PNGs of the interior and a contact sheet.</param>
+public sealed record KdpExportRequest(string DinoPath, string Language, string OutFolder, IReadOnlyDictionary<int, int>? Offsets = null, bool Previews = false);
 
 /// <summary>The files written and what to tell the person who ran the command.</summary>
-public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null);
+public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null);
 
 /// <summary>The pictures pulled out of a book: one per story page, the cover and the back cover (each null when the book has none).</summary>
 internal sealed record BookPictures(List<byte[]> Pages, byte[]? Cover, byte[]? Back);
@@ -54,7 +56,25 @@ public static class KdpExporter
         var older = WriteAll(pdfs, reportPath, cover is null ? coverPath : null, stale => KdpCheckReport.Build(input.Title, language.Code, result, cover, coverError, stale));
         WritePreviews(request.OutFolder, built.Pictures);
         SaveOffsets(request, toSave);
-        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older));
+        var (sheet, previewError) = TryWritePreviews(request, input, result);
+        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError);
+    }
+
+    /// <summary>
+    /// The <c>--previews</c> files are a side output like the cover: a failure to make them is reported and never stops the PDFs, the report or <c>kdp.json</c>.
+    /// Without the option, those of an earlier run are removed so none is stale; after a failure none is left either.
+    /// </summary>
+    private static (string? ContactSheet, string? Error) TryWritePreviews(KdpExportRequest request, KdpBookInput input, KdpInteriorResult result)
+    {
+        try
+        {
+            KdpPreviews.Remove(request.OutFolder);
+            return (request.Previews ? KdpPreviews.Write(request.OutFolder, input, result).ContactSheetPath : null, null);
+        }
+        catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException or AccessViolationException or OperationCanceledException))
+        {
+            return (null, ex.Message);
+        }
     }
 
     /// <summary>

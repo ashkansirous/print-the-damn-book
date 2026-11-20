@@ -33,7 +33,14 @@ internal static class KdpInteriorDocument
     /// </summary>
     private static readonly DocumentSettings Settings = new() { ImageCompressionQuality = ImageCompressionQuality.Best, CompressDocument = false };
 
-    public static byte[] Render(KdpDrawing drawing)
+    /// <summary>One small PNG per page (Slice 30, <c>--previews</c>): the same drawing as the PDF, rasterised at <see cref="KdpContactSheetLayout.PageRasterDpi"/>.</summary>
+    public static IReadOnlyList<byte[]> RenderPagePreviews(KdpDrawing drawing)
+    {
+        var settings = new ImageGenerationSettings { ImageFormat = ImageFormat.Png, RasterDpi = KdpContactSheetLayout.PageRasterDpi };
+        return CreateDocument(drawing).GenerateImages(settings).ToList();
+    }
+
+    internal static IDocument CreateDocument(KdpDrawing drawing)
     {
         QuestPDF.Settings.License = LicenseType.Community;
         KdpFonts.EnsureRegistered();
@@ -43,7 +50,7 @@ internal static class KdpInteriorDocument
             {
                 container.Page(p => Compose(p, page, drawing));
             }
-        }).WithSettings(Settings).GeneratePdf();
+        }).WithSettings(Settings);
     }
 
     private static void Compose(PageDescriptor p, KdpPage page, KdpDrawing drawing)

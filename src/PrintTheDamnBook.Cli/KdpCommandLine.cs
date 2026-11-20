@@ -13,9 +13,10 @@ public static class KdpCommandLine
     public const string LanguageOption = "--language";
     public const string OutOption = "--out";
     public const string OffsetOption = "--offset";
+    public const string PreviewsOption = "--previews";
     public const string DefaultLanguage = "en";
 
-    public const string Usage = "Usage: print-the-damn-book kdp <book.dino> [--language en] [--offset <page>=<pixels> ...] --out <folder>   (--offset <page>=0 clears a page's saved offset)";
+    public const string Usage = "Usage: print-the-damn-book kdp <book.dino> [--language en] [--offset <page>=<pixels> ...] [--previews] --out <folder>   (--offset <page>=0 clears a page's saved offset; --previews also writes contact-sheet.png and small page PNGs)";
 
     public static KdpArguments Parse(IReadOnlyList<string> args)
     {
@@ -23,6 +24,7 @@ public static class KdpCommandLine
         string? language = null;
         string? output = null;
         var offsets = new Dictionary<int, int>();
+        var previews = false;
         for (var i = 0; i < args.Count; i++)
         {
             switch (args[i])
@@ -31,6 +33,9 @@ public static class KdpCommandLine
                     return Fail($"{args[i]} needs a value.");
                 case LanguageOption or OutOption or OffsetOption when args[i + 1].StartsWith("--", StringComparison.Ordinal):
                     return Fail($"{args[i]} needs a value, not the option {args[i + 1]}.");
+                case PreviewsOption:
+                    previews = true;
+                    break;
                 case LanguageOption:
                     language = args[++i];
                     break;
@@ -60,7 +65,7 @@ public static class KdpCommandLine
 
         return output is null
             ? Fail($"{OutOption} is needed.")
-            : new KdpArguments(new KdpExportRequest(dino, language ?? DefaultLanguage, output, offsets.Count > 0 ? offsets : null), null);
+            : new KdpArguments(new KdpExportRequest(dino, language ?? DefaultLanguage, output, offsets.Count > 0 ? offsets : null, previews), null);
     }
 
     private static bool TryParseOffset(string text, out int page, out int pixels)
