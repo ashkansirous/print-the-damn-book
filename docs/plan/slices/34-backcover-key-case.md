@@ -1,6 +1,6 @@
 ### Slice 34 — Dino back cover: read the store's PascalCase keys
 
-*Planned 2026-11-19 by run-all-waves night 2026-11-19-2055, wave 1, from a finding while building Slice 27.*
+*Planned 2026-11-19 by run-all-waves night 2026-11-19-2055, wave 1, from a finding while building Slice 27. Built as part of Slice 36, merged as PR #85 (5b3eaf7).*
 
 **Touches:** `src/PrintTheDamnBook.Core/Dino/DinoBackCover.cs`, `tests/PrintTheDamnBook.Core.Tests/DinoBackCoverReaderTests.cs`,
 `tests/PrintTheDamnBook.App.Tests/StoryFitAndBackCoverTests.cs`

@@ -1,6 +1,6 @@
 ### Slice 36 — Amazon KDP: an agent picks every picture's crop, a cover without white boxes, tinted text pages
 
-*Planned 2026-11-20 with the owner (interactive session, RefineScope), includes Slice 34 (back-cover keys). Built 2026-11-20 (A-G), not merged; H (Freddy rebuild) done, the owner's verdict is pending.*
+*Planned 2026-11-20 with the owner (interactive session, RefineScope), includes Slice 34 (back-cover keys). Built 2026-11-20 (A-G), merged as PR #85 (5b3eaf7); H (Freddy rebuild) done, the owner's verdict is pending.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/`, `src/PrintTheDamnBook.Core/Dino/DinoBackCover.cs`,
 `src/PrintTheDamnBook.Core/Text/TextPageTint.cs`, `src/PrintTheDamnBook.Kdp/`, `src/PrintTheDamnBook.Cli/`,
@@ -126,7 +126,7 @@ The 27 keys where the sheet and the 480 px copy differ by more than 60 px (sheet
   light skies. Not decided by the owner.
 - Text sizes stop at 14 pt, so Freddy pages 12 and 24 still wrap on one line. Not decided by the owner.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-20)
 
 Already added in this branch's `CLAUDE.md` diff (two Slice 36 rules: the crop agent and its `kdp.json` offsets; cover words,
 QR library and text-page tint). Nothing further to lift.
