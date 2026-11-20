@@ -1,6 +1,6 @@
 ### Slice 42 — Amazon KDP: one text size for every story page of a book
 
-*Built 2026-11-20 (PR #100), 980 tests pass. Item C (rebuild all 16 books) done before merge on the reviewed code is re-run after merge.*
+*Built 2026-11-20, merged as PR #100 (4425035), 980 tests pass. Item C (rebuild all 16 books) done before merge on the reviewed code is re-run after merge.*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/`, `src/PrintTheDamnBook.Kdp/`, `tests/PrintTheDamnBook.Kdp.Tests/`,
 `tests/PrintTheDamnBook.Core.Tests/`, `src/PrintTheDamnBook.Cli/`, `.claude/agents/kdp-visual-check.md`,

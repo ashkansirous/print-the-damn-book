@@ -35,7 +35,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 39 | Amazon KDP robot: every language, and keeping published books up to date | planned | | | [39](docs/plan/slices/39-kdp-robot-languages-and-updates.md) |
 | 40 | Amazon KDP: series, "Also by" page, author page, short link to the Dino app | planned | | | [40](docs/plan/slices/40-kdp-series-and-cross-links.md) |
 | 41 | Amazon KDP: "More books" on the last page, and the crop agent places the back-cover words and the Dino QR | verified: built (PR #93), 16 books rebuilt, owner accepted 2026-11-20 | 93 | | [41](docs/plan/slices/41-kdp-more-books-and-back-placement.md) |
-| 42 | Amazon KDP: one text size for every story page of a book | planned | | | [42](docs/plan/slices/42-kdp-one-text-size-per-book.md) |
+| 42 | Amazon KDP: one text size for every story page of a book | built (PR #100) | 100 | | [42](docs/plan/slices/42-kdp-one-text-size-per-book.md) |
 
 Notes:
 
@@ -49,8 +49,9 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 29 checks across 16 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
-- Text size on story pages: the owner chose one size per book (2026-11-20: "yes. your pick is good. 1 sizr"); planned as [Slice 42](docs/plan/slices/42-kdp-one-text-size-per-book.md).
+- **Not yet tried on a device:** 30 checks across 16 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- Text size answered: every story page of every book is 24 pt (Slice 42, built PR #100; [slice 42](docs/plan/slices/42-kdp-one-text-size-per-book.md)).
+- `tools/kdp-robot` should refuse a folder whose `check-report.md` has an `## Errors` section: `planDraft` (`src/draft.mjs:45-52`) checks only that `interior.pdf` and `cover.pdf` exist ([slice 42](docs/plan/slices/42-kdp-one-text-size-per-book.md), Follow-ups).
 - Slice 38 (KDP robot) is built but `draft` refuses to run until its page maps are confirmed from a capture; next step needs the owner signed in to KDP for the capture session: [KDP bookshelf](https://kdp.amazon.com/en_US/bookshelf) ([slice 38](docs/plan/slices/38-kdp-robot-draft.md)).
 - KDP robot open points (owner can change; [slice 40](docs/plan/slices/40-kdp-series-and-cross-links.md)): the other 14 books stay in series "Dino Stories"; Love from Seagull Island is book 1 of "Little Seagull’s Big Adventures" and X Marks the Treasure book 2. Arabic and Farsi paperbacks don't exist on KDP, so those wait for the Kindle edition (Slice 32's gate).
 - Amazon KDP spin-offs that belong to other repos (Scope Inbox doc of 2026-11-18, *Spin-offs*), not planned there yet: print-resolution art for Three Little Pigs, Town Mouse, Ugly Duckling and X Marks the Treasure, and author/credit fields per book (ReadTheStupidText / dino-reader); audiobook collections (dino-reader). Later here: hardcover treasury and 3-in-1 collection, KDP upload is now planned as the Playwright robot, Slices 38-40.
