@@ -79,3 +79,17 @@ Findings 1-5 and 7 of `reviews/pr-77-high.md` were applied; the skips are listed
 - `[owner]` The same run on Freddy (English), which needs the owner's paid copy.
 
 *Follow-up (not built):* contact-sheet labels may be blank on Linux without a default font (medium #3).
+
+*Follow-up (not built), live check 2026-11-20 FAILED:* a fresh headless `claude -p` session ran `kdp-build` on The Three
+Little Pigs (std) and X Marks the Treasure (hd), English, with no human step; it wrote `interior.pdf`, `cover.pdf`,
+`check-report.md`, the contact sheet and previews, and `kdp-visual-check` said clean on both. But neither report was clean
+by the skill's own stop rule: "may be cut through a character" stayed on Pigs story pages 1 and 15 and X Marks story
+page 16, and X Marks has "cover: the back picture may be cut through a character at the trim edge". The session called
+them false alarms and did not move those crops. Checked by hand: X Marks `previews/page-16.jpg` (score 2.9) has the line
+through sand and sticks below everyone's feet, nothing cut. To do: (1) the cut-line flag (`CutLineCheck`, `FlagRatio`
+2.5) fires on uncut pictures in free books, so tune or rethink it; (2) the skill has no way to end clean when the
+visual check overrules a flag, so give it a recorded override or have the report drop a flag the owner or agent
+dismissed; (3) the session handed `kdp-visual-check` the wrong book page for Pigs story 15 (31 instead of 33), so make
+the report or previews map story page to book page; (4) the skill never previews the cover, so the cover cut-line
+warning can only be checked by opening `cover.pdf`. Output and the session's log: `D:/print-the-damn-book-worktrees/reviews/lc-2026-11-20/`
+(`kdp-out/`, `s30-session.log`).
