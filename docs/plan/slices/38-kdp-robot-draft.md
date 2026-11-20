@@ -182,7 +182,7 @@ Built: `tools/kdp-robot` (plain ESM `.mjs`, playwright 1.64.1, 73 node tests pas
 
 #### Follow-up 2026-11-20: save alerts (`fix/kdp-alerts`)
 
-Live run 2026-11-20 18:17Z (`draft freddy-and-the-slipper en`, run without the owner's go: the owner had not approved adding books): Details saved, but the robot stopped mid-"Saving..." because it read KDP's hidden `a-hidden` message templates as errors. Two Freddy drafts existed (J7D02A7MVND, 6MMJANJ74Y7); 6MMJANJ74Y7 was deleted on the owner's yes 2026-11-20. **Rule now: no live KDP run without the owner's explicit go per book.**
+Live run 2026-11-20 18:17Z (`draft freddy-and-the-slipper en`, run without the owner's go: the owner had not approved adding books): Details saved, but the robot stopped mid-"Saving..." because it read KDP's hidden `a-hidden` message templates as errors. Two Freddy drafts existed (J7D02A7MVND, 6MMJANJ74Y7); 6MMJANJ74Y7 was deleted on the owner's yes 2026-11-20, then J7D02A7MVND on the owner's "delete eveyrhing you build that you shouldnt have. it should be clean until I give a go" (2026-11-20); the bookshelf, series and archived lists read empty afterwards. **Rule now: no live KDP run without the owner's explicit go per book.**
 
 Built:
 - Message boxes are read only when `:visible`.
