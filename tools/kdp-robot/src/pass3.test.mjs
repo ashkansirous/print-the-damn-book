@@ -7,7 +7,7 @@ import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Ambiguous, IdConflict, NotEditable, PageMapNotConfirmed, assertEditable, keepKdpId, requireConfirmedPages, singleRow } from './checks.mjs';
-import { NEEDED_PAGES, noteKdpId, runDraft, settleTitle } from './draft.mjs';
+import { DRAFT_STEPS, NEEDED_PAGES, START_PAGES, noteKdpId, runDraft, settleTitle } from './draft.mjs';
 import { planStatusWrites } from './commands.mjs';
 import { parseBookshelfRows, stateFromStatus } from './bookshelf.mjs';
 import { CAPTURE_MAX_WIDTH, capturePage, capturePlan } from './capture.mjs';
@@ -66,6 +66,14 @@ test('1: settleTitle adopts the one matching row, stops on two rows, and refuses
   assert.equal(fresh.kdpId, null);
 });
 
+test('2: while the title links are unconfirmed, a shelf with other titles and no saved id stops before Create', async () => {
+  const stranger = { href: href('CCCCCCCCCC'), title: 'Other book', text: 'English', status: 'Draft' };
+  const none = { kdpId: null };
+  await assert.rejects(settleTitle(livePage([stranger]), plan, none, { book: 'fox', lang: 'en' }), /not confirmed against a non-empty shelf/);
+  const known = { kdpId: 'AAAAAAAAAA' };
+  await assert.rejects(settleTitle(livePage([stranger]), plan, known, { book: 'fox', lang: 'en' }), NotEditable); // a saved id is checked as before
+});
+
 test('1: singleRow and assertEditable', () => {
   assert.equal(singleRow([], 'x'), null);
   assert.throws(() => singleRow([{ row: 1 }, { row: 2 }], 'x'), Ambiguous);
@@ -86,16 +94,23 @@ test('10: the state comes from the status cell with an exact label, not from wor
   assert.equal(parseBookshelfRows([{ href: href('AAAAAAAAAA'), title: 'Fox', text: 'English Live' }])[0].state, 'unknown');
 });
 
-test('page maps: every map is unconfirmed and draft refuses with the page named', async () => {
+test('page maps: bookshelf and details are confirmed from the 2026-11-20 capture, content and pricing are not; draft refuses with the page named', async () => {
   assert.deepEqual(NEEDED_PAGES.map((p) => p.name), ['bookshelf', 'details', 'content', 'pricing']);
-  for (const p of NEEDED_PAGES) assert.equal(p.confirmed, false, p.name);
+  assert.deepEqual(NEEDED_PAGES.map((p) => p.confirmed), [true, true, false, false]);
   for (const p of NEEDED_PAGES) {
     const only = NEEDED_PAGES.map((x) => ({ ...x, confirmed: x !== p }));
     assert.throws(() => requireConfirmedPages(only), (e) => e instanceof PageMapNotConfirmed && e.message === `page map not confirmed: ${p.name}; run capture first`);
   }
   assert.doesNotThrow(() => requireConfirmedPages(NEEDED_PAGES.map((p) => ({ ...p, confirmed: true }))));
-  await assert.rejects(runDraft('/nowhere', { books: [] }, 'fox', 'en'), /page map not confirmed: bookshelf; run capture first/);
+  await assert.rejects(runDraft('/nowhere', { books: [] }, 'fox', 'en', { pages: [{ name: 'bookshelf', confirmed: false }] }), /page map not confirmed: bookshelf; run capture first/);
   await assert.rejects(runDraft('/nowhere', { books: [] }, 'fox', 'en', { pages: [{ name: 'content', confirmed: false }] }), /page map not confirmed: content; run capture first/);
+});
+
+test('the real lists: the up-front check passes with today\'s maps, and the unconfirmed content page is what stops the run later', () => {
+  assert.deepEqual(START_PAGES.map((p) => p.name), ['bookshelf']);
+  assert.doesNotThrow(() => requireConfirmedPages(START_PAGES));
+  assert.deepEqual(DRAFT_STEPS.filter((s) => !s.page.confirmed).map((s) => s.page.name), ['content', 'pricing']);
+  assert.ok(START_PAGES.every((p) => NEEDED_PAGES.includes(p)));
 });
 
 test('capture: the plan is the bookshelf, the new form and one draft title\'s three pages; no draft row, no title pages', () => {

@@ -19,6 +19,8 @@ export const ALLOWED_BUTTONS = [
   'Assign ISBN',
   'Cancel',
   'Add another contributor',
+  'Add Another',
+  '+ Create new title or series',
 ];
 
 export class PublishRefused extends Error {

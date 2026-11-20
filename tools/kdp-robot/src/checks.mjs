@@ -98,6 +98,15 @@ export class PageMapNotConfirmed extends Error {
   }
 }
 
+/** `draft` reached a page whose map is not confirmed: the page was captured (nothing saved on it) and the run stops here. */
+export class StoppedAtUnconfirmedPage extends PageMapNotConfirmed {
+  constructor(page, capturedHtml) {
+    super(page);
+    this.message = `page map not confirmed: ${page}; nothing was saved on it. The page was captured to ${capturedHtml}: confirm src/pages/${page}.mjs from that capture (set confirmed: true), then run draft again`;
+    this.name = 'StoppedAtUnconfirmedPage';
+  }
+}
+
 /** The id is set once: the same id is fine, a different one stops the run. Returns the id to keep. */
 export function keepKdpId(known, seen) {
   if (known && !KDP_ID.test(known)) throw new Error(`the known title id "${String(known).slice(0, 40)}" is not a KDP title id; the run stops`);
@@ -122,7 +131,7 @@ export function requireConfirmedPages(pages) {
 }
 
 export function requireKdpId(id) {
-  if (!id) throw new Error('no KDP id after Save as Draft: the URL did not carry the title id; run stopped before a second title could be created');
+  if (!id) throw new Error('no KDP id after Save as Draft: the URL did not carry the title id. The title was saved on KDP, so kdp/state now marks it (savedWithoutId) and the next run creates no new title until the bookshelf shows one matching row');
   return id;
 }
 

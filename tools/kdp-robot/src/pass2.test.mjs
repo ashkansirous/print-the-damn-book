@@ -13,12 +13,14 @@ import { chooseCategories, createTitle, decideIsbn, recordableFields, savePage }
 import { writeField } from './fieldio.mjs';
 import { PublishRefused } from './guard.mjs';
 import { kdpIdFromUrl } from './pages/bookshelf.mjs';
+import { nextState } from './state.mjs';
 
 function ctl({ aria = null, text = '', count = 1, checked = true } = {}) {
   const calls = [];
   const loc = {
     calls,
     first: () => loc,
+    or: () => loc,
     nth: () => loc,
     count: async () => count,
     innerText: async () => text,
@@ -53,7 +55,26 @@ test('1: a "new" placeholder is never a KDP id and is not recorded after a save'
   const recorded = [];
   const ctx = { kdpId: null, screens: [], messages: [], dir: mkdtempSync(join(tmpdir(), 'kdp-p2-')), saveTimeoutMs: 20, pollMs: 1, idTimeoutMs: 20, record: (p) => recorded.push(p) };
   await assert.rejects(savePage(savedAfterClick('https://kdp.amazon.com/en_US/title-setup/paperback/new/details'), 'details', ctx), /no KDP id/);
-  assert.deepEqual(recorded, []);
+  assert.deepEqual(recorded, [{ savedWithoutId: true }]); // the id is never recorded, but the saved-without-id marker is
+});
+
+test('1c: with no id in the URL the id comes from the bookshelf row, and the saved fields are recorded with the marker', async () => {
+  const recorded = [];
+  const ctx = {
+    kdpId: null, screens: [], messages: [], dir: mkdtempSync(join(tmpdir(), 'kdp-p2-')), saveTimeoutMs: 20, pollMs: 1, idTimeoutMs: 20,
+    record: (p) => recorded.push(p), findShelfId: async () => 'ABCDE12345',
+  };
+  const diff = [{ key: 'title', value: 'Fox', status: 'new' }];
+  await savePage(savedAfterClick('https://kdp.amazon.com/en_US/title-setup/paperback/new/details'), 'details', ctx, diff);
+  assert.equal(ctx.kdpId, 'ABCDE12345');
+  assert.deepEqual(recorded[0], { savedWithoutId: true, fields: recordableFields(diff) });
+  assert.deepEqual(recorded[1], { kdpId: 'ABCDE12345' });
+});
+
+test('1b: a title saved without an id blocks a second Create on the next run', async () => {
+  const ctx = { kdpId: null, savedWithoutId: true };
+  await assert.rejects(createTitle({ goto: async () => assert.fail('no navigation') }, ctx), /no second title is created/);
+  assert.equal(nextState({ kdpId: null, savedWithoutId: true }, { kdpId: 'ABCDE12345' }).savedWithoutId, undefined);
 });
 
 test('2: a bookshelf row matches on title AND language AND format; same title in two languages is not mixed up', () => {
@@ -149,10 +170,10 @@ test('9: the KDP id is recorded as soon as the title exists, before any save', a
   assert.deepEqual(recorded, [{ kdpId: 'ABCDE12345' }]);
 });
 
-test('9: when KDP shows no id after Create, nothing is recorded and the run stops before any save', async () => {
+test('9: a Create that lands on a page with no id in its URL (the new-details page has none; the Create flow itself was not captured): nothing is recorded, the id comes with the first save', async () => {
   const recorded = [];
   const ctx = { kdpId: null, record: (p) => recorded.push(p), pollMs: 1, createIdWaitMs: 10 };
-  await assert.rejects(createTitle(kdpPage('https://kdp.amazon.com/en_US/title-setup/paperback/new/details', 'Bookshelf\n+ Create'), ctx), /no title id after Create/);
+  await createTitle(kdpPage('https://kdp.amazon.com/en_US/title-setup/paperback/new/details', 'Bookshelf\n+ Create'), ctx);
   assert.equal(ctx.kdpId, null);
   assert.deepEqual(recorded, []);
 });

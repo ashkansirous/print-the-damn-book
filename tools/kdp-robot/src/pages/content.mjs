@@ -2,7 +2,13 @@
 // `confirmed` becomes true only after this map was checked against a `capture` of the live page; `draft` refuses until then.
 export const PAGE = { name: 'content', confirmed: false };
 
+const YES_NO = ['Yes', 'No'];
+
 export const CONTENT_SPECS = {
+  // Not on the Details page (capture 2026-11-20 has no "AI-generated" text); KDP asks them with the content. Unconfirmed until Content is captured.
+  'ai-text': { kind: 'radio', group: /AI-generated text/i, options: YES_NO },
+  'ai-images': { kind: 'radio', group: /AI-generated images/i, options: YES_NO },
+  'ai-translations': { kind: 'radio', group: /AI-generated translations/i, options: YES_NO },
   ink: { kind: 'radio', group: /interior|ink|paper/i, options: ['Premium color', 'Standard color', 'Black & white'] },
   trim: { kind: 'text', label: /trim size/i, readOnly: true },
   bleed: { kind: 'radio', group: /bleed/i, options: ['Bleed (PDF only)', 'No Bleed'] },

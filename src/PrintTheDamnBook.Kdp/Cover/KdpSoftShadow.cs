@@ -47,6 +47,9 @@ internal static class KdpSoftShadow
 
     private static byte[]? Render(double widthInches, double heightInches, Action<IContainer, string> draw, string color)
     {
+        // Set here too, like KdpCover and KdpInterior: the shadow can be drawn before either of them has run.
+        QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+        KdpFonts.EnsureRegistered();
         var document = Document.Create(container => container.Page(page =>
         {
             page.Size((float)widthInches, (float)heightInches, Unit.Inch);
