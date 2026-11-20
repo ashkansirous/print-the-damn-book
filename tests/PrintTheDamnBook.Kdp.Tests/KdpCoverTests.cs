@@ -37,7 +37,7 @@ public class KdpCoverTests
 
         using var pdf = PdfDocument.Open(result.Pdf);
         var page = pdf.GetPage(1);
-        Assert.Equal(2, page.GetImages().Count());
+        Assert.Equal(3, page.GetImages().Count()); // front, back and the QR code
         var text = string.Join(' ', page.GetWords().Select(w => w.Text));
         foreach (var line in BackCoverWording.Lines(Credits, "en"))
         {
@@ -90,7 +90,7 @@ public class KdpCoverTests
         Assert.True(back.X > KdpCoverSize.Spine(24).X);
         Assert.Equal(ReadingDirection.RightToLeft, result.Direction);
         using var pdf = PdfDocument.Open(result.Pdf);
-        Assert.Equal(2, pdf.GetPage(1).GetImages().Count());
+        Assert.Equal(3, pdf.GetPage(1).GetImages().Count()); // front, back and the QR code
     }
 
     [Fact]

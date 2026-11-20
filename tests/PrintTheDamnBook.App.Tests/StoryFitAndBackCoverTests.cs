@@ -394,6 +394,16 @@ public sealed class StoryFitAndBackCoverTests : IDisposable
     }
 
     [Fact]
+    public void AStoreBookWithPascalCaseBackCoverKeysShowsItsCreditLinesOnTheBackCover()
+    {
+        var book = DinoBookReader.Read(new MemoryStream(Package("a", "b", withBackCover: true, pascalKeys: true)));
+
+        var credits = book.BackCover!.Credits!;
+        Assert.Equal(("Aesop", "Ashkan Sirous"), (credits.StoryBy, credits.Illustration));
+        Assert.NotEmpty(BackCoverWording.Lines(credits, "en"));
+    }
+
+    [Fact]
     public void TheCacheKeepsTheBackCoverPictureWhenThereIsOneAndTheBlankWhenThereIsNot()
     {
         var with = DinoBookReader.PlannedPictures(DinoBookReader.Read(new MemoryStream(Package("a", "b", withBackCover: true))));
@@ -479,12 +489,15 @@ public sealed class StoryFitAndBackCoverTests : IDisposable
         return new OpenedDino(Path.Combine(_dir, name + ".dino"), folder, book, files, pictures);
     }
 
-    private static byte[] Package(string one, string two, bool withBackCover)
+    private static byte[] Package(string one, string two, bool withBackCover, bool pascalKeys = false)
     {
         var pages = new List<object> { new { Text = one, ImageFile = "p1.jpg" }, new { Text = two, ImageFile = "p2.jpg" } };
         if (withBackCover)
         {
-            pages.Add(new { Text = "Original story by Aesop", ImageFile = "back-cover.jpg", BackCover = new { storyBy = "Aesop", retold = true, illustration = "Ashkan Sirous", month = "2026-11", picture = "back-cover.jpg" } });
+            object credits = pascalKeys
+                ? new { StoryBy = "Aesop", Retold = true, Illustration = "Ashkan Sirous", Month = "2026-11", Picture = "back-cover.jpg" }
+                : new { storyBy = "Aesop", retold = true, illustration = "Ashkan Sirous", month = "2026-11", picture = "back-cover.jpg" };
+            pages.Add(new { Text = "Original story by Aesop", ImageFile = "back-cover.jpg", BackCover = credits });
         }
 
         var story = new { Title = "Seagull", Language = "en", CoverFile = "c.jpg", Pages = pages, Translations = new Dictionary<string, Dictionary<string, string>> { [Fa] = new() { ["Short one."] = "اول", ["Short two."] = "دوم" } } };

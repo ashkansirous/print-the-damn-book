@@ -29,8 +29,8 @@ origin/main ed0e03c.)
 
 #### Work
 
-- [ ] **A — Reader.** Case-insensitive lookup of every back-cover key, `NamesByLanguage` included.
-- [ ] **B — Tests.** A Core test with the PascalCase shape above (credits, retold, illustration, month, a picture
+- [x] **A — Reader.** (built in Slice 36) Case-insensitive lookup of every back-cover key, `NamesByLanguage` included.
+- [x] **B — Tests.** (built in Slice 36) A Core test with the PascalCase shape above (credits, retold, illustration, month, a picture
   name other than `back-cover.jpg`, names by language) and the existing camelCase shape; one App test through the
   Dino open path with PascalCase keys showing the credit lines on the back cover.
 

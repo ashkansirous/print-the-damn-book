@@ -2,6 +2,7 @@ using PrintTheDamnBook.Core.Dino;
 using PrintTheDamnBook.Core.Kdp;
 using PrintTheDamnBook.Core.Text;
 using PrintTheDamnBook.Kdp.Cover;
+using PrintTheDamnBook.Kdp.CropSheet;
 using PrintTheDamnBook.Kdp.Pictures;
 using PrintTheDamnBook.Kdp.Previews;
 
@@ -10,10 +11,12 @@ namespace PrintTheDamnBook.Kdp;
 /// <summary>What the command line asked for: one local <c>.dino</c>, the language to print it in and the folder to write to.</summary>
 /// <param name="Offsets">Crop offsets (story page number to pixels) from <c>--offset</c>, saved to <c>kdp.json</c>; null when none were given.</param>
 /// <param name="Previews">True for <c>--previews</c> (Slice 30): also write small per-page PNGs of the interior and a contact sheet.</param>
-public sealed record KdpExportRequest(string DinoPath, string Language, string OutFolder, IReadOnlyDictionary<int, int>? Offsets = null, bool Previews = false);
+/// <param name="CoverOffsets">Crop offsets of the cover pictures (<see cref="KdpPictureKeys.Front"/> or <see cref="KdpPictureKeys.Back"/> to pixels) from <c>--offset front=...</c>; null when none were given.</param>
+/// <param name="CropSheet">True for <c>--crop-sheet</c> (Slice 36): also write the crop sheet and the larger uncut copies for the crop agent.</param>
+public sealed record KdpExportRequest(string DinoPath, string Language, string OutFolder, IReadOnlyDictionary<int, int>? Offsets = null, bool Previews = false, IReadOnlyDictionary<string, int>? CoverOffsets = null, bool CropSheet = false);
 
 /// <summary>The files written and what to tell the person who ran the command.</summary>
-public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null);
+public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null, string? CropSheetPath = null, string? CropSheetError = null);
 
 /// <summary>The pictures pulled out of a book: one per story page, the cover and the back cover (each null when the book has none).</summary>
 internal sealed record BookPictures(List<byte[]> Pages, byte[]? Cover, byte[]? Back);
@@ -35,7 +38,7 @@ public static class KdpExporter
         var pictures = all.Pages;
         Directory.CreateDirectory(request.OutFolder);
         var storyPages = Math.Min(book.Pages.Count, pictures.Count);
-        var settings = MergeOffsets(request, book, storyPages);
+        var settings = MergeOffsets(request, book, storyPages, all);
         var input = new KdpBookInput(
             book.In(book.Title, language.Code),
             language.Code,
@@ -45,19 +48,55 @@ public static class KdpExporter
             pictures,
             settings);
         var built = Build(input);
-        var (cover, coverError) = TryBuildCover(book, language, all, built.Plan.PageCount);
+        var (cover, coverError) = TryBuildCover(book, language, all, built.Plan.PageCount, settings);
         var coverPath = Path.Combine(request.OutFolder, CoverName);
-        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages), .. built.Warnings, .. cover?.Warnings ?? []]);
+        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages, all.Back is not null), .. built.Warnings, .. cover?.Warnings ?? [], .. UnsavedCoverOffsetWarnings(request, cover)]);
         var pdfPath = Path.Combine(request.OutFolder, PdfName);
         var reportPath = Path.Combine(request.OutFolder, ReportName);
         var result = built with { Warnings = warnings };
-        var toSave = OffsetsToSave(request, book, built.Pictures);
+        var toSave = OffsetsToSave(request, book, built.Pictures, cover);
         var pdfs = cover is null ? [(pdfPath, result.Pdf)] : new[] { (pdfPath, result.Pdf), (coverPath, cover.Pdf) };
         var older = WriteAll(pdfs, reportPath, cover is null ? coverPath : null, stale => KdpCheckReport.Build(input.Title, language.Code, result, cover, coverError, stale));
         WritePreviews(request.OutFolder, built.Pictures);
         SaveOffsets(request, toSave);
         var (sheet, previewError) = TryWritePreviews(request, input, result);
-        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError);
+        var (cropSheet, cropSheetError) = TryWriteCropSheet(request, all, settings, storyPages);
+        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError);
+    }
+
+    /// <summary>
+    /// <c>--crop-sheet</c> (Slice 36) is a side output like the previews: a failure to make it is reported and never stops the PDFs, the report or <c>kdp.json</c>.
+    /// Without the option, the files of an earlier run are removed so none shows a window that is no longer the one in use.
+    /// </summary>
+    private static (string? SheetPath, string? Error) TryWriteCropSheet(KdpExportRequest request, BookPictures all, KdpBookSettings settings, int storyPages)
+    {
+        try
+        {
+            KdpCropSheetWriter.Remove(request.OutFolder);
+            return request.CropSheet ? (KdpCropSheetWriter.Write(request.OutFolder, CropSheetPictures(all, settings, storyPages)).SheetPath, null) : (null, null);
+        }
+        catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException or AccessViolationException or OperationCanceledException))
+        {
+            return (null, ex.Message);
+        }
+    }
+
+    /// <summary>Every picture of the book with the offset in use: the story pages, the front (the first story picture when the book has no cover) and the back when there is one.</summary>
+    internal static List<KdpCropSheetPicture> CropSheetPictures(BookPictures all, KdpBookSettings settings, int storyPages)
+    {
+        var pictures = all.Pages.Take(storyPages).Select((bytes, i) => new KdpCropSheetPicture(KdpPictureKeys.ForStoryPage(i + 1), bytes, settings.OffsetFor(i + 1))).ToList();
+        var front = all.Cover ?? (all.Pages.Count > 0 ? all.Pages[0] : null);
+        if (front is not null)
+        {
+            pictures.Add(new KdpCropSheetPicture(KdpPictureKeys.Front, front, settings.CoverOffsetFor(KdpPictureKeys.Front)));
+        }
+
+        if (all.Back is not null)
+        {
+            pictures.Add(new KdpCropSheetPicture(KdpPictureKeys.Back, all.Back, settings.CoverOffsetFor(KdpPictureKeys.Back)));
+        }
+
+        return pictures;
     }
 
     /// <summary>
@@ -82,11 +121,11 @@ public static class KdpExporter
     /// interior and the report. The filter is broad on purpose, because decoders, SkiaSharp and QuestPDF throw many unrelated types; only process-fatal
     /// exceptions and cancellation propagate.
     /// </summary>
-    private static (KdpCoverResult? Cover, string? Error) TryBuildCover(DinoBook book, DinoLanguage language, BookPictures all, int pageCount)
+    private static (KdpCoverResult? Cover, string? Error) TryBuildCover(DinoBook book, DinoLanguage language, BookPictures all, int pageCount, KdpBookSettings settings)
     {
         try
         {
-            return (BuildCover(book, language, all, pageCount), null);
+            return (BuildCover(book, language, all, pageCount, settings), null);
         }
         catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException or AccessViolationException or OperationCanceledException))
         {
@@ -114,11 +153,11 @@ public static class KdpExporter
     }
 
     /// <summary>The cover: the book's cover picture on the front (its first story picture when it has none, with a warning) and its back cover picture and credits behind.</summary>
-    private static KdpCoverResult BuildCover(DinoBook book, DinoLanguage language, BookPictures all, int pageCount)
+    private static KdpCoverResult BuildCover(DinoBook book, DinoLanguage language, BookPictures all, int pageCount, KdpBookSettings settings)
     {
         var front = all.Cover ?? (all.Pages.Count > 0 ? all.Pages[0] : throw new KdpException("The book has no pictures, so there is nothing to put on the cover."));
         var direction = TextDirection.ForLanguage(language.Code);
-        var input = new KdpCoverInput(book.In(book.Title, language.Code), language.Code, book.BackCover?.Credits, front, all.Back, pageCount, direction);
+        var input = new KdpCoverInput(book.In(book.Title, language.Code), language.Code, book.BackCover?.Credits, front, all.Back, pageCount, direction, settings);
         try
         {
             var result = KdpCover.Build(input);
@@ -131,7 +170,7 @@ public static class KdpExporter
     }
 
     /// <summary>The owner's choices in <c>kdp.json</c> beside the output, with any <c>--offset</c> of this run added (0 clears the page's choice); nothing is saved yet. A file that cannot be read stops the run and is left as it is.</summary>
-    private static KdpBookSettings MergeOffsets(KdpExportRequest request, DinoBook book, int storyPages)
+    private static KdpBookSettings MergeOffsets(KdpExportRequest request, DinoBook book, int storyPages, BookPictures all)
     {
         try
         {
@@ -144,6 +183,16 @@ public static class KdpExporter
                 }
 
                 settings = pixels == 0 ? settings.Without(page) : settings.WithOffset(page, pixels);
+            }
+
+            foreach (var (key, pixels) in request.CoverOffsets ?? new Dictionary<string, int>())
+            {
+                if (key == KdpPictureKeys.Back && all.Back is null && pixels != 0)
+                {
+                    throw new KdpException("--offset back names the back cover picture, but the book has none.");
+                }
+
+                settings = pixels == 0 ? settings.WithoutCover(key) : settings.WithCoverOffset(key, pixels);
             }
 
             return settings;
@@ -165,8 +214,13 @@ public static class KdpExporter
     private static string SettingsPath(KdpExportRequest request) => Path.Combine(request.OutFolder, KdpBookSettings.FileName);
 
     /// <summary>Saved entries for pages the book does not have are ignored by the build; say so, so a stale file is not a silent surprise.</summary>
-    private static IEnumerable<string> StaleOffsetWarnings(KdpBookSettings settings, int storyPages)
+    private static IEnumerable<string> StaleOffsetWarnings(KdpBookSettings settings, int storyPages, bool hasBack)
     {
+        if (!hasBack && settings.Covers.Contains(KdpPictureKeys.Back))
+        {
+            yield return $"{KdpBookSettings.FileName} has an offset for the back cover, but the book has no back cover picture; it is ignored (--offset back=0 clears it).";
+        }
+
         foreach (var page in settings.Pages.Where(p => p > storyPages))
         {
             yield return $"{KdpBookSettings.FileName} has an offset for story page {page}, but the book has {storyPages} story pages; it is ignored.";
@@ -177,9 +231,9 @@ public static class KdpExporter
     /// Works out what this run's <c>--offset</c> choices make of <c>kdp.json</c>, in memory: only offsets that moved something (the value actually used) and
     /// clears, with the book's identity. Null when nothing changes. An offset with no effect is not saved; <c>KdpInterior</c> already warns about it once.
     /// </summary>
-    private static KdpBookSettings? OffsetsToSave(KdpExportRequest request, DinoBook book, IReadOnlyList<KdpPicture> pictures)
+    private static KdpBookSettings? OffsetsToSave(KdpExportRequest request, DinoBook book, IReadOnlyList<KdpPicture> pictures, KdpCoverResult? cover)
     {
-        if (request.Offsets is not { Count: > 0 } offsets)
+        if (request.Offsets is not { Count: > 0 } && request.CoverOffsets is not { Count: > 0 })
         {
             return null;
         }
@@ -188,7 +242,7 @@ public static class KdpExporter
         {
             var before = ReadStored(request, book);
             var settings = before;
-            foreach (var (page, pixels) in offsets)
+            foreach (var (page, pixels) in request.Offsets ?? new Dictionary<int, int>())
             {
                 if (pixels == 0)
                 {
@@ -200,12 +254,49 @@ public static class KdpExporter
                 }
             }
 
+            settings = CoverOffsetsToSave(request, settings, cover);
             return settings.ToJson() == before.ToJson() ? null : settings.ForBook(book.Id, book.Title);
         }
         catch (KdpSettingsException ex)
         {
             throw new KdpException(ex.Message, ex);
         }
+    }
+
+    /// <summary>A cover that could not be made saves no cover offset (its clamp is not known); say so, so the choice is not dropped silently.</summary>
+    internal static IEnumerable<string> UnsavedCoverOffsetWarnings(KdpExportRequest request, KdpCoverResult? cover)
+    {
+        if (cover is not null)
+        {
+            yield break;
+        }
+
+        foreach (var (key, pixels) in request.CoverOffsets ?? new Dictionary<string, int>())
+        {
+            if (pixels != 0)
+            {
+                yield return $"--offset {key}={pixels} was not saved to {KdpBookSettings.FileName}, because the cover could not be made; run again once it can.";
+            }
+        }
+    }
+
+    /// <summary>The cover offsets of this run that moved something (the value actually used) and the clears; a cover that could not be made saves none, since its clamp is not known.</summary>
+    private static KdpBookSettings CoverOffsetsToSave(KdpExportRequest request, KdpBookSettings settings, KdpCoverResult? cover)
+    {
+        foreach (var (key, pixels) in request.CoverOffsets ?? new Dictionary<string, int>())
+        {
+            var picture = key == KdpPictureKeys.Front ? cover?.FrontPrepared : cover?.BackPrepared;
+            if (pixels == 0)
+            {
+                settings = settings.WithoutCover(key);
+            }
+            else if (picture is { MaxOffsetPx: > 0 })
+            {
+                settings = settings.WithCoverOffset(key, picture.AppliedOffsetPx);
+            }
+        }
+
+        return settings;
     }
 
     /// <summary>The last write of a run: <c>kdp.json</c> is touched only after the PDF, report and previews are in place, so a failure earlier leaves the old file as it was.</summary>

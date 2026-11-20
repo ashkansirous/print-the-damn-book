@@ -1,11 +1,15 @@
 using PrintTheDamnBook.Core.Kdp;
+using PrintTheDamnBook.Core.Text;
 using PrintTheDamnBook.Kdp.Pictures;
 using SkiaSharp;
 
 namespace PrintTheDamnBook.Kdp;
 
-/// <summary>A picture ready for its page: the JPEG at exactly the KDP pixel size, and what was done to it.</summary>
-public sealed record KdpPicture(byte[] Jpeg, int SourceWidth, int SourceHeight, KdpCrop Crop, CutLineScore Cut, bool OffsetChosen, byte[]? Preview, int RequestedOffsetPx = 0, int MaxOffsetPx = 0)
+/// <summary>
+/// A picture ready for its page: the JPEG at exactly the KDP pixel size, and what was done to it. <paramref name="Tint"/> is the soft text-page colour
+/// of the kept part (Slice 36) and <paramref name="Overview"/> its brightness on a small grid, for placing the cover title.
+/// </summary>
+public sealed record KdpPicture(byte[] Jpeg, int SourceWidth, int SourceHeight, KdpCrop Crop, CutLineScore Cut, bool OffsetChosen, byte[]? Preview, int RequestedOffsetPx = 0, int MaxOffsetPx = 0, Rgb? Tint = null, LumaImage? Overview = null)
 {
     /// <summary>The offset actually used (the request, clamped so the kept part stays inside the picture).</summary>
     public int AppliedOffsetPx => Crop.Source.Y;
@@ -25,6 +29,8 @@ public static class KdpImageDecoder
 {
     public const int JpegQuality = 95;
 
+    private const int OverviewPx = 64;
+
     /// <summary>A picture is untrusted input: one with more pixels than this (width x height, 50 million, about 200 MB decoded) is refused before it is decoded.</summary>
     public const long MaxPixels = 50_000_000;
 
@@ -37,8 +43,36 @@ public static class KdpImageDecoder
         var cut = offsetChosen ? CutLineScore.None : CutLineCheck.Evaluate(CutLineInputs.Luma(source), crop.Source);
         var preview = cut.Flagged ? CutLineInputs.Preview(source, crop.Source) : null;
         using var page = Resample(source, crop);
-        return new KdpPicture(Encode(page), source.Width, source.Height, crop, cut, offsetChosen, preview, offsetPx, KdpPictureCrop.MaxOffset(source.Width, source.Height));
+        using var small = Overview(source, crop);
+        var tint = TextPageTint.FromBgra(Bgra(small), small.Width, small.Height, small.Width * 4);
+        return new KdpPicture(Encode(page), source.Width, source.Height, crop, cut, offsetChosen, preview, offsetPx, KdpPictureCrop.MaxOffset(source.Width, source.Height), tint, CutLineInputs.Luma(small));
     }
+
+    /// <summary>The kept part on a small grid (<see cref="OverviewPx"/> square): enough to average its colour and tell a calm band from a busy one.</summary>
+    private static SKBitmap Overview(SKBitmap source, KdpCrop crop)
+    {
+        var small = new SKBitmap(OverviewPx, OverviewPx, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using var canvas = new SKCanvas(small);
+        using var image = SKImage.FromBitmap(source);
+        var from = new SKRect(crop.Source.X, crop.Source.Y, crop.Source.X + crop.Source.Width, crop.Source.Y + crop.Source.Height);
+        canvas.DrawImage(image, from, new SKRect(0, 0, OverviewPx, OverviewPx), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear), null);
+        return small;
+    }
+
+    /// <summary>The pixels of an opaque RGBA bitmap as the straight BGRA bytes <see cref="TextPageTint"/> reads.</summary>
+    private static byte[] Bgra(SKBitmap rgba)
+    {
+        var bytes = rgba.GetPixelSpan().ToArray();
+        for (var at = 0; at + 3 < bytes.Length; at += 4)
+        {
+            (bytes[at], bytes[at + 2]) = (bytes[at + 2], bytes[at]);
+        }
+
+        return bytes;
+    }
+
+    /// <summary>The upright, opaque picture, for the crop sheet (<see cref="CropSheet.KdpCropSheetWriter"/>); the caller disposes it.</summary>
+    internal static SKBitmap DecodeUpright(byte[] encoded) => Decode(encoded);
 
     private static SKBitmap Decode(byte[] encoded)
     {

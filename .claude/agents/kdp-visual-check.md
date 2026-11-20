@@ -33,6 +33,11 @@ page number against the safe margin on those. Open any other page you doubt too.
 4. **Facing.** Every text page sits in the same spread as its own picture; a spread of two text pages or two pictures from different
    story pages is a failure.
 5. **Blank or broken pages** that the report does not list as intended blanks.
+6. **Lines.** Since Slice 36 each of the book's own lines stays on one line (the size shrinks until it fits), so a word alone on a line, or
+   a line broken in the middle, on a text page is a failure unless the report lists that page ("does not fit on one line even at 14 pt").
+
+Text pages are no longer plain white: each carries a soft tint taken from its picture (Slice 36). A tinted text page is right; a white one
+is a failure. (You look at the interior only; the cover is the owner's to look at.)
 
 ## Report
 

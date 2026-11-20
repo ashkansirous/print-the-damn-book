@@ -11,7 +11,8 @@ public sealed record KdpPageSettings([property: JsonPropertyName("cropOffsetPx")
 
 /// <summary>
 /// <c>kdp.json</c> beside a book's output (Slice 28): <c>{ "pages": { "7": { "cropOffsetPx": 60 } } }</c>, keyed by story page number (1-based, the
-/// number the check report lists). A page with an entry is the owner's choice and is never flagged or changed again over it. Read and written only here.
+/// number the check report lists); since Slice 36 also <c>"covers": { "front": { "cropOffsetPx": 60 }, "back": { ... } }</c> for the two cover pictures
+/// (a file without <c>covers</c> still reads). A picture with an entry is the owner's choice and is never flagged or changed again over it. Read and written only here.
 /// </summary>
 public sealed class KdpBookSettings
 {
@@ -20,18 +21,22 @@ public sealed class KdpBookSettings
     private static readonly JsonSerializerOptions Options = new() { WriteIndented = true };
 
     private readonly SortedDictionary<int, KdpPageSettings> _pages;
+    private readonly SortedDictionary<string, KdpPageSettings> _covers;
 
     public KdpBookSettings()
-        : this([], null, null)
+        : this([], [], null, null)
     {
     }
 
-    private KdpBookSettings(IEnumerable<KeyValuePair<int, KdpPageSettings>> pages, string? bookId, string? bookTitle)
+    private KdpBookSettings(IEnumerable<KeyValuePair<int, KdpPageSettings>> pages, IEnumerable<KeyValuePair<string, KdpPageSettings>> covers, string? bookId, string? bookTitle)
     {
         _pages = new SortedDictionary<int, KdpPageSettings>(pages.ToDictionary(p => p.Key, p => p.Value));
+        _covers = new SortedDictionary<string, KdpPageSettings>(covers.ToDictionary(p => p.Key, p => p.Value), StringComparer.Ordinal);
         BookId = bookId;
         BookTitle = bookTitle;
     }
+
+    private KdpBookSettings Copy() => new(_pages, _covers, BookId, BookTitle);
 
     public static KdpBookSettings Empty => new();
 
@@ -42,7 +47,7 @@ public sealed class KdpBookSettings
     public string? BookTitle { get; }
 
     /// <summary>A copy that records which book the choices belong to.</summary>
-    public KdpBookSettings ForBook(string bookId, string bookTitle) => new(_pages, bookId, bookTitle);
+    public KdpBookSettings ForBook(string bookId, string bookTitle) => new(_pages, _covers, bookId, bookTitle);
 
     /// <summary>The choices belong to another book, so applying them would crop the wrong pictures; a file that records no book passes.</summary>
     /// <exception cref="KdpSettingsException">The file records a different book id.</exception>
@@ -67,7 +72,7 @@ public sealed class KdpBookSettings
             throw new ArgumentOutOfRangeException(nameof(storyPage), "Story pages are numbered from 1.");
         }
 
-        var copy = new KdpBookSettings(_pages, BookId, BookTitle);
+        var copy = Copy();
         copy._pages[storyPage] = new KdpPageSettings(Math.Max(0, offsetPx));
         return copy;
     }
@@ -75,7 +80,7 @@ public sealed class KdpBookSettings
     /// <summary>A copy with the page's entry removed, so the page is checked and flagged again (a page with no entry is unchanged).</summary>
     public KdpBookSettings Without(int storyPage)
     {
-        var copy = new KdpBookSettings(_pages, BookId, BookTitle);
+        var copy = Copy();
         copy._pages.Remove(storyPage);
         return copy;
     }
@@ -83,12 +88,38 @@ public sealed class KdpBookSettings
     /// <summary>The story pages that have an entry, in order.</summary>
     public IReadOnlyList<int> Pages => [.. _pages.Keys];
 
+    /// <summary>True when the owner (or the crop agent) chose an offset for a cover picture (<see cref="KdpPictureKeys.Front"/> or <see cref="KdpPictureKeys.Back"/>).</summary>
+    public bool HasCoverOffset(string coverKey) => _covers.ContainsKey(coverKey);
+
+    public int CoverOffsetFor(string coverKey) => _covers.TryGetValue(coverKey, out var cover) ? cover.CropOffsetPx : 0;
+
+    /// <summary>A copy with the cover picture's offset set (never negative).</summary>
+    public KdpBookSettings WithCoverOffset(string coverKey, int offsetPx)
+    {
+        KdpPictureKeys.EnsureCover(coverKey);
+        var copy = Copy();
+        copy._covers[coverKey] = new KdpPageSettings(Math.Max(0, offsetPx));
+        return copy;
+    }
+
+    /// <summary>A copy with the cover picture's entry removed (a cover with no entry is unchanged).</summary>
+    public KdpBookSettings WithoutCover(string coverKey)
+    {
+        var copy = Copy();
+        copy._covers.Remove(coverKey);
+        return copy;
+    }
+
+    /// <summary>The cover keys that have an entry, in order.</summary>
+    public IReadOnlyList<string> Covers => [.. _covers.Keys];
+
     public string ToJson()
     {
         var file = new SettingsFile
         {
             Book = BookId is null ? null : new BookIdentity { Id = BookId, Title = BookTitle },
             Pages = _pages.ToDictionary(p => p.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), p => p.Value),
+            Covers = _covers.Count == 0 ? null : _covers.ToDictionary(c => c.Key, c => c.Value),
         };
         return JsonSerializer.Serialize(file, Options);
     }
@@ -110,7 +141,18 @@ public sealed class KdpBookSettings
                 pages.Add(new KeyValuePair<int, KdpPageSettings>(number, page));
             }
 
-            return new KdpBookSettings(pages, file.Book?.Id, file.Book?.Title);
+            var covers = new List<KeyValuePair<string, KdpPageSettings>>();
+            foreach (var (key, cover) in file.Covers ?? [])
+            {
+                if (!KdpPictureKeys.IsCover(key) || cover is null || cover.CropOffsetPx < 0)
+                {
+                    throw new KdpSettingsException($"{FileName} has a bad entry for cover \"{key}\".");
+                }
+
+                covers.Add(new KeyValuePair<string, KdpPageSettings>(key, cover));
+            }
+
+            return new KdpBookSettings(pages, covers, file.Book?.Id, file.Book?.Title);
         }
         catch (JsonException ex)
         {
@@ -179,5 +221,9 @@ public sealed class KdpBookSettings
 
         [JsonPropertyName("pages")]
         public Dictionary<string, KdpPageSettings>? Pages { get; set; }
+
+        [JsonPropertyName("covers")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public Dictionary<string, KdpPageSettings>? Covers { get; set; }
     }
 }
