@@ -72,12 +72,12 @@ there are no jumps. A long sentence may wrap"; or an 18 pt floor; or as is. Owne
 
 #### From review
 
-- Skipped #3 (`reviews/pr-100-medium.md`): "CLAUDE.md:104 still names deleted LinesStayWhole" - CLAUDE.md changes only in the index pass after merge (repo docs layout); the wording is in this file's For CLAUDE.md section.
-- Skipped #3 (`reviews/pr-100-check.md`): same as above - CLAUDE.md changes only in the index pass after merge.
-- Skipped #1 (`reviews/pr-100-check.md`): "StopPaging drops trailing lines; the wording says cut at edge" - the error names the page and says its words don't fit, which is what the owner acts on; none of the 16 books has such a page.
-- Skipped #2 (`reviews/pr-100-check.md`): "Fits turns a font failure into does not fit" - the fonts are embedded resources of the Kdp project; a load failure fails every Kdp test, so it cannot reach a build unnoticed.
-- Skipped #4 (`reviews/pr-100-check.md`): "files still written on overflow" - owner decision in this file: the page is reported and the owner decides; the exit code is 1; the robot gap is recorded under Follow-ups.
-- Skipped #5 (`reviews/pr-100-check.md`): "no test of the overflowing page's PDF content" - the overflow path is covered by the page-count, error-line and exit-code tests.
+- Skipped #3 (`reviews/pr-100-medium.md`): "Still says each own line stays on one line (KdpTextFit.LinesStayWhole), which this change deletes" - CLAUDE.md changes only in the index pass after merge (repo docs layout); the wording is in this file's For CLAUDE.md section.
+- Skipped #3 (`reviews/pr-100-check.md`): "Rule still names the deleted `KdpTextFit.LinesStayWhole` and shrink-to-fit" - CLAUDE.md changes only in the index pass after merge (repo docs layout).
+- Skipped #1 (`reviews/pr-100-check.md`): "StopPaging only drops what does not fit; it does not clip symmetrically" - the error names the page and says its words don't fit, which is what the owner acts on; none of the 16 books has such a page.
+- Skipped #2 (`reviews/pr-100-check.md`): "Fits turns every DocumentLayoutException into 'does not fit'," - the fonts are embedded resources of the Kdp project; a load failure fails every Kdp test, so it cannot reach a build unnoticed.
+- Skipped #4 (`reviews/pr-100-check.md`): "On overflow, files (interior.pdf, kdp.json) are still written" - Decision (desk) in this file: the page is reported as an error and the owner decides; the exit code is 1; the robot gap is recorded under Follow-ups.
+- Skipped #5 (`reviews/pr-100-check.md`): "Overflow tests check page count, report text and exit code, not the overflowing page's PDF content" - the overflow path is covered by the page-count, error-line and exit-code tests.
 
 #### Follow-ups
 
