@@ -26,11 +26,13 @@ export function readState(root, book, lang) {
 }
 
 export function nextState(previous, patch) {
-  return {
+  const next = {
     kdpId: null, state: 'unknown', fields: {}, files: {}, ...previous, ...patch,
     fields: { ...previous?.fields, ...patch.fields },
     files: { ...previous?.files, ...patch.files },
   };
+  if (next.kdpId) delete next.savedWithoutId; // once the id is known the "saved without an id" marker is moot
+  return next;
 }
 
 export function writeState(root, book, lang, state) {

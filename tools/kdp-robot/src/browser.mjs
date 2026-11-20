@@ -101,6 +101,16 @@ async function resolvedTexts(locator, intended) {
     await tryText(() => locator.getAttribute('aria-label', { timeout: 2000 })),
     await tryText(() => locator.getAttribute('value', { timeout: 2000 })),
     await tryText(() => locator.evaluate((el) => el.closest('label')?.innerText ?? '')),
+    ...(await identityTexts(locator)),
+  ];
+}
+
+/** The id, name and (inside an iframe) the frame's title: the stable identity of a control that has no accessible name. Publish words in them are refused like any other text. */
+async function identityTexts(locator) {
+  return [
+    await tryText(() => locator.getAttribute('id', { timeout: 2000 })),
+    await tryText(() => locator.getAttribute('name', { timeout: 2000 })),
+    await tryText(() => locator.evaluate((el) => el.ownerDocument?.defaultView?.frameElement?.title ?? '')),
   ];
 }
 
@@ -136,7 +146,7 @@ export async function safeUncheck(locator, intended, allowed) {
 /** A text box or select: only its name, aria-label and wrapping label are checked (its value or options are the book's own text). */
 export async function guardField(locator, intended, allowed) {
   const label = await tryText(() => locator.evaluate((el) => [...(el.labels ?? [])].map((l) => l.innerText).join(' ') || (el.closest('label')?.innerText ?? '')));
-  const texts = [intended, await tryText(() => locator.getAttribute('aria-label', { timeout: 2000 })), label];
+  const texts = [intended, await tryText(() => locator.getAttribute('aria-label', { timeout: 2000 })), label, ...(await identityTexts(locator))];
   assertNotPublish(texts.slice(1), allowed);
   assertAllowedControl(texts, allowed);
 }
@@ -144,6 +154,13 @@ export async function guardField(locator, intended, allowed) {
 export async function clickButton(page, name) {
   assertSafeClick(name);
   await safeClick(page.getByRole('button', { name, exact: true }).first(), name, ALLOWED_BUTTONS);
+}
+
+/** A control that is a button or a link (KDP's "+ Create new title or series" is a link); same allow-list and guard as `clickButton`. */
+export async function clickAction(page, name) {
+  assertSafeClick(name);
+  const target = page.getByRole('button', { name, exact: true }).or(page.getByRole('link', { name, exact: true })).first();
+  await safeClick(target, name, ALLOWED_BUTTONS);
 }
 
 /** A small JPEG of the visible page, for the summary. Returns the file path. */

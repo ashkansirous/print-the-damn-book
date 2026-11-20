@@ -11,7 +11,7 @@ import { FieldNotFound } from './fieldio.mjs';
 import { assignIsbn, chooseCategories, savePage, uploadFiles, untickUnlisted } from './draft.mjs';
 import { KdpNoSignal, KdpRejected, IsbnConflict, hasIsbn, isbnPlan, judgeFileCheck, judgeSave, needsUpload, requireKdpId, waitForVerdict, fileHash, stateForTitle, liveCategories } from './checks.mjs';
 import { classifyPage } from './bookshelf.mjs';
-import { DETAILS_SPECS } from './pages/details.mjs';
+import { CONTENT_SPECS } from './pages/content.mjs';
 import { nextState } from './state.mjs';
 
 function fakeLocator({ text = '', aria = null, count = 1, checked = true, children = {} } = {}) {
@@ -170,10 +170,10 @@ test('6: live categories are matched by exact text first, else by position; none
   assert.deepEqual(liveCategories([], fields), {});
 });
 
-test('7: each AI group name matches exactly one of the details groups', () => {
-  const groups = ['AI-generated text', 'AI-generated images', 'AI-generated translations', 'Sexually explicit images or title', 'Publishing rights'];
-  for (const key of ['ai-text', 'ai-images', 'ai-translations', 'explicit']) {
-    assert.equal(groups.filter((g) => DETAILS_SPECS[key].group.test(g)).length, 1, key);
+test('7: each AI group name matches exactly one of the content groups', () => {
+  const groups = ['AI-generated text', 'AI-generated images', 'AI-generated translations', 'Publishing rights'];
+  for (const key of ['ai-text', 'ai-images', 'ai-translations']) {
+    assert.equal(groups.filter((g) => CONTENT_SPECS[key].group.test(g)).length, 1, key);
   }
 });
 
