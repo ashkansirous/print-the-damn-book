@@ -2,9 +2,9 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
-### Slice 41: Amazon KDP: "More books" on the last page, and the crop agent places the back-cover words and the Dino QR ([slice](slices/41-kdp-more-books-and-back-placement.md))
+### Slice 42: Amazon KDP: one text size for every story page of a book ([slice](slices/42-kdp-one-text-size-per-book.md))
 
-- [owner] The owner looks at the rebuilt back covers and last pages.
+- [owner] The owner looks at the rebuilt story pages.
 
 ### Slice 37: Amazon KDP: the crop agent also places the cover text and picks its colours ([slice](slices/37-kdp-cover-text-by-agent.md))
 

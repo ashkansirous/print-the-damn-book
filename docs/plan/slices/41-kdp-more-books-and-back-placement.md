@@ -1,6 +1,6 @@
 ### Slice 41 — Amazon KDP: "More books" on the last page, and the crop agent places the back-cover words and the Dino QR in the empty space
 
-*Built 2026-11-20, merged as PR #93 (f27653f), 977 tests pass. Item D (crop agent re-run and rebuild of all 16 books) runs after merge.*
+*Built 2026-11-20, merged as PR #93 (f27653f), 977 tests pass. Item D done 2026-11-20: all 16 books rebuilt (exit 0, no fallback). Verified: the owner accepted the 16 covers and last pages ("1- all good.", 2026-11-20).*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/`, `src/PrintTheDamnBook.Kdp/`, `src/PrintTheDamnBook.Cli/`,
 `tests/PrintTheDamnBook.Kdp.Tests/`, `tests/PrintTheDamnBook.Core.Tests/`, `.claude/skills/kdp-crop/`,
@@ -72,7 +72,7 @@ code is fixed in the barcode-free bottom corner (`KdpTextBoxMaths.QrStrip`); the
   bottom; page count unchanged; tests (count, order stable, this book absent, QR still decodes).
 - [x] **C — Agent and skills.** `kdp-crop-check` returns the back credits box and the Dino box placed in the empty
   space (rules above); `kdp-crop` applies them; `kdp-build` passes the other-books folder.
-- [ ] **D — Rebuild all 16 books.** Re-run the crop agent's back-cover choice for every book (and re-decide the front
+- [x] **D — Rebuild all 16 books.** Re-run the crop agent's back-cover choice for every book (and re-decide the front
   text box too), rebuild, show the owner
   the 16 back covers and Freddy's last page.
 
@@ -102,7 +102,7 @@ code is fixed in the barcode-free bottom corner (`KdpTextBoxMaths.QrStrip`); the
 
 #### Not yet verified
 
-- [owner] The owner looks at the rebuilt back covers and last pages.
+- None. The owner looked at the rebuilt covers and last pages and accepted them: "1- all good." (2026-11-20).
 
 #### Review
 
