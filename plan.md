@@ -36,6 +36,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 40 | Amazon KDP: series, "Also by" page, author page, short link to the Dino app | planned | | | [40](docs/plan/slices/40-kdp-series-and-cross-links.md) |
 | 41 | Amazon KDP: "More books" on the last page, and the crop agent places the back-cover words and the Dino QR | verified: built (PR #93), 16 books rebuilt, owner accepted 2026-11-20 | 93 | | [41](docs/plan/slices/41-kdp-more-books-and-back-placement.md) |
 | 42 | Amazon KDP: one text size for every story page of a book | built (PR #100) | 100 | | [42](docs/plan/slices/42-kdp-one-text-size-per-book.md) |
+| 44 | Amazon KDP: the build skills report their steps to the agent board, with process keys | planned (owner 2026-11-22; waits for agent-progress-board Slice 55) | | | [44](docs/plan/slices/44-kdp-board-steps.md) |
 
 Notes:
 
