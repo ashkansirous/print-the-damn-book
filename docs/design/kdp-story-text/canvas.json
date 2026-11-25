@@ -1,0 +1,126 @@
+{
+  "v": 3,
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-11-25T11:25:00Z"
+  },
+  "title": "Story Text Experiments",
+  "launch": {
+    "view": "focused",
+    "file": "Asked.dc.html"
+  },
+  "pages": [],
+  "boards": {
+    "Asked.dc.html": {
+      "x": 0,
+      "y": -1200,
+      "w": 4572,
+      "h": 612,
+      "title": "★ My rules — gaps + big/little + Squawk ×3 colours + red X + voices + gentle shapes + refrain, shouts, stretched words, songs"
+    },
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 4572,
+      "h": 612,
+      "title": "1 · Today (as printed)"
+    },
+    "StoryPages.dc.html": {
+      "x": 0,
+      "y": 800,
+      "w": 4572,
+      "h": 612,
+      "title": "2 · My rules + gentle shapes and small moves"
+    },
+    "Ideas.dc.html": {
+      "x": 0,
+      "y": 1600,
+      "w": 4572,
+      "h": 612,
+      "title": "3 · EXPERIMENT (not agreed): ★ + refrain, shouts, stretched words, bigger songs"
+    },
+    "More.dc.html": {
+      "x": 0,
+      "y": 2400,
+      "w": 5892,
+      "h": 612,
+      "title": "4 · EXPERIMENT (not agreed): ★ + names in colour, speaker dots, big first letter, big The End"
+    },
+    "MatterToday.dc.html": {
+      "x": 0,
+      "y": 3400,
+      "w": 3252,
+      "h": 612,
+      "title": "Front and back pages — today (title, credits, belongs to, The End, Dino page)"
+    },
+    "Matter.dc.html": {
+      "x": 0,
+      "y": 4200,
+      "w": 3252,
+      "h": 612,
+      "title": "★ Front and back pages — AGREED"
+    },
+    "DinoLink.dc.html": {
+      "x": 3332,
+      "y": 4200,
+      "w": 612,
+      "h": 612,
+      "title": "★ Dino page + short link — AGREED (replaces the Dino page on the left)"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "StoryPages.dc.html",
+    "Asked.dc.html",
+    "Ideas.dc.html",
+    "More.dc.html",
+    "MatterToday.dc.html",
+    "Matter.dc.html",
+    "DinoLink.dc.html"
+  ],
+  "notes": {
+    "title": {
+      "x": 0,
+      "y": -1520,
+      "text": "X Marks the Treasure — story text rules, real pages at true size (1 px = 1 pt) — pages 6, 16, 18, 26, 28, 30, 36",
+      "kind": "title1",
+      "maxW": 4572
+    },
+    "n2": {
+      "x": -480,
+      "y": 800,
+      "w": 400,
+      "fill": "green",
+      "text": "★ plus small moves that stay on the line: Down steps lower, Squawk grows, rumble tilts, Splish splash bobs, the soft squawk shrinks, Yo ho bounces."
+    },
+    "n3": {
+      "x": -480,
+      "y": 1600,
+      "w": 400,
+      "fill": "orange",
+      "text": "Experiment only. ★ plus: 'X marks the treasure!' bigger and bold (pages 6, 30); shouts 'Land ahoy!' 'There it is!' bigger and bold (page 28); 'long, long, long' and 'slow' stretched (page 16); 'Yo ho, yo ho!' bigger (page 26)."
+    },
+    "n4": {
+      "x": -480,
+      "y": 2400,
+      "w": 400,
+      "fill": "purple",
+      "text": "Experiment only. ★ plus: character names in the narration in their colour; a coloured dot before each line someone speaks; a big first letter on page 4; a big The End. Adds page 4 and The End to this row."
+    },
+    "mtitle": {
+      "x": 0,
+      "y": 3100,
+      "text": "Front and back pages",
+      "kind": "title1",
+      "maxW": 3252
+    },
+    "n5": {
+      "x": -480,
+      "y": 4200,
+      "w": 400,
+      "fill": "green",
+      "text": "Agreed. Title: Seagull picture, 'Treasure!' big, red X, cream page. Credits: names bold, labels small grey. Belongs to: rope-style frame, dotted line, 'Draw yourself here!' box. The End: big, Seagull teal (could move onto today's blank page 38). Dino page: big QR, character names in their voice colours."
+    }
+  },
+  "designSystems": []
+}

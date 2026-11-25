@@ -26,6 +26,8 @@ overwrite these copies.
 | `StoryCheck.dc.html` | The working prototype the frames render: Open (folder or Dino book), Check with the right-hand text editor, band picker, fit line and text/spacer tiles, the Reading direction switch, the Dino store dialog and the Dino Reader hand-over states |
 | `reference/blackberry-path.png` | A picture made with room for its words: the bottom ~30% is plain (user's reference, 2026-10-26). Bottom-band reference for Slice 14, a test picture for Slice 16 |
 | `Store Kit.dc.html` | App icon in the shell (2a), .ico ladder (2b), MSIX assets (2c), Store logos (2d), hero art (2e), screenshots (2f) |
+| `kdp-typography.md` | KDP typography spec (Slice 46): every value for styled story text (R1-R10) and the front and back pages of the KDP interior |
+| `kdp-story-text/` | Copy (2026-11-25) of the "Story Text Experiments" Design canvas, https://claude.ai/code/artifact/79577946-e48e-4087-a83b-dbba0476196f. Agreed (★): `Asked.dc.html` (renders `StoryPages.dc.html` with `rules="asked"`), `Matter.dc.html`, `DinoLink.dc.html`; the rest are today's look and experiments, not agreed. Images (`/_blob/…`) and `support.js` not copied |
 | `icons/app-icon.svg`, `icons/app-icon-sm.svg` | The app icon (48 px and up) and the simplified glyph (32 px and below) |
 | `nocturne/styles.css` | The Nocturne design-system tokens and component classes (dark theme, Inter, accent #9184d9) |
 | `nocturne/readme.md` | How Nocturne is meant to be used (outlined primary buttons, fading rules, Phosphor icons) |
