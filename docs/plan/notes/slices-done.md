@@ -36,3 +36,4 @@ Slices 7 to 11 merged 2026-10-22. Slices 14-16 merged 2026-10-26/27. Slices 17, 
 | 36 | Amazon KDP: an agent picks every picture's crop, a cover without white boxes, tinted text pages | built | #85 | | [36](../slices/36-kdp-crop-agent-and-cover.md) |
 | 37 | Amazon KDP: the crop agent also places the cover text and picks its colours | built | #88 | | [37](../slices/37-kdp-cover-text-by-agent.md) |
 | 38 | Amazon KDP robot: the book catalog, and one paperback saved as a KDP draft (built; `draft` blocked until the page maps are confirmed from a capture with the owner signed in) | built | #90 | | [38](../slices/38-kdp-robot-draft.md) |
+| 46 | Amazon KDP: styled story text (R1-R10) and redesigned front and back pages, every book | built (X Marks, English accepted by the owner 2026-11-25) | #105 | | [46](../slices/46-kdp-styled-story-text.md) |

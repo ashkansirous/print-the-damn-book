@@ -1,6 +1,6 @@
 ### Slice 46 — Amazon KDP: styled story text and redesigned front and back pages
 
-*Built 2026-11-25, PR #105 (not merged). Nothing needs a device (CLI and PDF only); `kdp-linux` CI runs on the PR.*
+*Built 2026-11-25, merged as PR #105 (44529ec). Nothing needs a device (CLI and PDF only); `kdp-linux` CI runs on the PR.*
 
 *Planned 2026-11-25 (interactive session, owner present).*
 
@@ -224,7 +224,7 @@ Desk (decided by this planning session, 2026-11-25; the owner can change any of 
   `--style-sheet` run removes and rewrites `styles/speakers.md`, and the failure is a warning in `check-report.md`).
 - **Owner, 2026-11-25, on the Seagull title circle and Elinsoft © build:** "approved! merge it". The X Marks (en) build is accepted.
 
-#### For CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-25)
 
 - Styling maths (the R1-R10 rules, colour checks, speaker analysis) lives in Core `Kdp/Styling`; drawing lives in Kdp `Styling/`. The
   Kdp project never decides what is styled. (Slice 46: docs/plan/slices/46-kdp-styled-story-text.md)
