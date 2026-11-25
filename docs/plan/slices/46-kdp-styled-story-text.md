@@ -133,8 +133,9 @@ Desk (decided by this planning session, 2026-11-25; the owner can change any of 
       `title = <page> <cx>,<cy>,<d> — reason` (face and body framed, calm background, no other character cut in half). New `kdp-style`
       skill runs it per book and language and saves the answers with the CLI flags; `kdp-build` runs it before the build when
       `kdp.json` has no `styles`.
-- [ ] **I. Builds and previews.** `kdp-build` for X Marks the Treasure! (pilot), The Gingerbread Man and The Three Little Pigs in English,
-      with `--previews`; `kdp-visual-check` on each; `check-report.md` has no overflow error. Local builds only; nothing goes to KDP.
+- [ ] **I. Builds and previews.** `kdp-build` for X Marks the Treasure! in English only (owner, 2026-11-25, at the build start:
+      "do it only for 1 ... book in english"; no other book or language is built in this slice), with `--previews`;
+      `kdp-visual-check` on it; `check-report.md` has no overflow error. Local builds only; nothing goes to KDP.
 - [ ] **J. Docs.** `docs/design/README.md` lists the new files (in this plan PR); the CLAUDE.md rules to lift: styling in Core
       `Kdp/Styling`, choices in `kdp.json` `styles` set only by the CLI, short address constant, fonts list.
 
@@ -143,7 +144,7 @@ Desk (decided by this planning session, 2026-11-25; the owner can change any of 
 - `dotnet test PrintTheDamnBook.slnx` green: a test per rule (R1 to R10), per shape class, per precedence step, for the colour rules,
   the fallbacks and the page plan, with excerpts from five books; the Farsi and Arabic tests for right-to-left order.
 - `dotnet format PrintTheDamnBook.slnx --verify-no-changes` passes; `kdp-linux` CI green (Core `Kdp` namespace and Kdp.Tests).
-- `kdp` builds X Marks the Treasure!, The Gingerbread Man and The Three Little Pigs (`en`) with exit 0 and no overflow in
+- `kdp` builds X Marks the Treasure! (`en`, the only book built) with exit 0 and no overflow in
   `check-report.md`; previews checked by `kdp-visual-check` match the ★ rows (story pages like `Asked.dc.html`, front and back pages like
   `Matter.dc.html` and `DinoLink.dc.html`, More books on its own page before the Dino page).
 - The interior PDF's text layer holds every story word once (no doubled shaped words).
