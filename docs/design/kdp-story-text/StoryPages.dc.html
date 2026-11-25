@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Story pages</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: {{w}}px; height: 612px; display: flex; gap: 48px; font-family: Andika, sans-serif; color: #2B2540">
+<sc-for list="{{pages}}" as="pg" hint-placeholder-count="5">
+<div style="position: relative; width: 612px; height: 612px; flex: none; box-sizing: border-box; padding: 61px; background: {{pg.bg}}; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.12)">
+<div style="display: flex; flex-direction: column; gap: {{gap}}px; text-align: center; font-size: 24px; line-height: 1.35">
+<sc-for list="{{pg.paras}}" as="p" hint-placeholder-count="3">
+<div><sc-if value="{{p.hasMark}}" hint-placeholder-val="{{ false }}"><span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: {{p.mark}}; margin-right: 8px; vertical-align: 2px"></span></sc-if><sc-for list="{{p.segs}}" as="s"><span style="color: {{s.c}}; font-size: {{s.fs}}px; font-weight: {{s.fw}}; font-style: {{s.fi}}; display: {{s.d}}; transform: {{s.tr}}; vertical-align: {{s.va}}; letter-spacing: {{s.ls}}em; margin: 0 {{s.mx}}px">{{s.t}}</span></sc-for></div>
+</sc-for>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 38px; text-align: center; font-size: 9px">{{pg.num}}</div>
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"rules":{"editor":"enum","options":["asked+more","asked+shapes","asked+ideas","asked","today","breathe","size","sounds","voices","playful","voices+size"],"default":"asked+shapes"},"gap":{"editor":"range","min":0,"max":36,"step":2,"unit":"px","default":14},"$preview":{"width":4572,"height":612}}'>
+class Component extends DCLogic {
+  pagesData() {
+    return [
+      { num: 6, bg: '#F6F2EC', paras: [
+        `[r0 down:Down], [r1 down:down], [r2 down:down] swooped Seagull, and she landed right on top of Kathryn's [big:big] hat.`,
+        `{seagull|"[r0 grow:Squawk!] [r1 grow:Squawk!] [r2 grow:Squawk!] What's up, Kathryn?"} said Seagull.`,
+        `Kathryn held up an old map. It had a [small:little] island on it and a [big:big] [red:red X]. {kathryn|"Look! I've found the map to the lost treasure!"} said Kathryn. {kathryn|"[refrain red:X] [refrain:marks the treasure!]"}`
+      ]},
+      { num: 16, bg: '#ECF4F3', paras: [
+        `The trip was [r0 stretch:long], [r1 stretch:long], [r2 stretch:long]. After a while, everyone on deck felt [stretch:slow] and grumbly, and nobody knew why.`,
+        `{kathryn|"Billy, can you see an island?"} said Kathryn.`,
+        `Billy was up in the basket at the top of the mast. He was too hungry to answer, so he just gave a [big:big] yawn. His tummy went [r0 wob:rumble], [r1 wob:rumble], [r2 wob:rumble]!`
+      ]},
+      { num: 18, bg: '#FFF0E0', paras: [
+        `{kathryn|"Izzy, can you check the map with your compass?"} said Kathryn.`,
+        `Izzy sat on a barrel with the map on her lap. But she was hungry too, so she didn't answer. She just gave a [big:big] sigh. Her tummy went [r0 wob:rumble], [r1 wob:rumble], [r2 wob:rumble]!`
+      ]},
+      { num: 26, bg: '#FFF0DC', paras: [
+        `Now everyone's tummy was full, and they all felt happy and bouncy again! Izzy and Pancake Polly danced across the deck, and Billy sang from the top of the mast.`,
+        `{izzy|"[b0:Yo] [b1:ho,] [b0:yo] [b1:ho!]"} sang Izzy.`,
+        `{billy|"[b0:Yo] [b1:ho,] [b0:yo] [b1:ho!]"} sang Billy.`,
+        `{polly|"We're going to find the lost treasure!"} sang Pancake Polly.`
+      ]},
+      { num: 28, bg: '#FFF0DE', paras: [
+        `{billy|"[shout:Land ahoy!] I can see an island!"} said Billy, and he pointed far across the sea.`,
+        `Everyone cheered. Kathryn looked through her telescope. {kathryn|"[shout:There it is!] Treasure Island!"} said Kathryn.`
+      ]},
+      { num: 30, bg: '#FFF1D5', paras: [
+        `The ship stopped near the island, and Seagull flew on ahead to the sandy beach.`,
+        `And there in the sand were two long sticks, crossed in a [big:big] X. {seagull|"[r0 grow:Squawk!] [r1 grow:Squawk!] [r2 grow:Squawk!] I found it! [refrain red:X] [refrain:marks the treasure!]"} said Seagull.`,
+        `[r0 bob0:Splish], [r1 bob1:splash], [r2 bob2:splosh]! Behind her, the pirates came through the water with their spades.`
+      ]},
+      { num: 36, bg: '#FFEFE4', paras: [
+        `That evening, as the sun went down, the pirates had a treasure party on the beach, with music and dancing.`,
+        `Kathryn gave Seagull a [big:big], [soft:gentle] hug.`,
+        `{kathryn|"Thank you, Seagull. You're the best friend a pirate could ever have!"} said Kathryn.`,
+        `{seagull|"[r0 shrink:Squawk], [r1 shrink:squawk], [r2 shrink:squawk],"} said Seagull [soft:softly], and she snuggled down on Kathryn's [big:big] hat.`
+      ]}
+    ];
+  }
+
+  parse(text) {
+    const out = [];
+    const voiceRe = /\{(\w+)\|([^}]*)\}/g;
+    const tagRe = /\[([^:\]]+):([^\]]+)\]/g;
+    const pushTagged = (part, voice) => {
+      let last = 0, m;
+      tagRe.lastIndex = 0;
+      while ((m = tagRe.exec(part))) {
+        if (m.index > last) out.push({ t: part.slice(last, m.index), flags: [], voice });
+        out.push({ t: m[2], flags: m[1].split(' '), voice });
+        last = m.index + m[0].length;
+      }
+      if (last < part.length) out.push({ t: part.slice(last), flags: [], voice });
+    };
+    let last = 0, m;
+    while ((m = voiceRe.exec(text))) {
+      if (m.index > last) pushTagged(text.slice(last, m.index), null);
+      pushTagged(m[2], m[1]);
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) pushTagged(text.slice(last), null);
+    return out;
+  }
+
+  style(seg, rules) {
+    const ink = '#2B2540';
+    const more = rules === 'asked+more';
+    const on = {
+      ideas: more || ['asked+ideas', 'asked'].includes(rules),
+      size: more || ['size', 'playful', 'voices+size', 'asked', 'asked+shapes', 'asked+ideas'].includes(rules),
+      sounds: more || ['sounds', 'playful', 'asked', 'asked+shapes', 'asked+ideas'].includes(rules),
+      shapes: more || ['playful', 'asked+shapes', 'asked'].includes(rules),
+      voices: more || ['voices', 'voices+size', 'asked', 'asked+shapes', 'asked+ideas'].includes(rules)
+    };
+    const voiceColors = { kathryn: '#1F4FA0', seagull: '#0E6B78', izzy: '#6A3A96', billy: '#2F6B34', polly: '#8A4B12' };
+    const soundColors = ['#C2410C', '#1F5FA8', '#7A3E9D'];
+    const f = seg.flags;
+    const has = (x) => f.includes(x);
+    const rep = has('r0') ? 0 : has('r1') ? 1 : has('r2') ? 2 : -1;
+    let c = ink, fs = 24, fw = 400, fi = 'normal', tr = 'none', va = 'baseline', mx = 0, ls = 0;
+
+    if (on.voices && seg.voice) c = voiceColors[seg.voice] || ink;
+    if (on.size) {
+      if (has('big')) { fs = 30; fw = 700; }
+      if (has('small')) fs = 19;
+      if (has('soft')) { fs = 19; c = '#6E6880'; fi = 'italic'; }
+      if (has('red')) { c = '#C62828'; fw = 700; }
+    }
+    if (more) {
+      if (has('cap')) { fs = 64; fw = 700; c = voiceColors.seagull; }
+      if (has('end')) { fs = 64; fw = 700; c = voiceColors.kathryn; }
+      const nm = f.find((x) => x.indexOf('nm-') === 0);
+      if (nm) { c = voiceColors[nm.slice(3)]; fw = 700; }
+    }
+    if (on.ideas) {
+      if (has('refrain')) { fs = 30; fw = 700; }
+      if (has('shout')) { fs = 30; fw = 700; }
+      if (has('stretch')) ls = 0.22;
+      if (has('b0') || has('b1')) { fs = 28; fw = 700; }
+      if (has('red')) { c = '#C62828'; fw = 700; }
+    }
+    if (on.sounds && rep >= 0) { c = soundColors[rep]; fw = 700; }
+    if (on.shapes) {
+      // vertical-align (not transform) so the line grows to make room and words never run into the next line
+      if (has('down') && rep >= 0) va = (-3 * rep) + 'px';
+      if (has('grow') && rep >= 0) fs = [24, 27, 30][rep];
+      if (has('shrink') && rep >= 0) { fs = [24, 21, 19][rep]; }
+      if (has('wob') && rep >= 0) { tr = 'rotate(' + [-4, 3, -3][rep] + 'deg)'; mx = 2; }
+      if (has('bob0')) va = '3px';
+      if (has('bob1')) va = '-2px';
+      if (has('bob2')) va = '2px';
+      if (has('b0')) { va = '2px'; fw = 700; }
+      if (has('b1')) { va = '-2px'; fw = 700; }
+    }
+    return { t: seg.t, c, fs, fw, fi, tr, va, mx, ls, d: tr === 'none' ? 'inline' : 'inline-block' };
+  }
+
+  // experiment: colour character names in the narration too
+  splitNames(segs) {
+    const names = { 'Pancake Polly': 'polly', "Kathryn's": 'kathryn', 'Kathryn': 'kathryn', 'Seagull': 'seagull', 'Izzy': 'izzy', 'Billy': 'billy' };
+    const re = /(Pancake Polly|Kathryn's|Kathryn|Seagull|Izzy|Billy)/g;
+    const out = [];
+    segs.forEach((s) => {
+      if (s.voice || s.flags.length) { out.push(s); return; }
+      s.t.split(re).forEach((part) => {
+        if (!part) return;
+        out.push(names[part] ? { t: part, flags: ['nm-' + names[part]], voice: null } : { t: part, flags: [], voice: null });
+      });
+    });
+    return out;
+  }
+
+  renderVals() {
+    const rules = this.props.rules ?? 'asked+shapes';
+    const more = rules === 'asked+more';
+    const gap = rules === 'today' ? 0 : (this.props.gap ?? 14);
+    const voiceColors = { kathryn: '#1F4FA0', seagull: '#0E6B78', izzy: '#6A3A96', billy: '#2F6B34', polly: '#8A4B12' };
+    let data = this.pagesData();
+    if (more) {
+      data = [{ num: 4, bg: '#F6F2EC', paras: [
+        `[cap:S]eagull flew high, high up over the sea. Down below she could see [small:little] boats, a sandy beach and a sunny harbour.`,
+        `Then she spotted a [big:big] pirate hat she knew. It was Captain Kathryn! She was running to her ship, waving a piece of paper. She looked so happy!`
+      ]}].concat(data).concat([{ num: '', bg: '#F6F2EC', paras: [`[end:The End]`] }]);
+    }
+    const pages = data.map((pg) => ({
+      num: pg.num,
+      bg: pg.bg,
+      paras: pg.paras.map((text) => {
+        let segs = this.parse(text);
+        if (more) segs = this.splitNames(segs);
+        const v = segs.find((x) => x.voice);
+        return {
+          hasMark: more && !!v,
+          mark: v ? voiceColors[v.voice] : 'transparent',
+          segs: segs.map((x) => this.style(x, rules))
+        };
+      })
+    }));
+    const w = data.length * 612 + (data.length - 1) * 48;
+    return { pages, gap, w };
+  }
+}
+</script>
+</body>
+</html>
