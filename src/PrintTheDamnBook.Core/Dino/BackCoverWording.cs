@@ -16,6 +16,12 @@ public sealed record BackCoverWords(
     string AndWord,
     string List);
 
+/// <summary>The labels of the credit roles on the KDP credits page, without a name.</summary>
+public sealed record CreditLabels(string StoryBy, string OriginalStoryBy, string RetoldBy, string Illustrations);
+
+/// <summary>One group of the credits page: its label (null for "A traditional tale") and the name or words under it.</summary>
+public sealed record CreditRole(string? Label, string Name);
+
 /// <summary>
 /// The credit lines of a back cover in a language (Slice 23), the same lines in the same order as Dino Reader's <c>BackCoverText.Lines</c>:
 /// story by (or original story by, or a traditional tale), retold by, illustration, month and year. A language without wording uses English.
@@ -66,6 +72,52 @@ public static class BackCoverWording
         ["zh"] = new("故事：{0}", "原作：{0}", "传统故事", "为小读者改写：{0}", "插图：{0}", "{1}年{0}",
             "1月|2月|3月|4月|5月|6月|7月|8月|9月|10月|11月|12月", "0123456789", "{0}和{1}", "和", "{0}、{1}"),
     };
+
+    /// <summary>The role labels of the KDP credits page (Slice 46, decision 11), labels only: the names and the date come from the same credit wording as the lines above.</summary>
+    private static readonly Dictionary<string, CreditLabels> LabelTable = new(StringComparer.Ordinal)
+    {
+        [English] = new("Story by", "Original story by", "Retold for young readers by", "Illustrations by"),
+    };
+
+    /// <summary>The credit role labels of <paramref name="language"/>; English when the language has none yet (only English has them, Slice 46 decision 10).</summary>
+    public static CreditLabels LabelsFor(string? language)
+    {
+        return LabelTable.TryGetValue(DinoBook.Primary(language), out var labels) ? labels : LabelTable[English];
+    }
+
+    /// <summary>True when <paramref name="language"/> has its own credit labels.</summary>
+    public static bool HasLabels(string? language) => LabelTable.ContainsKey(DinoBook.Primary(language));
+
+    /// <summary>
+    /// The credits as label and name pairs (the KDP credits page): story by (or original story by, or a traditional tale with no label), retold by, illustrations by.
+    /// Names are spelled as in <see cref="Lines"/>; the date line is <see cref="DateText"/>.
+    /// </summary>
+    public static IReadOnlyList<CreditRole> Roles(DinoCredits credits, string? language)
+    {
+        var words = WordsFor(language);
+        var code = DinoBook.Primary(language);
+        var labels = LabelsFor(language);
+        var roles = new List<CreditRole>();
+        if (credits.IsTraditional)
+        {
+            roles.Add(new CreditRole(null, words.Traditional));
+        }
+        else
+        {
+            roles.Add(new CreditRole(credits.Retold ? labels.OriginalStoryBy : labels.StoryBy, JoinNames(credits, words, code)));
+        }
+
+        if (credits.Retold)
+        {
+            roles.Add(new CreditRole(labels.RetoldBy, credits.NameIn(DinoCredits.Maker, code)));
+        }
+
+        roles.Add(new CreditRole(labels.Illustrations, credits.NameIn(credits.Illustration, code)));
+        return roles;
+    }
+
+    /// <summary>The month and year line of the credits, e.g. "October 2026".</summary>
+    public static string DateText(DinoCredits credits, string? language) => DateLine(credits, WordsFor(language));
 
     /// <summary>The language codes that have their own wording (English included).</summary>
     public static IReadOnlyCollection<string> Languages => Table.Keys;

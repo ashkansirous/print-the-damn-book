@@ -62,12 +62,12 @@ public class KdpPagePlanTests
     {
         var plan = KdpPagePlan.Build(13, ReadingDirection.LeftToRight);
 
-        Assert.Equal([KdpPageRole.Title, KdpPageRole.Copyright, KdpPageRole.Dedication], plan.Pages.Take(3).Select(p => p.Role));
+        Assert.Equal([KdpPageRole.Title, KdpPageRole.Credits, KdpPageRole.BelongsTo], plan.Pages.Take(3).Select(p => p.Role));
         Assert.True(plan.Pages[0].IsRightHand);
     }
 
     [Fact]
-    public void Blank_pages_sit_only_before_The_End_and_the_book_closes_with_The_End_and_the_about_page()
+    public void Blank_pages_sit_only_before_The_End_and_the_book_closes_with_The_End_and_the_Dino_page()
     {
         var plan = KdpPagePlan.Build(13, ReadingDirection.LeftToRight);
 
@@ -75,7 +75,35 @@ public class KdpPagePlanTests
         var theEnd = plan.Pages.Single(p => p.Role == KdpPageRole.TheEnd).Position;
         Assert.All(plan.Pages.Where(p => p.Role == KdpPageRole.Blank), p => Assert.InRange(p.Position, lastPicture + 1, theEnd - 1));
         Assert.Equal(KdpPageRole.TheEnd, plan.Pages[^2].Role);
-        Assert.Equal(KdpPageRole.About, plan.Pages[^1].Role);
+        Assert.Equal(KdpPageRole.Dino, plan.Pages[^1].Role);
+        Assert.DoesNotContain(plan.Pages, p => p.Role == KdpPageRole.MoreBooks);
+    }
+
+    [Fact]
+    public void The_more_books_page_sits_between_The_End_and_the_Dino_page_and_takes_a_blank_when_there_is_one()
+    {
+        var without = KdpPagePlan.Build(13, ReadingDirection.LeftToRight);
+        var with = KdpPagePlan.Build(13, ReadingDirection.LeftToRight, moreBooks: true);
+
+        Assert.Equal(without.PageCount, with.PageCount);
+        Assert.Equal([KdpPageRole.TheEnd, KdpPageRole.MoreBooks, KdpPageRole.Dino], with.Pages.TakeLast(3).Select(p => p.Role));
+        Assert.Equal(without.Pages.Count(p => p.Role == KdpPageRole.Blank) - 1, with.Pages.Count(p => p.Role == KdpPageRole.Blank));
+    }
+
+    [Theory]
+    [InlineData(1, false, 24)]
+    [InlineData(1, true, 24)]
+    [InlineData(10, true, 26)]
+    [InlineData(13, true, 32)]
+    [InlineData(14, false, 34)]
+    [InlineData(14, true, 34)]
+    public void The_page_count_stays_even_and_at_least_24_with_or_without_more_books(int pictures, bool moreBooks, int expected)
+    {
+        var plan = KdpPagePlan.Build(pictures, ReadingDirection.LeftToRight, moreBooks);
+
+        Assert.Equal(expected, plan.PageCount);
+        Assert.Equal(expected, KdpPagePlan.TotalPages(pictures, moreBooks));
+        Assert.Equal(0, plan.PageCount % 2);
     }
 
     [Fact]

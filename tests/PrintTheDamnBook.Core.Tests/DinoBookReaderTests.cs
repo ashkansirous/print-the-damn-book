@@ -64,6 +64,71 @@ public class DinoBookReaderTests
     }
 
     [Fact]
+    public void Read_GivesTheNamesOfTheCastAndOfALanguageCast()
+    {
+        var story = Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}]", "\"Cast\":[{\"Name\":\"Pip\"},{\"Name\":\" Pop \"},{\"Id\":\"x\"},7],\"LanguageCasts\":{\"de\":[{\"Name\":\"Pipp\"}],\"fa\":\"nope\"}", StringComparison.Ordinal);
+
+        var book = DinoBookReader.Read(GoodBook(story));
+
+        Assert.Equal(["Pip", "Pop"], book.Cast);
+        Assert.Equal(["Pip", "Pop"], book.CastIn("en"));
+        Assert.Equal(["Pipp"], book.CastIn("de-DE"));
+        Assert.Equal(["Pip", "Pop"], book.CastIn("fa"));
+    }
+
+    [Fact]
+    public void Read_MatchesTheNameKeyOfACastEntryWithoutRegardToCase()
+    {
+        var story = Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}]", "\"Cast\":[{\"name\":\"Pip\"},{\"NAME\":\"Pop\"}]", StringComparison.Ordinal);
+
+        var book = DinoBookReader.Read(GoodBook(story));
+
+        Assert.Equal(["Pip", "Pop"], book.Cast);
+    }
+
+    [Fact]
+    public void Read_ReadsOnlyTheFirstSixtyFourLanguageCasts()
+    {
+        var casts = string.Join(",", Enumerable.Range(0, 70).Select(i => $"\"l{i}\":[{{\"Name\":\"N{i}\"}}]"));
+        var story = Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}]", "\"Cast\":[{\"Name\":\"Pip\"}],\"LanguageCasts\":{" + casts + "}", StringComparison.Ordinal);
+
+        var book = DinoBookReader.Read(GoodBook(story));
+
+        Assert.Equal(["N63"], book.CastIn("l63"));
+        Assert.Equal(["Pip"], book.CastIn("l64"));
+    }
+
+    [Fact]
+    public void Read_CountsOnlyLanguageCastsThatHaveNamesTowardsTheCap()
+    {
+        var junk = string.Join(",", Enumerable.Range(0, 70).Select(i => $"\"j{i}\":\"nope\""));
+        var story = Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}]", "\"Cast\":[{\"Name\":\"Pip\"}],\"LanguageCasts\":{" + junk + ",\"fa\":[{\"Name\":\"Pari\"}]}", StringComparison.Ordinal);
+
+        var book = DinoBookReader.Read(GoodBook(story));
+
+        Assert.Equal(["Pari"], book.CastIn("fa"));
+    }
+
+    [Fact]
+    public void Read_TrimsACastNameBeforeCheckingItsLength()
+    {
+        var padded = new string(' ', 100) + "Pop" + new string(' ', 100);
+        var story = Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}]", "\"Cast\":[{\"Name\":\"" + padded + "\"}]", StringComparison.Ordinal);
+
+        var book = DinoBookReader.Read(GoodBook(story));
+
+        Assert.Equal(["Pop"], book.Cast);
+    }
+
+    [Fact]
+    public void Read_GivesAnEmptyCastWhenTheFileHasNone()
+    {
+        var book = DinoBookReader.Read(GoodBook(Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}],", string.Empty, StringComparison.Ordinal)));
+
+        Assert.Empty(book.CastIn("en"));
+    }
+
+    [Fact]
     public void Read_RefusesAPackageWithoutStoryJson()
     {
         using var zip = Zip(("package.json", Manifest, null), ("page-1.jpg", null, Picture));

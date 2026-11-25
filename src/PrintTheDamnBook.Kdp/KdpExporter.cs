@@ -5,6 +5,8 @@ using PrintTheDamnBook.Kdp.Cover;
 using PrintTheDamnBook.Kdp.CropSheet;
 using PrintTheDamnBook.Kdp.Pictures;
 using PrintTheDamnBook.Kdp.Previews;
+using PrintTheDamnBook.Kdp.StyleSheet;
+using PrintTheDamnBook.Kdp.Styling;
 
 namespace PrintTheDamnBook.Kdp;
 
@@ -17,6 +19,7 @@ namespace PrintTheDamnBook.Kdp;
 /// <param name="DinoText">The colours (and, since Slice 41, the box) of the Dino line beside the QR code (<c>--dino-text back=...</c>); a change with null colours clears them; null when not given (Slice 37).</param>
 /// <param name="OtherBooksFolder">The folder of <c>.dino</c> files whose other books are shown on the last page (<c>--other-books</c>, Slice 41); null leaves the last page as it was.</param>
 /// <param name="BooksOutRoot">The folder that holds each book's output folder, where their <c>kdp.json</c> files are (<c>--books-out</c>); null means the parent of the output folder.</param>
+/// <param name="Styles">The per-book style choices of this run (<c>--speaker</c>, <c>--main-character</c>, <c>--title-picture</c>), saved to <c>kdp.json</c> <c>styles</c>; null when none were given (Slice 46).</param>
 public sealed record KdpExportRequest(
     string DinoPath,
     string Language,
@@ -28,13 +31,15 @@ public sealed record KdpExportRequest(
     IReadOnlyDictionary<string, KdpCoverText?>? CoverText = null,
     KdpDinoTextChange? DinoText = null,
     string? OtherBooksFolder = null,
-    string? BooksOutRoot = null);
+    string? BooksOutRoot = null,
+    KdpStyleChanges? Styles = null,
+    bool StyleSheet = false);
 
 /// <summary>A <c>--dino-text</c> request: the colours to save, or null to clear the whole choice; with <paramref name="Box"/> also the box the Dino block (QR code and line) sits in (Slice 41).</summary>
 public sealed record KdpDinoTextChange(KdpTextColors? Colors, KdpTextBox? Box = null);
 
 /// <summary>The files written and what to tell the person who ran the command.</summary>
-public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null, string? CropSheetPath = null, string? CropSheetError = null, IReadOnlyList<string>? OtherBookTitles = null, IReadOnlyList<string>? Errors = null);
+public sealed record KdpExportResult(string PdfPath, string ReportPath, int PageCount, IReadOnlyList<string> Warnings, string CoverPath = "", string? CoverError = null, string? CoverNote = null, string? ContactSheetPath = null, string? PreviewError = null, string? CropSheetPath = null, string? CropSheetError = null, IReadOnlyList<string>? OtherBookTitles = null, IReadOnlyList<string>? Errors = null, string? StyleSheetPath = null, string? StyleSheetError = null);
 
 /// <summary>The pictures pulled out of a book: one per story page, the cover and the back cover (each null when the book has none).</summary>
 internal sealed record BookPictures(List<byte[]> Pages, byte[]? Cover, byte[]? Back);
@@ -48,7 +53,10 @@ public static class KdpExporter
     public const string ReportName = "check-report.md";
     public const string NoCoverWarning = "cover: the book has no cover picture; its first story picture is used on the front";
 
-    public static KdpExportResult Export(KdpExportRequest request)
+    public static KdpExportResult Export(KdpExportRequest request) => Export(request, KdpStyleSheetWriter.Write);
+
+    /// <summary>The export with the style-sheet writer given, so a test can make that side output fail in a way no file system gives.</summary>
+    internal static KdpExportResult Export(KdpExportRequest request, Func<string, KdpBookInput, KdpInteriorResult, string> writeStyleSheet)
     {
         var book = ReadBook(request.DinoPath);
         var language = ChooseLanguage(book, request.Language);
@@ -56,24 +64,62 @@ public static class KdpExporter
         var pictures = all.Pages;
         Directory.CreateDirectory(request.OutFolder);
         var storyPages = Math.Min(book.Pages.Count, pictures.Count);
-        var settings = MergeOffsets(request, book, storyPages, all);
+        var settings = MergeOffsets(request, book, language, storyPages, all);
         var others = LoadOtherBooks(request, book, language);
         var input = BookInput(book, language, pictures, settings, others);
         var built = Build(input);
+        EnsureRequestedSpeakersAccepted(request, built);
         var (cover, coverError) = TryBuildCover(book, language, all, built.Plan.PageCount, settings);
         var coverPath = Path.Combine(request.OutFolder, CoverName);
-        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages, all.Back is not null), .. built.Warnings, .. cover?.Warnings ?? [], .. UnsavedCoverOffsetWarnings(request, cover), .. others?.Warnings ?? []]);
+        var warnings = new List<string>([.. BookWarnings(book, language), .. StaleOffsetWarnings(settings, storyPages, all.Back is not null), .. built.Warnings, .. cover?.Warnings ?? [], .. UnsavedCoverOffsetWarnings(request, cover), .. others?.Warnings ?? [], .. UnusedSpeakerWarnings(request, built)]);
         var pdfPath = Path.Combine(request.OutFolder, PdfName);
         var reportPath = Path.Combine(request.OutFolder, ReportName);
         var result = built with { Warnings = warnings };
-        var toSave = OffsetsToSave(request, book, built.Pictures, cover);
+        var (cropSheet, cropSheetError) = TryWriteCropSheet(request, all, settings, storyPages);
+        if (!request.CropSheet && cropSheetError is not null)
+        {
+            warnings.Add($"the crop sheet that --style-sheet also writes was not written: {cropSheetError}");
+            cropSheetError = null;
+        }
+        else if (cropSheetError is not null)
+        {
+            warnings.Add($"the crop sheet was not written: {cropSheetError}");
+        }
+
+        var (styleSheet, styleSheetError) = TryWriteStyleSheet(request, input, result, writeStyleSheet);
+        if (styleSheetError is not null)
+        {
+            warnings.Add($"the style sheet was not written: {styleSheetError}");
+        }
+
+        var (sheet, previewError) = TryWritePreviews(request, input, result, built.Pictures);
+        if (previewError is not null)
+        {
+            warnings.Add($"the previews were not written: {previewError}");
+        }
+
+        var toSave = OffsetsToSave(request, book, language, built.Pictures, cover);
         var pdfs = cover is null ? [(pdfPath, result.Pdf)] : new[] { (pdfPath, result.Pdf), (coverPath, cover.Pdf) };
         var older = WriteAll(pdfs, reportPath, cover is null ? coverPath : null, stale => KdpCheckReport.Build(input.Title, language.Code, result, cover, coverError, stale));
-        WritePreviews(request.OutFolder, built.Pictures);
         SaveOffsets(request, toSave);
-        var (sheet, previewError) = TryWritePreviews(request, input, result);
-        var (cropSheet, cropSheetError) = TryWriteCropSheet(request, all, settings, storyPages);
-        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError, others?.Tiles.Select(t => t.Title).ToList(), result.Errors);
+        return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError, others?.Tiles.Select(t => t.Title).ToList(), result.Errors, styleSheet, styleSheetError);
+    }
+
+    /// <summary>
+    /// <c>--style-sheet</c> (Slice 46 item H): <c>styles/speakers.md</c> for the style agent, written after the build, from its result; without the option the file of an earlier
+    /// run is removed so none is stale.
+    /// </summary>
+    private static (string? Path, string? Error) TryWriteStyleSheet(KdpExportRequest request, KdpBookInput input, KdpInteriorResult result, Func<string, KdpBookInput, KdpInteriorResult, string> write)
+    {
+        try
+        {
+            KdpStyleSheetWriter.Remove(request.OutFolder);
+            return request.StyleSheet ? (write(request.OutFolder, input, result), null) : (null, null);
+        }
+        catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException or AccessViolationException or OperationCanceledException))
+        {
+            return (null, ex.Message);
+        }
     }
 
     private static KdpBookInput BookInput(DinoBook book, DinoLanguage language, List<byte[]> pictures, KdpBookSettings settings, KdpOtherBooksResult? others)
@@ -86,7 +132,40 @@ public static class KdpExporter
             book.Pages.Select(p => StoryLines.Clean(book.In(p.Text, language.Code))).ToList(),
             pictures,
             settings,
-            others?.Tiles.Select(t => t.Jpeg).ToList());
+            others?.Tiles.Select(t => t.Jpeg).ToList(),
+            book.CastIn(language.Code));
+    }
+
+    /// <summary>
+    /// A speaker colour given on the command line that fails the colour rules once the book's page tints and the other speakers are known (the cheaper rules were checked
+    /// when it was read) stops the run before anything is written, with the reason; <c>kdp.json</c> is left as it was.
+    /// </summary>
+    private static void EnsureRequestedSpeakersAccepted(KdpExportRequest request, KdpInteriorResult built)
+    {
+        foreach (var (name, color) in request.Styles?.Speakers ?? new Dictionary<string, string?>())
+        {
+            if (color is not null && built.Style is { } style && style.RejectedSpeakers.TryGetValue(name, out var why))
+            {
+                throw new KdpException($"--speaker {name}={color} is refused: {why}");
+            }
+        }
+    }
+
+    /// <summary>A <c>--speaker</c> colour for a cast name the book does not have as a speaking character is saved but never drawn; the report names it so it is not a silent no-op.</summary>
+    private static IEnumerable<string> UnusedSpeakerWarnings(KdpExportRequest request, KdpInteriorResult built)
+    {
+        if (built.Style is not { } style)
+        {
+            yield break;
+        }
+
+        foreach (var (name, color) in request.Styles?.Speakers ?? new Dictionary<string, string?>())
+        {
+            if (color is not null && !style.SpeakerColours.ContainsKey(name) && !style.RejectedSpeakers.ContainsKey(name))
+            {
+                yield return $"styles: --speaker {name}={color} was saved, but \"{name}\" is not a speaking character found in the story, so the colour is not used";
+            }
+        }
     }
 
     /// <summary>
@@ -127,7 +206,7 @@ public static class KdpExporter
         try
         {
             KdpCropSheetWriter.Remove(request.OutFolder);
-            return request.CropSheet ? (KdpCropSheetWriter.Write(request.OutFolder, CropSheetPictures(all, settings, storyPages)).SheetPath, null) : (null, null);
+            return request.CropSheet || request.StyleSheet ? (KdpCropSheetWriter.Write(request.OutFolder, CropSheetPictures(all, settings, storyPages)).SheetPath, null) : (null, null);
         }
         catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException or AccessViolationException or OperationCanceledException))
         {
@@ -157,10 +236,11 @@ public static class KdpExporter
     /// The <c>--previews</c> files are a side output like the cover: a failure to make them is reported and never stops the PDFs, the report or <c>kdp.json</c>.
     /// Without the option, those of an earlier run are removed so none is stale; after a failure none is left either.
     /// </summary>
-    private static (string? ContactSheet, string? Error) TryWritePreviews(KdpExportRequest request, KdpBookInput input, KdpInteriorResult result)
+    private static (string? ContactSheet, string? Error) TryWritePreviews(KdpExportRequest request, KdpBookInput input, KdpInteriorResult result, IReadOnlyList<KdpPicture> pictures)
     {
         try
         {
+            WritePreviews(request.OutFolder, pictures);
             KdpPreviews.Remove(request.OutFolder);
             return (request.Previews ? KdpPreviews.Write(request.OutFolder, input, result).ContactSheetPath : null, null);
         }
@@ -224,7 +304,7 @@ public static class KdpExporter
     }
 
     /// <summary>The owner's choices in <c>kdp.json</c> beside the output, with any <c>--offset</c> of this run added (0 clears the page's choice); nothing is saved yet. A file that cannot be read stops the run and is left as it is.</summary>
-    private static KdpBookSettings MergeOffsets(KdpExportRequest request, DinoBook book, int storyPages, BookPictures all)
+    private static KdpBookSettings MergeOffsets(KdpExportRequest request, DinoBook book, DinoLanguage language, int storyPages, BookPictures all)
     {
         try
         {
@@ -249,7 +329,8 @@ public static class KdpExporter
                 settings = pixels == 0 ? settings.WithoutCover(key) : settings.WithCoverOffset(key, pixels);
             }
 
-            return ApplyText(settings, request, all.Back is not null, key => UsedCoverOffset(key, settings, all));
+            settings = ApplyText(settings, request, all.Back is not null, key => UsedCoverOffset(key, settings, all));
+            return ApplyStyles(settings, request, book, language, storyPages);
         }
         catch (KdpSettingsException ex)
         {
@@ -308,6 +389,12 @@ public static class KdpExporter
 
     private static bool HasTextChanges(KdpExportRequest request) => request.CoverText is { Count: > 0 } || request.DinoText is not null;
 
+    /// <summary>This run's <c>--speaker</c>, <c>--main-character</c> and <c>--title-picture</c> choices added to the settings (Slice 46); a choice the book cannot take is refused.</summary>
+    private static KdpBookSettings ApplyStyles(KdpBookSettings settings, KdpExportRequest request, DinoBook book, DinoLanguage language, int storyPages)
+    {
+        return request.Styles is { IsEmpty: false } styles ? styles.ApplyTo(settings, book.CastIn(language.Code), storyPages) : settings;
+    }
+
     /// <summary>The file as it is on disk; one that was made for another book stops the run (<see cref="KdpSettingsException"/>) and is never overwritten.</summary>
     private static KdpBookSettings ReadStored(KdpExportRequest request, DinoBook book)
     {
@@ -336,9 +423,9 @@ public static class KdpExporter
     /// Works out what this run's <c>--offset</c> choices make of <c>kdp.json</c>, in memory: only offsets that moved something (the value actually used) and
     /// clears, with the book's identity. Null when nothing changes. An offset with no effect is not saved; <c>KdpInterior</c> already warns about it once.
     /// </summary>
-    private static KdpBookSettings? OffsetsToSave(KdpExportRequest request, DinoBook book, IReadOnlyList<KdpPicture> pictures, KdpCoverResult? cover)
+    private static KdpBookSettings? OffsetsToSave(KdpExportRequest request, DinoBook book, DinoLanguage language, IReadOnlyList<KdpPicture> pictures, KdpCoverResult? cover)
     {
-        if (request.Offsets is not { Count: > 0 } && request.CoverOffsets is not { Count: > 0 } && !HasTextChanges(request))
+        if (request.Offsets is not { Count: > 0 } && request.CoverOffsets is not { Count: > 0 } && !HasTextChanges(request) && request.Styles is not { IsEmpty: false })
         {
             return null;
         }
@@ -361,6 +448,7 @@ public static class KdpExporter
 
             settings = CoverOffsetsToSave(request, settings, cover);
             settings = cover is null ? settings : ApplyText(settings, request, cover.BackPictureRead, key => AppliedCoverOffset(key, settings, cover));
+            settings = ApplyStyles(settings, request, book, language, pictures.Count);
             return settings.ToJson() == before.ToJson() ? null : settings.ForBook(book.Id, book.Title);
         }
         catch (KdpSettingsException ex)

@@ -1,6 +1,8 @@
 using PrintTheDamnBook.Core.Kdp;
+using PrintTheDamnBook.Core.Kdp.Styling;
 using PrintTheDamnBook.Core.Layout;
 using PrintTheDamnBook.Core.Text;
+using PrintTheDamnBook.Kdp.Styling;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -8,7 +10,7 @@ using QuestPDF.Infrastructure;
 namespace PrintTheDamnBook.Kdp;
 
 /// <summary>What the drawing needs for one story page: its words, the size Core chose and the soft tint of the picture it faces (null: plain white).</summary>
-internal sealed record KdpStoryPage(string Text, double Pt, Rgb? Tint = null);
+internal sealed record KdpStoryPage(StyledPage Styled, double Pt, Rgb? Tint = null);
 
 /// <summary>Everything <see cref="KdpInteriorDocument"/> draws: the plan, the wording, the prepared pictures and the chosen story pages (both indexed by story index).</summary>
 internal sealed record KdpDrawing(
@@ -18,7 +20,8 @@ internal sealed record KdpDrawing(
     IReadOnlyList<KdpStoryPage> Stories,
     IReadOnlyList<KdpPicture> Pictures,
     PageNumberDigits Digits,
-    IReadOnlyList<byte[]>? OtherCovers = null);
+    IReadOnlyList<byte[]>? OtherCovers = null,
+    KdpFrontPages? Front = null);
 
 /// <summary>The only drawing code for the KDP interior (Slice 27): QuestPDF pages of the KDP page size, zero margin, the picture full bleed, words and numbers inside the safe margin.</summary>
 internal static class KdpInteriorDocument
@@ -26,8 +29,6 @@ internal static class KdpInteriorDocument
     public const string Ink = "#2B2540";
 
     private const float LineHeight = 1.35f;
-    private const double AboutQrInches = 1.1;
-    private const double AboutGapInches = 0.3;
 
     /// <summary>
     /// Uncompressed so <see cref="KdpPdfInspector"/> can read the font descriptors. The raster dpi stays at QuestPDF's default (288): the page size is
@@ -72,20 +73,23 @@ internal static class KdpInteriorDocument
         });
     }
 
-    /// <summary>White paper, except a story text page, which takes the soft tint of the picture it faces (Slice 36).</summary>
+    /// <summary>White paper, except a story text page, which takes the soft tint of the picture it faces (Slice 36), and the title page and The End, which take the tint of the first and of the last story text page (Slice 46).</summary>
     private static string PaperOf(KdpPage page, KdpDrawing drawing)
     {
-        if (page.Role == KdpPageRole.StoryText && drawing.Stories[page.StoryIndex!.Value].Tint is { } tint)
+        var tint = page.Role switch
         {
-            return $"#{tint.R:X2}{tint.G:X2}{tint.B:X2}";
-        }
-
-        return Colors.White;
+            KdpPageRole.StoryText => drawing.Stories[page.StoryIndex!.Value].Tint,
+            KdpPageRole.Title => drawing.Front?.TitleTint,
+            KdpPageRole.TheEnd => drawing.Front?.EndTint,
+            _ => null,
+        };
+        return tint is { } rgb ? $"#{rgb.R:X2}{rgb.G:X2}{rgb.B:X2}" : Colors.White;
     }
 
     private static void Body(IContainer body, KdpPage page, KdpDrawing drawing)
     {
         var matter = drawing.Matter;
+        var rtl = drawing.Direction == ReadingDirection.RightToLeft;
         switch (page.Role)
         {
             case KdpPageRole.StoryPicture:
@@ -95,35 +99,29 @@ internal static class KdpInteriorDocument
                 StoryText(body, page, drawing);
                 break;
             case KdpPageRole.Title:
-                Lines(body, page, [new Line(matter.Title, KdpTrim.TitlePt)]);
+                KdpMatterPages.Title(body, page, drawing.Front!, rtl);
                 break;
-            case KdpPageRole.Copyright:
-                Lines(body, page, matter.CopyrightLines.Select(l => new Line(l, KdpTrim.SmallPt)).ToList(), verticalEnd: true);
+            case KdpPageRole.Credits:
+                KdpMatterPages.Credits(body, page, matter, rtl);
                 break;
-            case KdpPageRole.Dedication:
-                Dedication(body, page, matter.DedicationHeading);
+            case KdpPageRole.BelongsTo:
+                KdpMatterPages.BelongsTo(body, page, matter, rtl);
                 break;
             case KdpPageRole.TheEnd:
-                Lines(body, page, [new Line(matter.TheEnd, KdpTrim.TitlePt)]);
+                KdpMatterPages.TheEnd(body, page, matter, drawing.Front!, rtl);
                 break;
-            case KdpPageRole.About:
-                About(body, page, matter, drawing.OtherCovers ?? []);
+            case KdpPageRole.MoreBooks:
+                MoreBooks(body, page, matter, drawing.OtherCovers ?? []);
+                break;
+            case KdpPageRole.Dino:
+                KdpMatterPages.Dino(body, page, drawing.Front!, rtl);
                 break;
         }
     }
 
-    /// <summary>
-    /// The last page (Slice 37, 41): the QR code to the Dino Reader page with the Dino line beside it. With other books' covers (Slice 41) the heading and the grid of covers
-    /// come first and the pair last, all centred in the safe area; without, the pair alone is centred in the text box as before.
-    /// </summary>
-    private static void About(IContainer body, KdpPage page, KdpFrontMatter matter, IReadOnlyList<byte[]> otherCovers)
+    /// <summary>The "More books by Ashkan Sirous" page (Slice 41's heading and grid, its look unchanged, on its own page since Slice 46): centred in the safe area.</summary>
+    private static void MoreBooks(IContainer body, KdpPage page, KdpFrontMatter matter, IReadOnlyList<byte[]> otherCovers)
     {
-        if (otherCovers.Count == 0)
-        {
-            DinoPair(InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle(), matter.AboutLine);
-            return;
-        }
-
         InBox(body, SafeArea(page.IsRightHand)).AlignMiddle().Column(column =>
         {
             column.Spacing((float)KdpOtherBooks.BlockGapPt);
@@ -133,7 +131,6 @@ internal static class KdpInteriorDocument
                 t.Span(matter.OtherBooksHeading);
             });
             column.Item().Element(grid => CoverGrid(grid, otherCovers));
-            DinoPair(column.Item(), matter.AboutLine);
         });
     }
 
@@ -142,21 +139,6 @@ internal static class KdpInteriorDocument
     {
         var trim = KdpTrim.TrimRect(rightHandPage);
         return new RectD(trim.X + KdpTrim.SafeMarginInches, trim.Y + KdpTrim.SafeMarginInches, trim.Width - 2 * KdpTrim.SafeMarginInches, trim.Height - 2 * KdpTrim.SafeMarginInches);
-    }
-
-    private static void DinoPair(IContainer container, string line)
-    {
-        var qr = Cover.KdpQrCode.Png(KdpCoverWording.DinoReaderUrl);
-        container.Row(row =>
-        {
-            row.ConstantItem((float)AboutQrInches, Unit.Inch).Image(qr).UseOriginalImage().FitWidth();
-            row.ConstantItem((float)AboutGapInches, Unit.Inch);
-            row.RelativeItem().AlignMiddle().Text(t =>
-            {
-                t.DefaultTextStyle(s => s.FontFamily(StoryFont.For(line)).FontSize((float)KdpTrim.MatterPt));
-                t.Span(line);
-            });
-        });
     }
 
     /// <summary>The covers in rows of <see cref="KdpOtherBooks.Columns"/>, square tiles with a thin light-grey border, each row centred.</summary>
@@ -191,43 +173,8 @@ internal static class KdpInteriorDocument
     private static void StoryText(IContainer body, KdpPage page, KdpDrawing drawing)
     {
         var story = drawing.Stories[page.StoryIndex!.Value];
-        var family = StoryFont.For(story.Text);
-        InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle().StopPaging().Element(words => KdpTextFit.Words(words, story.Text, family, story.Pt, drawing.Direction == ReadingDirection.RightToLeft));
-    }
-
-    private sealed record Line(string Text, double Pt);
-
-    private static void Lines(IContainer body, KdpPage page, IReadOnlyList<Line> lines, bool verticalEnd = false)
-    {
-        var box = InBox(body, KdpTrim.TextBox(page.IsRightHand));
-        (verticalEnd ? box.AlignBottom() : box.AlignMiddle()).Column(column =>
-        {
-            column.Spacing(8);
-            foreach (var line in lines)
-            {
-                column.Item().Text(t =>
-                {
-                    t.AlignCenter();
-                    t.DefaultTextStyle(s => s.FontFamily(StoryFont.For(line.Text)).FontSize((float)line.Pt));
-                    t.Span(line.Text);
-                });
-            }
-        });
-    }
-
-    private static void Dedication(IContainer body, KdpPage page, string heading)
-    {
-        InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle().Column(column =>
-        {
-            column.Spacing(28);
-            column.Item().Text(t =>
-            {
-                t.AlignCenter();
-                t.DefaultTextStyle(s => s.FontSize((float)KdpTrim.MatterPt));
-                t.Span(heading);
-            });
-            column.Item().Height(1).BorderBottom(1).BorderColor(Ink);
-        });
+        var family = StoryFont.For(story.Styled.Text);
+        InBox(body, KdpTrim.TextBox(page.IsRightHand)).AlignMiddle().StopPaging().Element(words => KdpStyledText.Words(words, story.Styled, family, drawing.Direction == ReadingDirection.RightToLeft));
     }
 
     private static void Number(IContainer strip, KdpPage page, string text, PageNumberDigits digits)

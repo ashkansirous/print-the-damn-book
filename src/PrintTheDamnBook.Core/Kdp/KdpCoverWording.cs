@@ -4,7 +4,10 @@ namespace PrintTheDamnBook.Core.Kdp;
 public static class KdpCoverWording
 {
     /// <summary>The page the back cover's and the last interior page's QR code opens.</summary>
-    public const string DinoReaderUrl = "https://dinoreader.sirous.uk/";
+    public const string DinoReaderUrl = "https://" + DinoShortAddress + "/";
+
+    /// <summary>The short address printed under the QR code on the Dino page, one constant for all books (Slice 46, owner 2026-11-25).</summary>
+    public const string DinoShortAddress = "dinoreader.sirous.uk";
 
     /// <summary>The line next to the QR code, on the back cover and on the last interior page (one text for both, <see cref="KdpFrontMatterWording.DinoLine"/>).</summary>
     public static string DinoLine => KdpFrontMatterWording.DinoLine;

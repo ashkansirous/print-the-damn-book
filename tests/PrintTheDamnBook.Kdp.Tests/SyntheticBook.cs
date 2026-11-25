@@ -34,7 +34,7 @@ internal static class SyntheticBook
     /// <param name="withoutPicture">How many of the last pages have no picture file in the archive (the reader skips them).</param>
     /// <param name="pictureWidth">Width of every picture in the archive.</param>
     /// <param name="pictureHeight">Height of every picture in the archive.</param>
-    public static string WriteDino(string path, int pages, int withoutPicture = 0, int pictureWidth = SourceWidth, int pictureHeight = SourceHeight, string id = "test1", string title = "Freddy and the Test", bool corruptBackCover = false, string? pageText = null)
+    public static string WriteDino(string path, int pages, int withoutPicture = 0, int pictureWidth = SourceWidth, int pictureHeight = SourceHeight, string id = "test1", string title = "Freddy and the Test", bool corruptBackCover = false, string? pageText = null, IReadOnlyList<string>? cast = null)
     {
         var story = new StringBuilder($"{{\"Title\":\"{title}\",\"Language\":\"en\",\"Pages\":[");
         story.AppendJoin(',', Enumerable.Range(1, pages).Select(i => $"{{\"Text\":\"{pageText ?? $"Page {i} of the test."}\",\"ImageFile\":\"page-{i}.jpg\"}}"));
@@ -43,7 +43,13 @@ internal static class SyntheticBook
             story.Append(",{\"Text\":\"\",\"ImageFile\":\"back-cover.jpg\",\"BackCover\":{\"picture\":\"back-cover.jpg\"}}");
         }
 
-        story.Append("]}");
+        story.Append(']');
+        if (cast is not null)
+        {
+            story.Append(",\"Cast\":[").AppendJoin(',', cast.Select(name => $"{{\"Name\":\"{name}\"}}")).Append(']');
+        }
+
+        story.Append('}');
         using var file = File.Create(path);
         using var zip = new ZipArchive(file, ZipArchiveMode.Create);
         Add(zip, "package.json", Encoding.UTF8.GetBytes($"{{\"schemaVersion\":1,\"id\":\"{id}\",\"title\":\"Freddy and the Test\",\"language\":\"en\"}}"));

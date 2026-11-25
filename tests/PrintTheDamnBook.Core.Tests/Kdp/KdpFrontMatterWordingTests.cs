@@ -14,7 +14,7 @@ public class KdpFrontMatterWordingTests
 
         Assert.Equal("Freddy and the Slipper", wording.Title);
         Assert.Equal(BackCoverWording.Lines(Credits, "en").Count + 1, wording.CopyrightLines.Count);
-        Assert.Equal("© 2026 Ashkan Sirous. All rights reserved.", wording.CopyrightLines[^1]);
+        Assert.Equal("© 2026 Elinsoft Ltd. All rights reserved.", wording.CopyrightLines[^1]);
     }
 
     [Fact]
@@ -22,7 +22,7 @@ public class KdpFrontMatterWordingTests
     {
         var wording = KdpFrontMatterWording.For("T", null, fallbackYear: 2031);
 
-        Assert.Equal(["© 2031 Ashkan Sirous. All rights reserved."], wording.CopyrightLines);
+        Assert.Equal(["© 2031 Elinsoft Ltd. All rights reserved."], wording.CopyrightLines);
     }
 
     [Fact]

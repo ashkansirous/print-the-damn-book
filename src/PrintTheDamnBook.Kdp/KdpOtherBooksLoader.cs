@@ -144,7 +144,7 @@ internal static class KdpOtherBooksLoader
         var code = book.Languages().Any(l => l.IsSupported && DinoBook.Primary(l.Code) == DinoBook.Primary(language)) ? language : book.Language;
         var front = ReadFrontPicture(candidate.Path, book);
         var title = book.In(book.Title, code);
-        var input = new KdpCoverInput(title, code, null, front, null, KdpPagePlan.TotalPages(book.Pages.Count), TextDirection.ForLanguage(code), settings);
+        var input = new KdpCoverInput(title, code, null, front, null, KdpPagePlan.TotalPages(book.Pages.Count, moreBooks: true), TextDirection.ForLanguage(code), settings);
         return new KdpOtherBookTile(title, KdpFrontTile.Jpeg(input));
     }
 

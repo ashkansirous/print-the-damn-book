@@ -5,13 +5,14 @@ namespace PrintTheDamnBook.Core.Kdp;
 public enum KdpPageRole
 {
     Title,
-    Copyright,
-    Dedication,
+    Credits,
+    BelongsTo,
     StoryText,
     StoryPicture,
     Blank,
     TheEnd,
-    About,
+    MoreBooks,
+    Dino,
 }
 
 /// <summary>
@@ -31,8 +32,9 @@ public sealed record KdpPlan(IReadOnlyList<KdpPage> Pages, IReadOnlyList<string>
 }
 
 /// <summary>
-/// The page plan (Slice 27): title (right), copyright, dedication, then one spread per story page with the words on the left and the picture on
-/// the right (mirrored for a right-to-left book), blank pages, The End, the about page. The count is even and at least 24; page numbers are the
+/// The page plan (Slice 27, 46): title (right), credits, belongs-to, then one spread per story page with the words on the left and the picture on
+/// the right (mirrored for a right-to-left book), blank pages, The End, the More books page (only when the book has other covers; it takes a blank
+/// when there is one) and the Dino page last. The count is even and at least 24; page numbers are the
 /// physical position and only text pages carry one. (<see cref="Layout.PageNumbering.Compute"/> is not used: its Cover and Blank rules answer for a
 /// saddle-stitch booklet, and here a printed book's number is simply its position.)
 /// </summary>
@@ -48,19 +50,19 @@ public static class KdpPagePlan
     private const int FrontMatterPages = 3;
     private const int BackMatterPages = 2;
 
-    public static KdpPlan Build(int pictureCount, ReadingDirection direction)
+    public static KdpPlan Build(int pictureCount, ReadingDirection direction, bool moreBooks = false)
     {
         if (pictureCount < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(pictureCount), "A book needs at least one picture.");
         }
 
-        var total = TotalPages(pictureCount);
+        var total = TotalPages(pictureCount, moreBooks);
         var roles = new List<(KdpPageRole Role, int? Story)>
         {
             (KdpPageRole.Title, null),
-            (KdpPageRole.Copyright, null),
-            (KdpPageRole.Dedication, null),
+            (KdpPageRole.Credits, null),
+            (KdpPageRole.BelongsTo, null),
         };
         for (var i = 0; i < pictureCount; i++)
         {
@@ -69,22 +71,30 @@ public static class KdpPagePlan
             roles.Add(textFirst ? (KdpPageRole.StoryPicture, i) : (KdpPageRole.StoryText, i));
         }
 
-        var blanks = total - roles.Count - BackMatterPages;
+        var blanks = total - roles.Count - BackPages(moreBooks);
         roles.AddRange(Enumerable.Repeat((KdpPageRole.Blank, (int?)null), blanks));
         roles.Add((KdpPageRole.TheEnd, null));
-        roles.Add((KdpPageRole.About, null));
+        if (moreBooks)
+        {
+            roles.Add((KdpPageRole.MoreBooks, null));
+        }
+
+        roles.Add((KdpPageRole.Dino, null));
 
         var pages = roles.Select((r, i) => new KdpPage(i + 1, r.Role, r.Story, r.Role == KdpPageRole.StoryText ? i + 1 : null)).ToList();
         return new KdpPlan(pages, WarningsFor(total));
     }
 
     /// <summary>The page count: the pictures' spreads and the matter, rounded up to even, never under <see cref="MinPages"/>.</summary>
-    public static int TotalPages(int pictureCount)
+    public static int TotalPages(int pictureCount, bool moreBooks)
     {
-        var needed = FrontMatterPages + 2 * pictureCount + BackMatterPages;
+        var needed = FrontMatterPages + 2 * pictureCount + BackPages(moreBooks);
         var even = needed + needed % 2;
         return Math.Max(MinPages, even);
     }
+
+    /// <summary>The End and the Dino page, and the More books page between them when the book has other covers.</summary>
+    private static int BackPages(bool moreBooks) => BackMatterPages + (moreBooks ? 1 : 0);
 
     private static List<string> WarningsFor(int total)
     {

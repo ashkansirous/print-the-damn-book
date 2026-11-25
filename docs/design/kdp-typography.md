@@ -110,7 +110,7 @@ and grey can't be shown as themselves on a pale page).
 | Block | bottom of the page, 61 pt from the bottom, centred, 18 pt between groups |
 | Role label | 13 pt `#6E6880` ("Story by", "Illustrations by" in English) |
 | Name | 20 pt bold ink, 2 pt under its label |
-| Date and © line | 12 pt `#6E6880`, line height 1.5 ("October 2026" / "© 2026 Ashkan Sirous. All rights reserved.") |
+| Date and © line | 12 pt `#6E6880`, line height 1.5 ("October 2026" / "© 2026 Elinsoft Ltd. All rights reserved."; the rights holder is the company, the credits above stay the author's) |
 
 ### This book belongs to
 

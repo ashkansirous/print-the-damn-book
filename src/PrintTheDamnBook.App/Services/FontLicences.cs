@@ -9,6 +9,7 @@ public static class FontLicences
     private const string FontsFolder = "/Fonts/";
     private const string Separator = "\n\n----------------------------------------\n\n";
 
+    // Andika-Bold, Andika-Italic and Vazirmatn-Bold (Slice 46, KDP styled text) are the same families, so their licences are the Andika and Vazirmatn texts below.
     private static readonly string[] Files = ["Inter-LICENSE.txt", "Phosphor-LICENSE.txt", "Andika-LICENSE.txt", "Vazirmatn-LICENSE.txt"];
 
     public static string ReadAll()

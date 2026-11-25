@@ -6,7 +6,11 @@ namespace PrintTheDamnBook.Kdp;
 /// <summary>The story fonts, registered with QuestPDF from the copies embedded in this assembly (the App's own <c>.ttf</c> files, linked, not copied).</summary>
 internal static class KdpFonts
 {
-    private static readonly string[] Resources = ["Fonts.Andika-Regular.ttf", "Fonts.Vazirmatn-Regular.ttf"];
+    private static readonly string[] Resources =
+    [
+        "Fonts.Andika-Regular.ttf", "Fonts.Andika-Bold.ttf", "Fonts.Andika-Italic.ttf",
+        "Fonts.Vazirmatn-Regular.ttf", "Fonts.Vazirmatn-Bold.ttf",
+    ];
     private static readonly Lock Gate = new();
     private static bool _registered;
 
