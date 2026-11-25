@@ -99,6 +99,28 @@ public class DinoBookReaderTests
     }
 
     [Fact]
+    public void Read_CountsOnlyLanguageCastsThatHaveNamesTowardsTheCap()
+    {
+        var junk = string.Join(",", Enumerable.Range(0, 70).Select(i => $"\"j{i}\":\"nope\""));
+        var story = Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}]", "\"Cast\":[{\"Name\":\"Pip\"}],\"LanguageCasts\":{" + junk + ",\"fa\":[{\"Name\":\"Pari\"}]}", StringComparison.Ordinal);
+
+        var book = DinoBookReader.Read(GoodBook(story));
+
+        Assert.Equal(["Pari"], book.CastIn("fa"));
+    }
+
+    [Fact]
+    public void Read_TrimsACastNameBeforeCheckingItsLength()
+    {
+        var padded = new string(' ', 100) + "Pop" + new string(' ', 100);
+        var story = Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}]", "\"Cast\":[{\"Name\":\"" + padded + "\"}]", StringComparison.Ordinal);
+
+        var book = DinoBookReader.Read(GoodBook(story));
+
+        Assert.Equal(["Pop"], book.Cast);
+    }
+
+    [Fact]
     public void Read_GivesAnEmptyCastWhenTheFileHasNone()
     {
         var book = DinoBookReader.Read(GoodBook(Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}],", string.Empty, StringComparison.Ordinal)));

@@ -319,6 +319,7 @@ public class KdpStyleChoicesTests
             Assert.Contains(result.Warnings, w => w.Contains("crop sheet", StringComparison.Ordinal));
             Assert.Contains("crop sheet", report, StringComparison.Ordinal);
             Assert.NotNull(asked.CropSheetError);
+            Assert.Contains("crop sheet was not written", File.ReadAllText(asked.ReportPath), StringComparison.Ordinal);
         }
         finally
         {
@@ -340,6 +341,7 @@ public class KdpStyleChoicesTests
             var saved = KdpBookSettings.Read(Path.Combine(outFolder, KdpBookSettings.FileName));
 
             Assert.Equal("style sheet broke", result.StyleSheetError);
+            Assert.Contains("style sheet broke", File.ReadAllText(result.ReportPath), StringComparison.Ordinal);
             Assert.Equal("#2F6B34", saved.Styles.SpeakerColours["Seagull"]);
         }
         finally
@@ -362,6 +364,7 @@ public class KdpStyleChoicesTests
 
             Assert.NotNull(result.StyleSheetError);
             Assert.Null(result.StyleSheetPath);
+            Assert.Contains("style sheet was not written", File.ReadAllText(result.ReportPath), StringComparison.Ordinal);
             Assert.True(File.Exists(result.PdfPath));
             Assert.True(File.Exists(result.ReportPath));
             Assert.Empty(result.Errors ?? []);

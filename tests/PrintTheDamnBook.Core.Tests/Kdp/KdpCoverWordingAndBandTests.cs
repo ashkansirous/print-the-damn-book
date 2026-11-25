@@ -14,6 +14,12 @@ public class KdpCoverWordingAndBandTests
     }
 
     [Fact]
+    public void The_front_matter_dino_line_is_the_exact_text_the_back_cover_carried_before_it_was_built_from_parts()
+    {
+        Assert.Equal("Listen to this story in Dino: Kids Books & Stories. Want to join in? Pick a character and speak their lines yourself!", KdpFrontMatterWording.DinoLine);
+    }
+
+    [Fact]
     public void The_cover_and_the_last_interior_page_use_the_same_dino_line()
     {
         Assert.Equal(KdpCoverWording.DinoLine, KdpFrontMatterWording.For("T", null, 2026).AboutLine);

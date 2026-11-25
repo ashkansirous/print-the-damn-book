@@ -81,13 +81,22 @@ public static class KdpExporter
             warnings.Add($"the crop sheet that --style-sheet also writes was not written: {cropSheetError}");
             cropSheetError = null;
         }
+        else if (cropSheetError is not null)
+        {
+            warnings.Add($"the crop sheet was not written: {cropSheetError}");
+        }
+
+        var (styleSheet, styleSheetError) = TryWriteStyleSheet(request, input, result, writeStyleSheet);
+        if (styleSheetError is not null)
+        {
+            warnings.Add($"the style sheet was not written: {styleSheetError}");
+        }
 
         var toSave = OffsetsToSave(request, book, language, built.Pictures, cover);
         var pdfs = cover is null ? [(pdfPath, result.Pdf)] : new[] { (pdfPath, result.Pdf), (coverPath, cover.Pdf) };
         var older = WriteAll(pdfs, reportPath, cover is null ? coverPath : null, stale => KdpCheckReport.Build(input.Title, language.Code, result, cover, coverError, stale));
         WritePreviews(request.OutFolder, built.Pictures);
         var (sheet, previewError) = TryWritePreviews(request, input, result);
-        var (styleSheet, styleSheetError) = TryWriteStyleSheet(request, input, result, writeStyleSheet);
         SaveOffsets(request, toSave);
         return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError, others?.Tiles.Select(t => t.Title).ToList(), result.Errors, styleSheet, styleSheetError);
     }

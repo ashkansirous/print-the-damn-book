@@ -196,9 +196,10 @@ public static class DinoBookReader
         {
             var name = entry.ValueKind == JsonValueKind.String ? entry.GetString()
                 : entry.ValueKind == JsonValueKind.Object ? NameOf(entry) : null;
-            if (!string.IsNullOrWhiteSpace(name) && name.Length <= MaxCastNameChars)
+            var trimmed = name?.Trim();
+            if (!string.IsNullOrEmpty(trimmed) && trimmed.Length <= MaxCastNameChars)
             {
-                names.Add(name.Trim());
+                names.Add(trimmed);
             }
         }
 
@@ -228,12 +229,17 @@ public static class DinoBookReader
             return casts;
         }
 
-        foreach (var language in all.EnumerateObject().Take(MaxCastLanguages))
+        foreach (var language in all.EnumerateObject())
         {
             var names = ReadCast(language.Value);
             if (names.Count > 0)
             {
                 casts[language.Name] = names;
+            }
+
+            if (casts.Count >= MaxCastLanguages)
+            {
+                break;
             }
         }
 
