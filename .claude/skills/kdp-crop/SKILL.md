@@ -48,7 +48,10 @@ Output folder: the same one `kdp-build` uses, `<repo root>/tmp/kdp-out/<book>-<l
    back Dino block; Slice 41, and the owner's word on the Town Mouse front: "text on top of trees is better than on top of characters/animals"): the largest
    calm area that fits the block, the block centred in it; completely empty space first, else scenery (trees, sky, foliage, background); never over any
    character or animal, however small (birds included); blocks never overlap each other nor the barcode corner. Put this rule in every brief, so
-   the agent does not fall back to "credits at the top, QR in the corner". The words are decided
+   the agent does not fall back to "credits at the top, QR in the corner". **The brief also gives the number of credit lines of the back cover**
+   (the count `BackCoverWording.Lines` in Core makes: one story line, plus one "retold by" line only when the book's credits say retold, one
+   illustration line and one date line, so 3 or 4; read the book's credits, never guess), so the agent sizes the credits box to that many
+   lines and not to a fixed height (Slice 45). The words are decided
    **only from what the agent saw**: a cover in `NOT SEEN` has no words lines, and the skill never supplies a box or colour itself.
    **Refuse to apply a result that does not list every key as seen:** if the answer says `NOT SEEN`, lacks a line for any key that has a
    key of the expected list, or reports a read failure, apply nothing for the keys not seen (keep the lines for keys that were seen); dispatch a

@@ -70,6 +70,53 @@ public class KdpOtherBooksAndDinoBoxTests
         Assert.Equal(KdpOtherBooks.TilePt, Math.Floor(KdpOtherBooks.TilePt));
     }
 
+    private static readonly RectD CreditsBox = new(1, 1, 5, 2);
+
+    [Fact]
+    public void A_block_below_the_credits_in_the_same_column_moves_up_to_one_gap_under_the_credit_text()
+    {
+        var block = new RectD(1.5, 3.5, 4, 1);
+
+        var moved = KdpTextBoxMaths.MoveUnderCredits(block, CreditsBox, creditsTextBottom: 2.0);
+
+        Assert.Equal(2.0 + KdpTextBoxMaths.DinoUnderCreditsGapInches, moved.Y, 6);
+        Assert.Equal(block with { Y = moved.Y }, moved);
+    }
+
+    [Fact]
+    public void A_block_in_another_column_is_left_alone()
+    {
+        var block = new RectD(6.5, 3.5, 2, 1);
+
+        Assert.Equal(block, KdpTextBoxMaths.MoveUnderCredits(block, CreditsBox, 2.0));
+    }
+
+    [Fact]
+    public void A_block_above_the_credits_is_left_alone()
+    {
+        var block = new RectD(1.5, 0.2, 4, 0.5);
+
+        Assert.Equal(block, KdpTextBoxMaths.MoveUnderCredits(block, CreditsBox, 2.0));
+    }
+
+    [Fact]
+    public void A_block_already_closer_than_the_gap_never_moves_down()
+    {
+        var block = new RectD(1.5, 3.05, 4, 1);
+
+        Assert.Equal(block, KdpTextBoxMaths.MoveUnderCredits(block, CreditsBox, 2.9));
+    }
+
+    [Fact]
+    public void A_moved_block_keeps_its_size_and_stays_inside_its_horizontal_span()
+    {
+        var block = new RectD(1.5, 3.5, 4, 1);
+
+        var moved = KdpTextBoxMaths.MoveUnderCredits(block, CreditsBox, 2.0);
+
+        Assert.Equal((block.X, block.Width, block.Height), (moved.X, moved.Width, moved.Height));
+    }
+
     [Fact]
     public void A_dino_block_box_puts_the_qr_code_at_the_left_and_the_line_beside_it()
     {
@@ -77,7 +124,7 @@ public class KdpOtherBooksAndDinoBoxTests
 
         var (qr, words) = KdpTextBoxMaths.SplitDinoBlock(block, rtl: false);
 
-        Assert.Equal(new RectD(1, 5 + (1.5 - KdpTextBoxMaths.QrInches) / 2, KdpTextBoxMaths.QrInches, KdpTextBoxMaths.QrInches), qr);
+        Assert.Equal(new RectD(1, 5, KdpTextBoxMaths.QrInches, KdpTextBoxMaths.QrInches), qr);
         Assert.Equal(1 + KdpTextBoxMaths.QrInches + KdpTextBoxMaths.QrGapInches, words.X, 6);
         Assert.Equal(5, words.X + words.Width, 6);
     }

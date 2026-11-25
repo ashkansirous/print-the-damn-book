@@ -61,15 +61,13 @@ public class KdpCoverRedesignTests
     }
 
     [Fact]
-    public void No_white_box_sits_behind_the_words_only_the_barcode_box_is_white()
+    public void No_white_box_sits_behind_the_words_and_none_is_drawn_for_the_barcode_spot()
     {
         var result = KdpCover.Build(Input());
 
         using var pdf = PdfDocument.Open(result.Pdf);
-        var barcode = result.Barcode;
-        var barcodeRect = new { Left = barcode.X * 72, Right = (barcode.X + barcode.Width) * 72 };
         var whites = pdf.GetPage(1).Paths.Where(IsWhiteFill).Select(p => p.GetBoundingRectangle()).Where(r => r is { } box && box.Width < pdf.GetPage(1).Width * 0.9).ToList();
-        Assert.All(whites, box => Assert.InRange(box!.Value.Left, barcodeRect.Left - 1, barcodeRect.Right + 1));
+        Assert.Empty(whites);
     }
 
     [Fact]

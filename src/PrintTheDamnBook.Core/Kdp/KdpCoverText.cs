@@ -119,15 +119,18 @@ public static class KdpTextBoxMaths
     /// <summary>... and at least this tall (the QR code).</summary>
     public const double DinoBlockMinHeightInches = QrInches;
 
+    /// <summary>A chosen Dino block that sits below the credits in the same column is moved up to this far below the last credit line (Slice 45).</summary>
+    public const double DinoUnderCreditsGapInches = 0.25;
+
     private const double Tolerance = 1e-6;
 
     /// <summary>
-    /// How a Dino block box is shared (Slice 41): the QR code at the box's edge on the reading side (the right for a right-to-left book), vertically centred,
-    /// the line filling the rest of the box beside it.
+    /// How a Dino block box is shared (Slice 41): the QR code at the box's edge on the reading side (the right for a right-to-left book) and at its top,
+    /// the line filling the rest of the box beside it, starting level with the top of the QR code (Slice 45).
     /// </summary>
     public static (RectD Qr, RectD Words) SplitDinoBlock(RectD block, bool rtl)
     {
-        var qr = new RectD(rtl ? block.X + block.Width - QrInches : block.X, block.Y + (block.Height - QrInches) / 2, QrInches, QrInches);
+        var qr = new RectD(rtl ? block.X + block.Width - QrInches : block.X, block.Y, QrInches, QrInches);
         var words = new RectD(rtl ? block.X : block.X + QrInches + QrGapInches, block.Y, block.Width - QrInches - QrGapInches, block.Height);
         return (qr, words);
     }
@@ -147,6 +150,19 @@ public static class KdpTextBoxMaths
         var left = Math.Min(qr.X, wordsX);
         var block = new RectD(left, y, Math.Max(qr.X + QrInches, wordsRight) - left, QrInches);
         return (block, qr, words);
+    }
+
+    /// <summary>
+    /// Slice 45: a chosen Dino block that lies below the credits box and shares a column with it moves up so its top is <see cref="DinoUnderCreditsGapInches"/> below
+    /// <paramref name="creditsTextBottom"/> (where the credit lines really end, not the box's bottom). It keeps its size and its left and right, and never moves down;
+    /// a block in another column, above the credits, or already closer than the gap is returned as it is.
+    /// </summary>
+    public static RectD MoveUnderCredits(RectD block, RectD creditsBox, double creditsTextBottom)
+    {
+        var below = block.Y >= creditsBox.Y + creditsBox.Height - Tolerance;
+        var sameColumn = Math.Min(block.X + block.Width, creditsBox.X + creditsBox.Width) - Math.Max(block.X, creditsBox.X) > Tolerance;
+        var top = creditsTextBottom + DinoUnderCreditsGapInches;
+        return below && sameColumn && top < block.Y ? block with { Y = top } : block;
     }
 
     /// <summary>True when a Dino block in a box the crop agent chose may stay there: it meets no credit lines (none placed means nothing to meet).</summary>
