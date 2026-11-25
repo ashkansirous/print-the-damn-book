@@ -61,7 +61,7 @@ shadow under it, in the box and colours you give. Decide them **after** the offs
 the window then keeps, `480 px` tall on the copy), from what you see inside it.
 
 - **Three blocks, each with its own box** (Slice 41; the same rule for every one): **front: the title** (the front carries no credit line);
-  **back: the credit lines** (the "Story by ... / Illustration: ..." lines, about 4 to 6 short lines, about 1.5 in tall); **back: the Dino
+  **back: the credit lines** (the "Story by ... / Illustration: ..." lines; the brief gives their number, `N`; size the box to exactly that many lines, about `N` x 0.35 in plus 0.06 in between lines, not a taller box: 3 lines are about 1.2 in, never 1.5 in, because empty space in the box would show as a gap before the Dino block; Slice 45); **back: the Dino
   block**, the QR code (0.8 in square, at the box's left edge, at the right edge for a right-to-left book) with the Dino line beside it (a short
   paragraph that needs about 3 in of width beside the code). Size the Dino box about 4 to 5.5 in wide and 0.9 to 1.3 in tall (fractions about
   `width` 0.47 to 0.64 and `height` 0.11 to 0.15), never smaller: the code keeps the QR at the size a phone scans, so the box must hold it plus the line.

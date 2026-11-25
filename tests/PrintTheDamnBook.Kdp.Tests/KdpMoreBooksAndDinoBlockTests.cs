@@ -29,7 +29,8 @@ public class KdpMoreBooksAndDinoBlockTests
     [Fact]
     public void A_saved_dino_box_holds_the_qr_code_at_its_left_edge_and_the_line_beside_it()
     {
-        var result = KdpCover.Build(Input(WithDino(MiddleBox)));
+        var creditsBelow = new KdpCoverText(new KdpTextBox(0.1, 0.70, 0.6, 0.15), "#FFFFFF", "#000000");
+        var result = KdpCover.Build(Input(WithDino(MiddleBox).WithCoverText(KdpPictureKeys.Back, creditsBelow)));
 
         Assert.Empty(result.Warnings);
         using var pdf = PdfDocument.Open(result.Pdf);
@@ -37,10 +38,42 @@ public class KdpMoreBooksAndDinoBlockTests
         var box = KdpTextBoxMaths.ResolveBlock(MiddleBox, KdpCoverSize.BackTrim(24, ReadingDirection.LeftToRight), result.Barcode, KdpCoverSize.BackPanel(24, ReadingDirection.LeftToRight))!.Value;
         var qr = Inches(Assert.Single(page.GetImages(), IsQr), page);
         Assert.Equal(box.X, qr.Left, 0.03);
-        Assert.Equal(box.Y + (box.Height - 0.8) / 2, qr.Top, 0.03);
+        Assert.Equal(box.Y, qr.Top, 0.03);
         var line = page.GetWords().First(w => w.Text == "Listen");
         Assert.InRange(line.BoundingBox.Left / 72, qr.Right, box.X + box.Width);
-        Assert.InRange((page.Height - line.BoundingBox.Top) / 72, box.Y - 0.02, box.Y + box.Height);
+        Assert.InRange((page.Height - line.BoundingBox.Top) / 72, qr.Top - 0.02, qr.Top + 0.3);
+    }
+
+    [Fact]
+    public void A_dino_block_below_the_credits_sits_one_gap_under_the_last_credit_line()
+    {
+        var credits = new KdpCoverText(new KdpTextBox(0.08, 0.09, 0.54, 0.18), "#FFFFFF", "#000000");
+        var settings = WithDino(new KdpTextBox(0.08, 0.30, 0.60, 0.15)).WithCoverText(KdpPictureKeys.Back, credits);
+
+        var result = KdpCover.Build(Input(settings));
+
+        using var pdf = PdfDocument.Open(result.Pdf);
+        var page = pdf.GetPage(1);
+        var qr = Inches(Assert.Single(page.GetImages(), IsQr), page);
+        var creditBottom = page.GetWords().Where(w => (page.Height - w.BoundingBox.Top) / 72 < qr.Top - 0.1).Max(w => (page.Height - w.BoundingBox.Bottom) / 72);
+        Assert.InRange(qr.Top - creditBottom, 0.20, 0.32);
+    }
+
+    [Fact]
+    public void A_right_to_left_dino_block_below_the_credits_moves_up_and_keeps_its_column()
+    {
+        var credits = new KdpCoverText(new KdpTextBox(0.30, 0.09, 0.60, 0.18), "#FFFFFF", "#000000");
+        var dinoBox = new KdpTextBox(0.30, 0.30, 0.60, 0.15);
+        var settings = WithDino(dinoBox).WithCoverText(KdpPictureKeys.Back, credits);
+
+        var result = KdpCover.Build(Input(settings, rtl: true));
+
+        using var pdf = PdfDocument.Open(result.Pdf);
+        var page = pdf.GetPage(1);
+        var box = KdpTextBoxMaths.ResolveBlock(dinoBox, KdpCoverSize.BackTrim(24, ReadingDirection.RightToLeft), result.Barcode, KdpCoverSize.BackPanel(24, ReadingDirection.RightToLeft))!.Value;
+        var qr = Inches(Assert.Single(page.GetImages(), IsQr), page);
+        Assert.True(qr.Top < box.Y - 0.05);
+        Assert.Equal(box.X + box.Width, qr.Right, 0.03);
     }
 
     [Fact]

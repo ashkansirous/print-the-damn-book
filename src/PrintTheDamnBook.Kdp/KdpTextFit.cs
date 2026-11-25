@@ -54,6 +54,30 @@ internal static class KdpTextFit
         return maxHeightInches;
     }
 
+    /// <summary>The height of the lines the words really take at their wrapped line count, with no slack; null when the font probe fails or the words need more than <paramref name="maxHeightInches"/>.</summary>
+    internal static double? WrappedLinesHeightInches(string text, string family, double pt, double widthInches, double maxHeightInches, bool rightToLeft)
+    {
+        double lineInches;
+        try
+        {
+            lineInches = LineHeightPt(family, pt) / KdpTrim.PointsPerInch;
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+
+        for (var lines = 1; lines * lineInches < maxHeightInches; lines++)
+        {
+            if (Fits(new RectD(0, 0, widthInches, lines * lineInches + TightSlackInches), [text], family, pt, rightToLeft))
+            {
+                return lines * lineInches;
+            }
+        }
+
+        return null;
+    }
+
     private const double TightSlackInches = 0.04;
 
     /// <summary>The height one line of <paramref name="pt"/> takes in the page's line height, measured once per font with the same engine (QuestPDF has no measuring call): the smallest box a probe line fits, scaled.</summary>

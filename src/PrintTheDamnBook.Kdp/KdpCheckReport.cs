@@ -77,7 +77,7 @@ public static class KdpCheckReport
         text.AppendLine();
     }
 
-    /// <summary>The cover.pdf facts: size from KDP's formula, the spine and the clear barcode box (inches from the top-left of the file).</summary>
+    /// <summary>The cover.pdf facts: size from KDP's formula, the spine and the barcode spot (inches from the top-left of the file).</summary>
     private static void AppendCover(StringBuilder text, KdpCoverResult cover)
     {
         var box = cover.Barcode;
@@ -86,7 +86,7 @@ public static class KdpCheckReport
         text.AppendLine(CultureInfo.InvariantCulture, $"- Cover size: {cover.WidthInches:0.0000} x {cover.HeightInches:0.0000} in (back + spine + front, bleed {KdpCoverSize.BleedInches} in on the top, bottom and outside edges)");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Spine width: {cover.SpineInches:0.0000} in for {cover.PageCount} pages ({KdpCoverSize.SpineInchesPerPage} in per page, premium colour); {SpineTextNote(cover.PageCount)}");
         var corner = cover.Direction == ReadingDirection.RightToLeft ? "lower left" : "lower right";
-        text.AppendLine(CultureInfo.InvariantCulture, $"- Barcode box, left clear: {box.Width} x {box.Height} in at x {box.X:0.000}, y {box.Y:0.000} in ({corner} of the back cover)");
+        text.AppendLine(CultureInfo.InvariantCulture, $"- Barcode spot, kept free of words and the QR code (KDP prints its own white box there): {box.Width} x {box.Height} in at x {box.X:0.000}, y {box.Y:0.000} in ({corner} of the back cover)");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Back cover picture read from the book: {(cover.BackPictureRead ? "yes" : "no")}; credit lines read: {(cover.CreditsRead ? "yes" : "no")}");
         text.AppendLine(CultureInfo.InvariantCulture, $"- Cover fonts embedded: {cover.Fonts.Embedded} of {cover.Fonts.Fonts}");
         text.AppendLine();

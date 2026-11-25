@@ -29,7 +29,7 @@ internal sealed record KdpCoverDrawing(
     KdpTextBox? DinoBox = null);
 
 /// <summary>
-/// The only drawing code for the KDP cover: one page of the whole wrap, the pictures full bleed, no spine text, the barcode box left clear (white, as KDP asks).
+/// The only drawing code for the KDP cover: one page of the whole wrap, the pictures full bleed, no spine text, the barcode spot kept free of words and the QR code (KDP prints its own white barcode box there).
 /// Words sit straight on the pictures with a soft blurred shadow beneath and no box (Slice 36, 37): the title alone on the front, the credit lines on the back,
 /// each in the box and colours the crop agent chose (else the calmest band, white or ink) and, at the bottom of the back on the side away from the barcode,
 /// the QR code with the Dino line beside it.
@@ -88,7 +88,6 @@ internal static class KdpCoverDocument
             FrontWords(layers, drawing);
             BackCredits(layers, drawing, credits);
             BackQr(layers, drawing, dino);
-            layers.Layer().Element(c => Barcode(c, drawing));
         });
     }
 
@@ -298,7 +297,7 @@ internal static class KdpCoverDocument
     private sealed record CreditsPlacement(RectD Box, double Pt, Look Look, IReadOnlyList<string> Lines);
 
     /// <summary>Where the QR code and the Dino line go: the whole block, the code, the line's box and size, and the look of the line.</summary>
-    private sealed record DinoPlacement(RectD Block, RectD Qr, RectD Words, double Pt, Look Look);
+    private sealed record DinoPlacement(RectD Block, RectD Qr, RectD Words, double Pt, Look Look, bool TopAligned = false);
 
     /// <summary>
     /// The back's credits and Dino block, decided together (Slice 41): the Dino block goes in the box the crop agent chose when that box is usable and does not meet the
@@ -325,8 +324,44 @@ internal static class KdpCoverDocument
             creditsPlacement = CreditsFor(drawing, trim, lines!, rtl, true, attempt);
         }
 
+        placed = placed is not null && creditsPlacement is not null ? MovedUnderCredits(drawing, placed, creditsPlacement, rtl) : placed;
+
         attempt.ForEach(n => Note(drawing, n));
         return (creditsPlacement, placed ?? CornerDino(drawing, trim, rtl));
+    }
+
+    /// <summary>Slice 45: a chosen Dino block below the credits in the same column moves up to sit one gap under the credit lines as drawn; the line keeps its size.</summary>
+    private static DinoPlacement MovedUnderCredits(KdpCoverDrawing drawing, DinoPlacement placed, CreditsPlacement credits, bool rtl)
+    {
+        if (credits.Lines.Count == 0)
+        {
+            return placed;
+        }
+
+        var textBottom = credits.Box.Y + CreditsTextHeightInches(drawing, credits, rtl);
+        var block = KdpTextBoxMaths.MoveUnderCredits(placed.Block, credits.Box, textBottom);
+        if (block == placed.Block)
+        {
+            return placed;
+        }
+
+        var (qr, words) = KdpTextBoxMaths.SplitDinoBlock(block, rtl);
+        return placed with { Block = block, Qr = qr, Words = words, Look = DinoLook(drawing, words) };
+    }
+
+    /// <summary>The height the credit lines really take at their size: each line's wrapped height with no slack plus the gaps between them, less the leading under the last line's glyphs ((line height - 1) x size), never more than the box (the whole box, with a note, when the font probe fails).</summary>
+    private static double CreditsTextHeightInches(KdpCoverDrawing drawing, CreditsPlacement credits, bool rtl)
+    {
+        var gaps = Math.Max(0, credits.Lines.Count - 1) * BackCreditSpacingPt / KdpTrim.PointsPerInch;
+        var heights = credits.Lines.Select(line => KdpTextFit.WrappedLinesHeightInches(line, StoryFont.For(line), credits.Pt, credits.Box.Width, credits.Box.Height, rtl)).ToList();
+        if (heights.Any(h => h is null))
+        {
+            Note(drawing, "cover: the credit lines could not be measured, so the Dino block is placed below the whole credits box");
+            return credits.Box.Height;
+        }
+
+        var leadingUnderGlyphs = (LineHeight - 1) * credits.Pt / KdpTrim.PointsPerInch;
+        return Math.Min(credits.Box.Height, heights.Sum(h => h!.Value) + gaps - leadingUnderGlyphs);
     }
 
     private static CreditsPlacement CreditsFor(KdpCoverDrawing drawing, RectD trim, IReadOnlyList<string> lines, bool rtl, bool clearStrip, ICollection<string> notes)
@@ -415,7 +450,7 @@ internal static class KdpCoverDocument
         var rtl = drawing.Direction == ReadingDirection.RightToLeft;
         var png = KdpQrCode.Png(KdpCoverWording.DinoReaderUrl);
         layers.Layer().Element(c => KdpInteriorDocument.InBox(c, placed.Qr).Image(png).UseOriginalImage().FitUnproportionally());
-        Lettered(layers, drawing, placed.Words, placed.Look, placed.Pt, (c, color) => c.AlignMiddle().Element(words => Aligned(words, rtl).Text(t => Line(t, KdpCoverWording.DinoLine, placed.Pt, color))));
+        Lettered(layers, drawing, placed.Words, placed.Look, placed.Pt, (c, color) => (placed.TopAligned ? c.AlignTop() : c.AlignMiddle()).Element(words => Aligned(words, rtl).Text(t => Line(t, KdpCoverWording.DinoLine, placed.Pt, color))));
     }
 
     /// <summary>The look of the Dino line: the crop agent's colours, else the backdrop rule over the line's own box.</summary>
@@ -432,7 +467,7 @@ internal static class KdpCoverDocument
     }
 
     /// <summary>
-    /// The Dino block in the box the crop agent chose (Slice 41): the QR code at the box's edge on the reading side, vertically centred, the line filling the rest.
+    /// The Dino block in the box the crop agent chose (Slice 41): the QR code at the box's edge on the reading side and at its top, the line filling the rest and top-aligned with the code (Slice 45).
     /// Null, with a note, when there is no usable box (none saved, too small, outside the safe margin, meeting the barcode) or the line does not fit it.
     /// </summary>
     private static DinoPlacement? ChosenDino(KdpCoverDrawing drawing, RectD trim, bool rtl)
@@ -456,7 +491,7 @@ internal static class KdpCoverDocument
             return null;
         }
 
-        return new DinoPlacement(block, qr, words, pt, DinoLook(drawing, words));
+        return new DinoPlacement(block, qr, words, pt, DinoLook(drawing, words), TopAligned: true);
     }
 
     /// <summary>The largest size at which the Dino line fits beside the QR code, or null when it fits at none (or the box is too narrow).</summary>
@@ -478,11 +513,5 @@ internal static class KdpCoverDocument
     {
         t.DefaultTextStyle(s => s.FontFamily(StoryFont.For(text)).FontSize((float)pt).FontColor(color));
         t.Span(text);
-    }
-
-    /// <summary>KDP puts its barcode here and rejects a cover with art or words in the spot, so it is a plain white box.</summary>
-    private static void Barcode(IContainer layer, KdpCoverDrawing drawing)
-    {
-        KdpInteriorDocument.InBox(layer, KdpCoverSize.Barcode(drawing.PageCount, drawing.Direction)).Background(Colors.White);
     }
 }

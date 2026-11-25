@@ -152,7 +152,7 @@ public class KdpCoverTests
             var report = File.ReadAllText(result.ReportPath);
             Assert.Contains("## Cover", report);
             Assert.Contains("Spine width: 0.0563 in for 24 pages", report);
-            Assert.Contains("Barcode box, left clear", report);
+            Assert.Contains("Barcode spot, kept free of words and the QR code", report);
             Assert.Contains(KdpCover.NoBackCoverWarning, report);
         }
         finally
