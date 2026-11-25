@@ -64,6 +64,27 @@ public class DinoBookReaderTests
     }
 
     [Fact]
+    public void Read_GivesTheNamesOfTheCastAndOfALanguageCast()
+    {
+        var story = Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}]", "\"Cast\":[{\"Name\":\"Pip\"},{\"Name\":\" Pop \"},{\"Id\":\"x\"},7],\"LanguageCasts\":{\"de\":[{\"Name\":\"Pipp\"}],\"fa\":\"nope\"}", StringComparison.Ordinal);
+
+        var book = DinoBookReader.Read(GoodBook(story));
+
+        Assert.Equal(["Pip", "Pop"], book.Cast);
+        Assert.Equal(["Pip", "Pop"], book.CastIn("en"));
+        Assert.Equal(["Pipp"], book.CastIn("de-DE"));
+        Assert.Equal(["Pip", "Pop"], book.CastIn("fa"));
+    }
+
+    [Fact]
+    public void Read_GivesAnEmptyCastWhenTheFileHasNone()
+    {
+        var book = DinoBookReader.Read(GoodBook(Story.Replace("\"Cast\":[{\"Name\":\"Pip\"}],", string.Empty, StringComparison.Ordinal)));
+
+        Assert.Empty(book.CastIn("en"));
+    }
+
+    [Fact]
     public void Read_RefusesAPackageWithoutStoryJson()
     {
         using var zip = Zip(("package.json", Manifest, null), ("page-1.jpg", null, Picture));

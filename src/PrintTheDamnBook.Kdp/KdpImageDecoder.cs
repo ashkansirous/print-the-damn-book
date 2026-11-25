@@ -71,6 +71,23 @@ public static class KdpImageDecoder
         return bytes;
     }
 
+    /// <summary>The square of a story picture the title page's round picture is cut from (<see cref="KdpTitleCircle.Square"/>), resampled to <paramref name="sidePx"/> square and encoded as a JPEG.</summary>
+    public static byte[] TitleSquare(byte[] encoded, KdpTitlePicture? saved, int pictureCount, int sidePx)
+    {
+        using var source = Decode(encoded);
+        var square = KdpTitleCircle.Square(source.Width, source.Height, saved, pictureCount);
+        using var target = new SKBitmap(sidePx, sidePx, SKColorType.Rgba8888, SKAlphaType.Premul);
+        using (var canvas = new SKCanvas(target))
+        using (var image = SKImage.FromBitmap(source))
+        {
+            var from = new SKRect(square.X, square.Y, square.X + square.Side, square.Y + square.Side);
+            var sampling = square.Side > sidePx ? new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear) : new SKSamplingOptions(SKCubicResampler.CatmullRom);
+            canvas.DrawImage(image, from, new SKRect(0, 0, sidePx, sidePx), sampling, null);
+        }
+
+        return Encode(target);
+    }
+
     /// <summary>The upright, opaque picture, for the crop sheet (<see cref="CropSheet.KdpCropSheetWriter"/>); the caller disposes it.</summary>
     internal static SKBitmap DecodeUpright(byte[] encoded) => Decode(encoded);
 

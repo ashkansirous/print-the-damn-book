@@ -41,15 +41,64 @@ public sealed class KdpBookSettings
     {
     }
 
-    private KdpBookSettings(IEnumerable<KeyValuePair<int, KdpPageSettings>> pages, IEnumerable<KeyValuePair<string, KdpCoverSettings>> covers, string? bookId, string? bookTitle)
+    private KdpBookSettings(IEnumerable<KeyValuePair<int, KdpPageSettings>> pages, IEnumerable<KeyValuePair<string, KdpCoverSettings>> covers, string? bookId, string? bookTitle, KdpStyleSettings? styles = null)
     {
         _pages = new SortedDictionary<int, KdpPageSettings>(pages.ToDictionary(p => p.Key, p => p.Value));
         _covers = new SortedDictionary<string, KdpCoverSettings>(covers.ToDictionary(p => p.Key, p => p.Value), StringComparer.Ordinal);
         BookId = bookId;
         BookTitle = bookTitle;
+        Styles = styles ?? KdpStyleSettings.Empty;
     }
 
-    private KdpBookSettings Copy() => new(_pages, _covers, BookId, BookTitle);
+    private KdpBookSettings Copy() => new(_pages, _covers, BookId, BookTitle, Styles);
+
+    /// <summary>The style choices (Slice 46): speaker colours, main character, title picture. Empty when none were saved.</summary>
+    public KdpStyleSettings Styles { get; }
+
+    /// <summary>A copy with the speaker's colour set (#RRGGBB); a null colour removes the speaker's entry.</summary>
+    /// <exception cref="KdpSettingsException">The name is empty or the colour is not valid.</exception>
+    public KdpBookSettings WithSpeaker(string name, string? color)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new KdpSettingsException("A speaker needs a name.");
+        }
+
+        var speakers = new Dictionary<string, string>(Styles.SpeakerColours, StringComparer.Ordinal);
+        if (color is null)
+        {
+            speakers.Remove(name);
+        }
+        else
+        {
+            speakers[name] = Hex(color);
+        }
+
+        return WithStyles(Styles with { Speakers = speakers.Count == 0 ? null : speakers });
+    }
+
+    /// <summary>A copy with the main character set; a null name removes the choice.</summary>
+    public KdpBookSettings WithMainCharacter(string? name, string? reason = null)
+    {
+        return WithStyles(Styles with { MainCharacter = string.IsNullOrWhiteSpace(name) ? null : new KdpMainCharacter(name.Trim(), string.IsNullOrWhiteSpace(reason) ? null : reason.Trim()) });
+    }
+
+    /// <summary>A copy with the title picture set; null removes the choice.</summary>
+    /// <exception cref="KdpSettingsException">The page is below 1 or a fraction is outside 0 to 1 (the diameter must be above 0).</exception>
+    public KdpBookSettings WithTitlePicture(KdpTitlePicture? picture)
+    {
+        if (picture is { IsValid: false })
+        {
+            throw new KdpSettingsException("The title picture needs a page from 1, a centre inside the picture (fractions 0 to 1) and a diameter above 0 up to 1.");
+        }
+
+        return WithStyles(Styles with { TitlePicture = picture });
+    }
+
+    private KdpBookSettings WithStyles(KdpStyleSettings styles)
+    {
+        return new KdpBookSettings(_pages, _covers, BookId, BookTitle, styles.IsEmpty ? KdpStyleSettings.Empty : styles);
+    }
 
     public static KdpBookSettings Empty => new();
 
@@ -60,7 +109,7 @@ public sealed class KdpBookSettings
     public string? BookTitle { get; }
 
     /// <summary>A copy that records which book the choices belong to.</summary>
-    public KdpBookSettings ForBook(string bookId, string bookTitle) => new(_pages, _covers, bookId, bookTitle);
+    public KdpBookSettings ForBook(string bookId, string bookTitle) => new(_pages, _covers, bookId, bookTitle, Styles);
 
     /// <summary>The choices belong to another book, so applying them would crop the wrong pictures; a file that records no book passes.</summary>
     /// <exception cref="KdpSettingsException">The file records a different book id.</exception>
@@ -221,6 +270,7 @@ public sealed class KdpBookSettings
             Book = BookId is null ? null : new BookIdentity { Id = BookId, Title = BookTitle },
             Pages = _pages.ToDictionary(p => p.Key.ToString(System.Globalization.CultureInfo.InvariantCulture), p => p.Value),
             Covers = _covers.Count == 0 ? null : _covers.ToDictionary(c => c.Key, c => c.Value),
+            Styles = Styles.IsEmpty ? null : Styles,
         };
         return JsonSerializer.Serialize(file, Options);
     }
@@ -257,7 +307,12 @@ public sealed class KdpBookSettings
                 }
             }
 
-            return new KdpBookSettings(pages, covers, file.Book?.Id, file.Book?.Title);
+            if (file.Styles is { IsValid: false })
+            {
+                throw new KdpSettingsException($"{FileName} has a bad \"styles\" entry (a speaker colour, the main character or the title picture).");
+            }
+
+            return new KdpBookSettings(pages, covers, file.Book?.Id, file.Book?.Title, file.Styles?.Normalized());
         }
         catch (JsonException ex)
         {
@@ -347,5 +402,9 @@ public sealed class KdpBookSettings
         [JsonPropertyName("covers")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public Dictionary<string, KdpCoverSettings>? Covers { get; set; }
+
+        [JsonPropertyName("styles")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public KdpStyleSettings? Styles { get; set; }
     }
 }

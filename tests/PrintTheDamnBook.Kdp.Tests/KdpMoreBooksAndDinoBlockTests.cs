@@ -196,6 +196,14 @@ public class KdpMoreBooksAndDinoBlockTests
         Assert.Equal(trim.Y + trim.Height - KdpTextBoxMaths.PanelInsetInches - 0.8, qr.Top, 0.03);
     }
 
+    [Fact]
+    public void Another_books_tile_is_sized_by_the_page_count_that_book_has_with_its_own_more_books_page()
+    {
+        var withOthers = KdpInterior.Build(WithOthers(1) with { Texts = Enumerable.Repeat("Pip ran.", 11).ToList(), Pictures = Enumerable.Range(0, 11).Select(i => SyntheticBook.Picture(i)).ToList() });
+
+        Assert.Equal(withOthers.Plan.PageCount, KdpPagePlan.TotalPages(11, KdpOtherBooksLoader.OtherBookHasMoreBooksPage));
+    }
+
     private static KdpBookInput WithOthers(int others)
     {
         var book = SyntheticBook.Input(2);
@@ -203,56 +211,57 @@ public class KdpMoreBooksAndDinoBlockTests
     }
 
     [Fact]
-    public void The_last_page_shows_the_heading_the_covers_and_the_qr_code_and_the_page_count_does_not_change()
+    public void The_more_books_page_shows_the_heading_and_the_covers_just_before_the_dino_page_and_the_page_count_does_not_change()
     {
         var plain = KdpInterior.Build(SyntheticBook.Input(2));
         var withOthers = KdpInterior.Build(WithOthers(15));
 
         Assert.Equal(plain.Plan.PageCount, withOthers.Plan.PageCount);
+        Assert.Equal([KdpPageRole.TheEnd, KdpPageRole.MoreBooks, KdpPageRole.Dino], withOthers.Plan.Pages.TakeLast(3).Select(p => p.Role));
         using var pdf = PdfDocument.Open(withOthers.Pdf);
-        var last = pdf.GetPage(withOthers.Plan.PageCount);
-        var images = last.GetImages().ToList();
-        Assert.Equal(16, images.Count);
-        Assert.Single(images, image => Math.Abs(image.BoundingBox.Width - 1.1 * 72) < 2);
+        var more = pdf.GetPage(withOthers.Plan.PageCount - 1);
+        var images = more.GetImages().ToList();
         Assert.Equal(15, images.Count(image => Math.Abs(image.BoundingBox.Width - KdpOtherBooks.TilePt) < 2));
-        var text = string.Join(' ', last.GetWords().Select(w => w.Text));
-        Assert.Equal(KdpFrontMatterWording.OtherBooksHeadingText + " " + KdpCoverWording.DinoLine, text);
+        Assert.Equal(15, images.Count);
+        Assert.Equal(KdpFrontMatterWording.OtherBooksHeadingText, string.Join(' ', more.GetWords().Select(w => w.Text)));
     }
 
     [Fact]
-    public void The_qr_code_on_the_last_page_still_decodes_with_other_books_above_it()
+    public void The_qr_code_on_the_last_page_still_decodes_with_a_more_books_page_before_it()
     {
         var result = KdpInterior.Build(WithOthers(15));
 
         using var pdf = PdfDocument.Open(result.Pdf);
-        var qr = Assert.Single(pdf.GetPage(result.Plan.PageCount).GetImages(), image => Math.Abs(image.BoundingBox.Width - 1.1 * 72) < 2);
+        var qr = Assert.Single(pdf.GetPage(result.Plan.PageCount).GetImages());
+        Assert.Equal(KdpMatterSpec.QrPt, qr.BoundingBox.Width, 2);
         Assert.Equal(KdpCoverWording.DinoReaderUrl, DecodeQr(qr));
     }
 
     [Fact]
-    public void The_covers_sit_five_to_a_row_inside_the_safe_margin_above_the_qr_code()
+    public void The_covers_sit_five_to_a_row_inside_the_safe_margin_on_their_own_page()
     {
         var result = KdpInterior.Build(WithOthers(12));
 
         using var pdf = PdfDocument.Open(result.Pdf);
-        var page = pdf.GetPage(result.Plan.PageCount);
+        var page = pdf.GetPage(result.Plan.PageCount - 1);
         var tiles = page.GetImages().Where(image => Math.Abs(image.BoundingBox.Width - KdpOtherBooks.TilePt) < 2).ToList();
-        var qr = page.GetImages().Single(image => Math.Abs(image.BoundingBox.Width - 1.1 * 72) < 2);
         Assert.Equal(12, tiles.Count);
         Assert.Equal([5, 5, 2], tiles.GroupBy(t => Math.Round(t.BoundingBox.Bottom)).OrderByDescending(g => g.Key).Select(g => g.Count()).ToArray());
-        Assert.All(tiles, tile => Assert.True(tile.BoundingBox.Bottom > qr.BoundingBox.Top));
         Assert.All(tiles, tile => Assert.InRange(tile.BoundingBox.Left, 0.5 * 72 - 1, page.Width - 0.5 * 72 + 1));
     }
 
     [Fact]
-    public void Without_other_books_the_last_page_is_as_before_the_qr_code_and_the_line_only()
+    public void Without_other_books_there_is_no_more_books_page_and_the_last_page_holds_the_qr_code_and_the_dino_wording()
     {
         var result = KdpInterior.Build(SyntheticBook.Input(2));
 
+        Assert.DoesNotContain(result.Plan.Pages, p => p.Role == KdpPageRole.MoreBooks);
         using var pdf = PdfDocument.Open(result.Pdf);
         var last = pdf.GetPage(result.Plan.PageCount);
         Assert.Single(last.GetImages());
-        Assert.Equal(KdpCoverWording.DinoLine, string.Join(' ', last.GetWords().Select(w => w.Text)));
+        var text = string.Join(' ', last.GetWords().Select(w => w.Text));
+        Assert.StartsWith(KdpFrontMatterWording.ScanLine + " " + KdpCoverWording.DinoShortAddress, text, StringComparison.Ordinal);
+        Assert.Contains(KdpFrontMatterWording.ListenLine, text, StringComparison.Ordinal);
     }
 
     [Fact]

@@ -46,6 +46,11 @@ public static class KdpRunner
                 output.WriteLine($"Wrote the crop sheet {cropSheet} and the larger uncut copies beside it.");
             }
 
+            if (result.StyleSheetPath is { } styleSheet)
+            {
+                output.WriteLine($"Wrote the style sheet {styleSheet}.");
+            }
+
             if (result.OtherBookTitles is { Count: > 0 } others)
             {
                 output.WriteLine($"Other books on the last page ({others.Count}): {string.Join("; ", others)}.");
@@ -74,6 +79,11 @@ public static class KdpRunner
             if (result.CropSheetError is { } cropSheetError)
             {
                 error.WriteLine($"Error: the crop sheet was not written: {cropSheetError}");
+            }
+
+            if (result.StyleSheetError is { } styleSheetError)
+            {
+                error.WriteLine($"Warning: the style sheet was not written: {styleSheetError}");
             }
 
             var bookErrors = result.Errors ?? [];

@@ -46,7 +46,9 @@ public class KdpTextPagesTests
     public void Right_to_left_story_pages_are_set_at_24_pt_in_Vazirmatn()
     {
         var persian = "سلام دنیا، من فردی هستم.\nامروز هوا خیلی خوب است.";
-        var result = KdpInterior.Build(SyntheticBook.Input(2, language: "fa", longText: persian));
+
+        // Two different pages: the same words on both pages would be a refrain (R7, Slice 46) and be set at 30 pt.
+        var result = KdpInterior.Build(SyntheticBook.Input(2, language: "fa") with { Texts = [persian, "کتاب را باز کرد و داستان را خواند.\nبعد خوابید."] });
 
         Assert.All(result.Stories, s => Assert.Equal(24, s.Pt));
         Assert.All(result.Stories, s => Assert.True(s.Fits));
@@ -162,7 +164,8 @@ public class KdpTextPagesTests
             var page = result.Plan.Pages[i];
             var corner = preview.GetPixel(2, 2);
             var isTextPage = page.Role == KdpPageRole.StoryText;
-            Assert.Equal(isTextPage, result.Pictures.Any(p => IsNear(corner, p.Tint!.Value)));
+            var isTinted = isTextPage || page.Role is KdpPageRole.Title or KdpPageRole.TheEnd; // the title page and The End take the tint of the first and the last text page (Slice 46)
+            Assert.Equal(isTinted, result.Pictures.Any(p => IsNear(corner, p.Tint!.Value)));
             if (isTextPage)
             {
                 Assert.True(IsNear(corner, result.Pictures[page.StoryIndex!.Value].Tint!.Value));

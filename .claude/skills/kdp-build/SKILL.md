@@ -25,10 +25,10 @@ Uploading is the owner's step; the listing text is the `kdp-listing` skill's job
    ```
 
    **Other books on the last page (Slice 41):** for every book add `--other-books D:/high-res-books --books-out <folder that holds each book's output folder>`
-   (this repo's `tmp/kdp-out` for a build here, or the folder of the rebuilt books). The last interior page then shows "More books by ..." with up to 15
-   other books' front covers (this book never; more than 15 are picked at random, seeded by this book's id, so a rebuild gives the same page) and the Dino
-   line with its QR code at the bottom. Each cover is titled as on that book's own `kdp.json`; without `--books-out` the output folder's parent is used.
-   Without `--other-books` the last page stays as before. The command prints the titles it used.
+   (this repo's `tmp/kdp-out` for a build here, or the folder of the rebuilt books). A page "More books by ..." with up to 15
+   other books' front covers (this book never; more than 15 are picked at random, seeded by this book's id, so a rebuild gives the same page) then sits just before the last
+   page, which is the Dino page (Slice 46: QR code, short address, the speaking characters). Each cover is titled as on that book's own `kdp.json`; without `--books-out` the output folder's parent is used.
+   Without `--other-books` there is no More books page. The command prints the titles it used.
 
    Add `--offset <story page|front|back>=<pixels>` for each offset chosen so far in this run (they are saved in `kdp.json` in the output
    folder, so a later run keeps them). Exit 0 means the files were written; 1 means a failure: either the book could not be made (read the `Error:` line), or it was made but something is wrong. A story page whose words
@@ -39,7 +39,11 @@ Uploading is the owner's step; the listing text is the `kdp-listing` skill's job
 removes the previews of an earlier run.
 2. **Read `check-report.md`**: page count (even, at least 24), fonts embedded, text pages facing their pictures, the `## Cover` section
    and every warning at the end.
-3. **Choose the crops first: run the `kdp-crop` skill** (once per build, before any visual check; Slice 36). It makes the crop sheet, has the
+3. **Choose the styles first: run the `kdp-style` skill when `kdp.json` in the output folder has no `styles`** (Slice 46; no file, or no `styles` object, or one that lacks a title picture,
+   a main character or a colour for a speaker the book has: the report's `styles: ... (fallback)` warnings say which). It makes the style sheet, has the `kdp-style-check` agent choose each
+   speaker's colour, the main character and the round title picture from small uncut copies, and saves them with `--speaker`, `--main-character` and `--title-picture`. A book whose `kdp.json` already holds every
+   choice skips it. Its two runs are not counted in the 4 below. English books only for now.
+   **Then choose the crops: run the `kdp-crop` skill** (once per build, before any visual check; Slice 36). It makes the crop sheet, has the
    `kdp-crop-check` agent decide every picture's window (story pages, `front`, `back`) from small uncut copies, and (Slice 37, for every book) the
    cover words too: the title's box and colours on the front, the credit lines' box and colours on the back, and the colours of the Dino line beside the
    QR code; it saves the offsets and the words choices (`--text`, `--dino-text`) in `kdp.json` and reruns with `--previews`. Its two runs are not counted in the 4 below. Never cut a book and look afterwards instead.

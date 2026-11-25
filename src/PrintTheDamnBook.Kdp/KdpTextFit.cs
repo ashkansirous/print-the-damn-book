@@ -1,5 +1,7 @@
 using PrintTheDamnBook.Core.Kdp;
+using PrintTheDamnBook.Core.Kdp.Styling;
 using PrintTheDamnBook.Core.Layout;
+using PrintTheDamnBook.Kdp.Styling;
 using QuestPDF.Drawing.Exceptions;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
@@ -125,18 +127,29 @@ internal static class KdpTextFit
         return high;
     }
 
-    /// <summary>Each text is set in the box on a page of its own; all must fit.</summary>
+    /// <summary>Whether a styled story page (the real runs: sizes, bold, paragraph gaps) fits its box (Slice 46); measured with the same composer the drawing uses.</summary>
+    public static bool Fits(StyledPage page, string family, RectD boxInches, bool rightToLeft)
+    {
+        return Fits(boxInches, [words => KdpStyledText.Words(words, page, family, rightToLeft)]);
+    }
+
     private static bool Fits(RectD boxInches, IReadOnlyList<string> texts, string family, double pt, bool rightToLeft)
+    {
+        return Fits(boxInches, texts.Select<string, Action<IContainer>>(text => words => Words(words, text, family, pt, rightToLeft)).ToList());
+    }
+
+    /// <summary>Each content is set in the box on a page of its own; all must fit.</summary>
+    private static bool Fits(RectD boxInches, IReadOnlyList<Action<IContainer>> contents)
     {
         var document = Document.Create(container =>
         {
-            foreach (var text in texts)
+            foreach (var content in contents)
             {
                 container.Page(page =>
                 {
                     page.Size((float)KdpTrim.PageWidthInches, (float)KdpTrim.PageHeightInches, Unit.Inch);
                     page.Margin(0);
-                    page.Content().Element(body => KdpInteriorDocument.InBox(body, boxInches).AlignMiddle().ShowEntire().Element(words => Words(words, text, family, pt, rightToLeft)));
+                    page.Content().Element(body => KdpInteriorDocument.InBox(body, boxInches).AlignMiddle().ShowEntire().Element(content));
                 });
             }
         });

@@ -35,12 +35,18 @@ public class KdpInteriorTests
                 Assert.Equal(KdpTrim.PictureWidthPx, image.WidthInSamples);
                 Assert.Equal(KdpTrim.PictureHeightPx, image.HeightInSamples);
             }
-            else if (planned.Role == KdpPageRole.About)
+            else if (planned.Role == KdpPageRole.Title)
+            {
+                Assert.Single(images); // the round picture (Slice 46)
+            }
+            else if (planned.Role == KdpPageRole.Dino)
             {
                 var qr = Assert.Single(images); // the QR code to the Dino Reader page (Slice 37)
                 Assert.Equal(KdpCoverWording.DinoReaderUrl, DecodeQr(qr));
                 var text = string.Join(' ', pdf.GetPage(planned.Position).GetWords().Select(w => w.Text));
-                Assert.Equal(KdpCoverWording.DinoLine, text);
+                Assert.Contains(KdpCoverWording.DinoShortAddress, text, StringComparison.Ordinal);
+                Assert.Contains(KdpFrontMatterWording.ListenLine, text, StringComparison.Ordinal);
+                Assert.Contains("speak their lines yourself!", text, StringComparison.Ordinal);
             }
             else
             {

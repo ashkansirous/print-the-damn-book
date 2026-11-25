@@ -128,7 +128,7 @@ public static class DinoBookReader
         var title = FirstText(story.Title, manifest.Title) ?? string.Empty;
         var cover = CoverOf(story, entries);
         var id = FirstText(manifest.Id, story.Id) ?? string.Empty;
-        return new DinoBook(id, title, FirstText(story.Language, manifest.Language) ?? "en", cover, pages, ReadTranslations(story.Translations), skipped, backCover);
+        return new DinoBook(id, title, FirstText(story.Language, manifest.Language) ?? "en", cover, pages, ReadTranslations(story.Translations), skipped, backCover, ReadCast(story.Cast), ReadLanguageCasts(story.LanguageCasts));
     }
 
     /// <summary>
@@ -178,6 +178,52 @@ public static class DinoBookReader
 
     private static bool IsPicture(string? name, Dictionary<string, ZipArchiveEntry> entries) =>
         name is not null && entries.ContainsKey(name) && PictureExtensions.Contains(Path.GetExtension(name), StringComparer.OrdinalIgnoreCase);
+
+    private const int MaxCastNames = 64;
+    private const int MaxCastNameChars = 80;
+
+    /// <summary>The names of a cast array (each entry an object with a <c>Name</c>, or a plain string); anything else is ignored. Capped, since the file is untrusted.</summary>
+    private static List<string> ReadCast(JsonElement? element)
+    {
+        var names = new List<string>();
+        if (element is not { ValueKind: JsonValueKind.Array } all)
+        {
+            return names;
+        }
+
+        foreach (var entry in all.EnumerateArray().Take(MaxCastNames))
+        {
+            var name = entry.ValueKind == JsonValueKind.String ? entry.GetString()
+                : entry.ValueKind == JsonValueKind.Object && entry.TryGetProperty("Name", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString() : null;
+            if (!string.IsNullOrWhiteSpace(name) && name.Length <= MaxCastNameChars)
+            {
+                names.Add(name.Trim());
+            }
+        }
+
+        return names;
+    }
+
+    /// <summary>The per-language casts (language code to cast array); a file without them gives none.</summary>
+    private static Dictionary<string, IReadOnlyList<string>> ReadLanguageCasts(JsonElement? element)
+    {
+        var casts = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        if (element is not { ValueKind: JsonValueKind.Object } all)
+        {
+            return casts;
+        }
+
+        foreach (var language in all.EnumerateObject())
+        {
+            var names = ReadCast(language.Value);
+            if (names.Count > 0)
+            {
+                casts[language.Name] = names;
+            }
+        }
+
+        return casts;
+    }
 
     /// <summary>Keeps the tables that are objects of strings; anything else in <c>Translations</c> is ignored rather than failing the book.</summary>
     private static Dictionary<string, IReadOnlyDictionary<string, string>> ReadTranslations(JsonElement? element)
@@ -435,6 +481,10 @@ public static class DinoBookReader
         public List<PageFile?>? Pages { get; set; }
 
         public JsonElement? Translations { get; set; }
+
+        public JsonElement? Cast { get; set; }
+
+        public JsonElement? LanguageCasts { get; set; }
     }
 
     private sealed class PageFile

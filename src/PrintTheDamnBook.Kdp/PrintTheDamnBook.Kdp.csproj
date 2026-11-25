@@ -7,6 +7,9 @@
   <ItemGroup>
     <EmbeddedResource Include="..\PrintTheDamnBook.App\Fonts\Andika-Regular.ttf" LogicalName="Fonts.Andika-Regular.ttf" />
     <EmbeddedResource Include="..\PrintTheDamnBook.App\Fonts\Vazirmatn-Regular.ttf" LogicalName="Fonts.Vazirmatn-Regular.ttf" />
+    <EmbeddedResource Include="..\PrintTheDamnBook.App\Fonts\Andika-Bold.ttf" LogicalName="Fonts.Andika-Bold.ttf" />
+    <EmbeddedResource Include="..\PrintTheDamnBook.App\Fonts\Andika-Italic.ttf" LogicalName="Fonts.Andika-Italic.ttf" />
+    <EmbeddedResource Include="..\PrintTheDamnBook.App\Fonts\Vazirmatn-Bold.ttf" LogicalName="Fonts.Vazirmatn-Bold.ttf" />
   </ItemGroup>
 
   <ItemGroup>

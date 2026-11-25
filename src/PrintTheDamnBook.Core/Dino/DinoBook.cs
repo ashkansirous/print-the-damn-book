@@ -16,7 +16,7 @@ public sealed record DinoLanguage(string Code, string Name, bool IsRightToLeft, 
 
 /// <summary>
 /// What this app reads of a <c>.dino</c> book (Slice 15): title, language, cover picture, pages with words, and the translation tables
-/// (language code to source sentence to translated sentence). Cast, voices and recordings are ignored.
+/// (language code to source sentence to translated sentence) and, since Slice 46, the names of the cast (for the KDP speaker colours). Voices and recordings are ignored.
 /// </summary>
 public sealed record DinoBook(
     string Id,
@@ -26,7 +26,9 @@ public sealed record DinoBook(
     IReadOnlyList<DinoPage> Pages,
     IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Translations,
     int SkippedPages = 0,
-    DinoBackCover? BackCover = null)
+    DinoBackCover? BackCover = null,
+    IReadOnlyList<string>? Cast = null,
+    IReadOnlyDictionary<string, IReadOnlyList<string>>? LanguageCasts = null)
 {
     private readonly ConcurrentDictionary<string, DinoTranslator> _translators = new();
 
@@ -56,6 +58,18 @@ public sealed record DinoBook(
 
     /// <summary>True when <paramref name="code"/> is the book's own language (or empty).</summary>
     public bool IsOwn(string? code) => string.IsNullOrWhiteSpace(code) || Primary(code) == Primary(Language);
+
+    /// <summary>The names of the book's cast in <paramref name="code"/> (Slice 46): the language's own list when the file has one, else the book's own cast.</summary>
+    public IReadOnlyList<string> CastIn(string? code)
+    {
+        var primary = Primary(code);
+        if (!IsOwn(code) && LanguageCasts?.FirstOrDefault(c => Primary(c.Key) == primary).Value is { Count: > 0 } own)
+        {
+            return own;
+        }
+
+        return Cast ?? [];
+    }
 
     /// <summary><paramref name="text"/> (written in the book's own language) in <paramref name="code"/>; unchanged for the own language or an unknown one.</summary>
     public string In(string text, string? code)

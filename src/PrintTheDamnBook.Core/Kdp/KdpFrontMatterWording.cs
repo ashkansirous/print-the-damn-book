@@ -9,7 +9,14 @@ public sealed record KdpFrontMatter(
     string DedicationHeading,
     string TheEnd,
     string AboutLine,
-    string OtherBooksHeading = KdpFrontMatterWording.OtherBooksHeadingText);
+    string OtherBooksHeading = KdpFrontMatterWording.OtherBooksHeadingText,
+    IReadOnlyList<CreditRole>? CreditRoles = null,
+    string DateLine = "",
+    string RightsLine = "")
+{
+    /// <summary>The credit groups of the credits page (label and name); empty for a book with no credits.</summary>
+    public IReadOnlyList<CreditRole> Roles => CreditRoles ?? [];
+}
 
 /// <summary>Where the title, copyright, dedication, end and about wording comes from; the Kdp project only draws it.</summary>
 public static class KdpFrontMatterWording
@@ -21,6 +28,18 @@ public static class KdpFrontMatterWording
     /// <summary>The Dino line, on the last interior page next to its QR code and on the back cover (Slice 37: one text for both).</summary>
     public const string DinoLine = "Listen to this story in Dino: Kids Books & Stories. Want to join in? Pick a character and speak their lines yourself!";
     public const string AllRightsReserved = "All rights reserved.";
+
+    /// <summary>The words of the Dino page (Slice 46, <c>docs/design/kdp-typography.md</c>); together they are <see cref="DinoLine"/>.</summary>
+    public const string ScanLine = "Scan the code, or type";
+
+    public const string StoresLine = "Google Play · App Store · Microsoft Store";
+    public const string ListenLine = "Listen to this story in Dino: Kids Books & Stories.";
+    public const string JoinBefore = "Want to join in? Pick a character and ";
+    public const string JoinBold = "speak their lines";
+    public const string JoinAfter = " yourself!";
+
+    /// <summary>The "Draw yourself here!" label in the box of the belongs-to page.</summary>
+    public const string DrawLabel = "Draw yourself here!";
 
     /// <summary>The heading above the other books' covers on the last page (Slice 41): "More books by Ashkan Sirous".</summary>
     public const string OtherBooksHeadingText = "More books by " + DinoCredits.Maker;
@@ -38,7 +57,10 @@ public static class KdpFrontMatterWording
         }
 
         var year = credits?.Year ?? fallbackYear;
-        lines.Add($"© {year} {DinoCredits.Maker}. {AllRightsReserved}");
-        return new KdpFrontMatter(title, lines, DedicationHeading, TheEnd, DinoLine);
+        var rights = $"© {year} {DinoCredits.Maker}. {AllRightsReserved}";
+        lines.Add(rights);
+        var roles = credits is null ? [] : BackCoverWording.Roles(credits, English);
+        var date = credits is null ? "" : BackCoverWording.DateText(credits, English);
+        return new KdpFrontMatter(title, lines, DedicationHeading, TheEnd, DinoLine, OtherBooksHeadingText, roles, date, rights);
     }
 }
