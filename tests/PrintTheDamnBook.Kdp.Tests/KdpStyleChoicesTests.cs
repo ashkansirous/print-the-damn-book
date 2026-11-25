@@ -312,11 +312,35 @@ public class KdpStyleChoicesTests
             File.WriteAllText(Path.Combine(outFolder, "crop"), "a file where the folder should go");
 
             var result = KdpExporter.Export(new KdpExportRequest(Dino(folder), "en", outFolder, StyleSheet: true));
+            var report = File.ReadAllText(result.ReportPath);
             var asked = KdpExporter.Export(new KdpExportRequest(Dino(folder), "en", outFolder, CropSheet: true));
 
             Assert.Null(result.CropSheetError);
             Assert.Contains(result.Warnings, w => w.Contains("crop sheet", StringComparison.Ordinal));
+            Assert.Contains("crop sheet", report, StringComparison.Ordinal);
             Assert.NotNull(asked.CropSheetError);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void A_style_sheet_that_fails_with_a_non_io_error_is_reported_and_kdp_json_is_still_saved()
+    {
+        var folder = SyntheticBook.NewFolder();
+        try
+        {
+            var outFolder = Path.Combine(folder, "out");
+            var styles = new KdpStyleChanges(new Dictionary<string, string?> { ["Seagull"] = "#2F6B34" }, null, null);
+            var request = new KdpExportRequest(Dino(folder), "en", outFolder, StyleSheet: true, Styles: styles);
+
+            var result = KdpExporter.Export(request, (_, _, _) => throw new InvalidOperationException("style sheet broke"));
+            var saved = KdpBookSettings.Read(Path.Combine(outFolder, KdpBookSettings.FileName));
+
+            Assert.Equal("style sheet broke", result.StyleSheetError);
+            Assert.Equal("#2F6B34", saved.Styles.SpeakerColours["Seagull"]);
         }
         finally
         {

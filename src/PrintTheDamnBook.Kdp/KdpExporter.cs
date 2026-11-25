@@ -53,7 +53,10 @@ public static class KdpExporter
     public const string ReportName = "check-report.md";
     public const string NoCoverWarning = "cover: the book has no cover picture; its first story picture is used on the front";
 
-    public static KdpExportResult Export(KdpExportRequest request)
+    public static KdpExportResult Export(KdpExportRequest request) => Export(request, KdpStyleSheetWriter.Write);
+
+    /// <summary>The export with the style-sheet writer given, so a test can make that side output fail in a way no file system gives.</summary>
+    internal static KdpExportResult Export(KdpExportRequest request, Func<string, KdpBookInput, KdpInteriorResult, string> writeStyleSheet)
     {
         var book = ReadBook(request.DinoPath);
         var language = ChooseLanguage(book, request.Language);
@@ -72,11 +75,6 @@ public static class KdpExporter
         var pdfPath = Path.Combine(request.OutFolder, PdfName);
         var reportPath = Path.Combine(request.OutFolder, ReportName);
         var result = built with { Warnings = warnings };
-        var toSave = OffsetsToSave(request, book, language, built.Pictures, cover);
-        var pdfs = cover is null ? [(pdfPath, result.Pdf)] : new[] { (pdfPath, result.Pdf), (coverPath, cover.Pdf) };
-        var older = WriteAll(pdfs, reportPath, cover is null ? coverPath : null, stale => KdpCheckReport.Build(input.Title, language.Code, result, cover, coverError, stale));
-        WritePreviews(request.OutFolder, built.Pictures);
-        var (sheet, previewError) = TryWritePreviews(request, input, result);
         var (cropSheet, cropSheetError) = TryWriteCropSheet(request, all, settings, storyPages);
         if (!request.CropSheet && cropSheetError is not null)
         {
@@ -84,7 +82,12 @@ public static class KdpExporter
             cropSheetError = null;
         }
 
-        var (styleSheet, styleSheetError) = TryWriteStyleSheet(request, input, result);
+        var toSave = OffsetsToSave(request, book, language, built.Pictures, cover);
+        var pdfs = cover is null ? [(pdfPath, result.Pdf)] : new[] { (pdfPath, result.Pdf), (coverPath, cover.Pdf) };
+        var older = WriteAll(pdfs, reportPath, cover is null ? coverPath : null, stale => KdpCheckReport.Build(input.Title, language.Code, result, cover, coverError, stale));
+        WritePreviews(request.OutFolder, built.Pictures);
+        var (sheet, previewError) = TryWritePreviews(request, input, result);
+        var (styleSheet, styleSheetError) = TryWriteStyleSheet(request, input, result, writeStyleSheet);
         SaveOffsets(request, toSave);
         return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError, others?.Tiles.Select(t => t.Title).ToList(), result.Errors, styleSheet, styleSheetError);
     }
@@ -93,14 +96,14 @@ public static class KdpExporter
     /// <c>--style-sheet</c> (Slice 46 item H): <c>styles/speakers.md</c> for the style agent, written after the build, from its result; without the option the file of an earlier
     /// run is removed so none is stale.
     /// </summary>
-    private static (string? Path, string? Error) TryWriteStyleSheet(KdpExportRequest request, KdpBookInput input, KdpInteriorResult result)
+    private static (string? Path, string? Error) TryWriteStyleSheet(KdpExportRequest request, KdpBookInput input, KdpInteriorResult result, Func<string, KdpBookInput, KdpInteriorResult, string> write)
     {
         try
         {
             KdpStyleSheetWriter.Remove(request.OutFolder);
-            return request.StyleSheet ? (KdpStyleSheetWriter.Write(request.OutFolder, input, result), null) : (null, null);
+            return request.StyleSheet ? (write(request.OutFolder, input, result), null) : (null, null);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is not (OutOfMemoryException or StackOverflowException or AccessViolationException or OperationCanceledException))
         {
             return (null, ex.Message);
         }

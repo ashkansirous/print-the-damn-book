@@ -181,6 +181,7 @@ public static class DinoBookReader
 
     private const int MaxCastNames = 64;
     private const int MaxCastNameChars = 80;
+    private const int MaxCastLanguages = 64;
 
     /// <summary>The names of a cast array (each entry an object with a <c>Name</c>, or a plain string); anything else is ignored. Capped, since the file is untrusted.</summary>
     private static List<string> ReadCast(JsonElement? element)
@@ -194,7 +195,7 @@ public static class DinoBookReader
         foreach (var entry in all.EnumerateArray().Take(MaxCastNames))
         {
             var name = entry.ValueKind == JsonValueKind.String ? entry.GetString()
-                : entry.ValueKind == JsonValueKind.Object && entry.TryGetProperty("Name", out var n) && n.ValueKind == JsonValueKind.String ? n.GetString() : null;
+                : entry.ValueKind == JsonValueKind.Object ? NameOf(entry) : null;
             if (!string.IsNullOrWhiteSpace(name) && name.Length <= MaxCastNameChars)
             {
                 names.Add(name.Trim());
@@ -204,7 +205,21 @@ public static class DinoBookReader
         return names;
     }
 
-    /// <summary>The per-language casts (language code to cast array); a file without them gives none.</summary>
+    /// <summary>The string <c>Name</c> of a cast object, its key matched without regard to case like every other key of the file.</summary>
+    private static string? NameOf(JsonElement entry)
+    {
+        foreach (var property in entry.EnumerateObject())
+        {
+            if (string.Equals(property.Name, "Name", StringComparison.OrdinalIgnoreCase) && property.Value.ValueKind == JsonValueKind.String)
+            {
+                return property.Value.GetString();
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The per-language casts (language code to cast array); a file without them gives none. At most <see cref="MaxCastLanguages"/> languages are read, since the file is untrusted.</summary>
     private static Dictionary<string, IReadOnlyList<string>> ReadLanguageCasts(JsonElement? element)
     {
         var casts = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
@@ -213,7 +228,7 @@ public static class DinoBookReader
             return casts;
         }
 
-        foreach (var language in all.EnumerateObject())
+        foreach (var language in all.EnumerateObject().Take(MaxCastLanguages))
         {
             var names = ReadCast(language.Value);
             if (names.Count > 0)

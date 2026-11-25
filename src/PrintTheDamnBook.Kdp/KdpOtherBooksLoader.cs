@@ -20,9 +20,6 @@ internal static class KdpOtherBooksLoader
 {
     private const string DinoPattern = "*.dino";
 
-    /// <summary>Another book is built with --other-books itself (that is where its kdp.json came from), so its interior has the More books page and its page count and spine include it.</summary>
-    internal const bool OtherBookHasMoreBooksPage = true;
-
     private sealed record Candidate(string Path, DinoBook Book);
 
     /// <summary>One output folder's <c>kdp.json</c>: its folder name (output folders are named <c>&lt;book&gt;-&lt;language&gt;</c>) and what it holds.</summary>
@@ -147,7 +144,7 @@ internal static class KdpOtherBooksLoader
         var code = book.Languages().Any(l => l.IsSupported && DinoBook.Primary(l.Code) == DinoBook.Primary(language)) ? language : book.Language;
         var front = ReadFrontPicture(candidate.Path, book);
         var title = book.In(book.Title, code);
-        var input = new KdpCoverInput(title, code, null, front, null, KdpPagePlan.TotalPages(book.Pages.Count, moreBooks: OtherBookHasMoreBooksPage), TextDirection.ForLanguage(code), settings);
+        var input = new KdpCoverInput(title, code, null, front, null, KdpPagePlan.TotalPages(book.Pages.Count, moreBooks: true), TextDirection.ForLanguage(code), settings);
         return new KdpOtherBookTile(title, KdpFrontTile.Jpeg(input));
     }
 

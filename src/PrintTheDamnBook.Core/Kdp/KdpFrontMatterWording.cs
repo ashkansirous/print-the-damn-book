@@ -26,10 +26,10 @@ public static class KdpFrontMatterWording
     public const string TheEnd = "The End";
 
     /// <summary>The Dino line, on the last interior page next to its QR code and on the back cover (Slice 37: one text for both).</summary>
-    public const string DinoLine = "Listen to this story in Dino: Kids Books & Stories. Want to join in? Pick a character and speak their lines yourself!";
+    public const string DinoLine = ListenLine + " " + JoinBefore + JoinBold + JoinAfter;
     public const string AllRightsReserved = "All rights reserved.";
 
-    /// <summary>The words of the Dino page (Slice 46, <c>docs/design/kdp-typography.md</c>); together they are <see cref="DinoLine"/>.</summary>
+    /// <summary>The words of the Dino page (Slice 46, <c>docs/design/kdp-typography.md</c>); <see cref="DinoLine"/> is built from the listen and join parts, so they cannot drift.</summary>
     public const string ScanLine = "Scan the code, or type";
 
     public const string StoresLine = "Google Play · App Store · Microsoft Store";

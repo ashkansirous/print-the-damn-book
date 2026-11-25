@@ -201,7 +201,7 @@ public class KdpMoreBooksAndDinoBlockTests
     {
         var withOthers = KdpInterior.Build(WithOthers(1) with { Texts = Enumerable.Repeat("Pip ran.", 11).ToList(), Pictures = Enumerable.Range(0, 11).Select(i => SyntheticBook.Picture(i)).ToList() });
 
-        Assert.Equal(withOthers.Plan.PageCount, KdpPagePlan.TotalPages(11, KdpOtherBooksLoader.OtherBookHasMoreBooksPage));
+        Assert.Equal(withOthers.Plan.PageCount, KdpPagePlan.TotalPages(11, moreBooks: true));
     }
 
     private static KdpBookInput WithOthers(int others)
