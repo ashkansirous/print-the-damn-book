@@ -37,7 +37,6 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 41 | Amazon KDP: "More books" on the last page, and the crop agent places the back-cover words and the Dino QR | verified: built (PR #93), 16 books rebuilt, owner accepted 2026-11-20 | 93 | | [41](docs/plan/slices/41-kdp-more-books-and-back-placement.md) |
 | 42 | Amazon KDP: one text size for every story page of a book | built (PR #100) | 100 | | [42](docs/plan/slices/42-kdp-one-text-size-per-book.md) |
 | 44 | Amazon KDP: the build skills report their steps to the agent board, with process keys | planned (owner 2026-11-22; waits for agent-progress-board Slice 55) | | | [44](docs/plan/slices/44-kdp-board-steps.md) |
-| 46 | Amazon KDP: styled story text (R1-R10) and redesigned front and back pages, every book | planned (owner 2026-11-25; pilot X Marks the Treasure!, English) | | | [46](docs/plan/slices/46-kdp-styled-story-text.md) |
 
 Notes:
 
@@ -52,6 +51,8 @@ Notes:
 ## Outstanding work
 
 - **Not yet tried on a device:** 30 checks across 16 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- Owner question, Slice 46: should a follow-on quote with no speaker (`"Stop!" said Granny. "Come back!"`, 104 of the English quotes across 16 books, X Marks story page 2) take the previous speaker's colour? Today it stays in ink with a warning; not built ([slice 46](docs/plan/slices/46-kdp-styled-story-text.md), *Found during the build*).
+- The (c) line still says Ashkan Sirous in `docs/design/kdp-story-text/Matter.dc.html`, `docs/design/kdp-story-text/MatterToday.dc.html` and `docs/store/listing.md:18`; the code now says Elinsoft Ltd. ([slice 46](docs/plan/slices/46-kdp-styled-story-text.md)).
 - Text size answered: every story page of every book is 24 pt (Slice 42, built PR #100; [slice 42](docs/plan/slices/42-kdp-one-text-size-per-book.md)).
 - `tools/kdp-robot` should refuse a folder whose `check-report.md` has an `## Errors` section: `planDraft` (`src/draft.mjs:45-52`) checks only that `interior.pdf` and `cover.pdf` exist ([slice 42](docs/plan/slices/42-kdp-one-text-size-per-book.md), Follow-ups).
 - Slice 38 (KDP robot) is built but `draft` refuses to run until its page maps are confirmed from a capture; next step needs the owner signed in to KDP for the capture session: [KDP bookshelf](https://kdp.amazon.com/en_US/bookshelf) ([slice 38](docs/plan/slices/38-kdp-robot-draft.md)).
