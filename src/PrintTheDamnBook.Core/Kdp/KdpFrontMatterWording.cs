@@ -29,6 +29,9 @@ public static class KdpFrontMatterWording
     public const string DinoLine = ListenLine + " " + JoinBefore + JoinBold + JoinAfter;
     public const string AllRightsReserved = "All rights reserved.";
 
+    /// <summary>The rights holder named in the credits page's © line (Slice 46, owner 2026-11-25): the company, not the author.</summary>
+    public const string RightsHolder = "Elinsoft Ltd.";
+
     /// <summary>The words of the Dino page (Slice 46, <c>docs/design/kdp-typography.md</c>); <see cref="DinoLine"/> is built from the listen and join parts, so they cannot drift.</summary>
     public const string ScanLine = "Scan the code, or type";
 
@@ -57,7 +60,7 @@ public static class KdpFrontMatterWording
         }
 
         var year = credits?.Year ?? fallbackYear;
-        var rights = $"© {year} {DinoCredits.Maker}. {AllRightsReserved}";
+        var rights = $"© {year} {RightsHolder} {AllRightsReserved}";
         lines.Add(rights);
         var roles = credits is null ? [] : BackCoverWording.Roles(credits, English);
         var date = credits is null ? "" : BackCoverWording.DateText(credits, English);

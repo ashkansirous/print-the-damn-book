@@ -92,11 +92,15 @@ public static class KdpExporter
             warnings.Add($"the style sheet was not written: {styleSheetError}");
         }
 
+        var (sheet, previewError) = TryWritePreviews(request, input, result, built.Pictures);
+        if (previewError is not null)
+        {
+            warnings.Add($"the previews were not written: {previewError}");
+        }
+
         var toSave = OffsetsToSave(request, book, language, built.Pictures, cover);
         var pdfs = cover is null ? [(pdfPath, result.Pdf)] : new[] { (pdfPath, result.Pdf), (coverPath, cover.Pdf) };
         var older = WriteAll(pdfs, reportPath, cover is null ? coverPath : null, stale => KdpCheckReport.Build(input.Title, language.Code, result, cover, coverError, stale));
-        WritePreviews(request.OutFolder, built.Pictures);
-        var (sheet, previewError) = TryWritePreviews(request, input, result);
         SaveOffsets(request, toSave);
         return new KdpExportResult(pdfPath, reportPath, result.Plan.PageCount, result.Warnings, cover is null ? string.Empty : coverPath, coverError, KdpCheckReport.StaleText(older), sheet, previewError, cropSheet, cropSheetError, others?.Tiles.Select(t => t.Title).ToList(), result.Errors, styleSheet, styleSheetError);
     }
@@ -232,10 +236,11 @@ public static class KdpExporter
     /// The <c>--previews</c> files are a side output like the cover: a failure to make them is reported and never stops the PDFs, the report or <c>kdp.json</c>.
     /// Without the option, those of an earlier run are removed so none is stale; after a failure none is left either.
     /// </summary>
-    private static (string? ContactSheet, string? Error) TryWritePreviews(KdpExportRequest request, KdpBookInput input, KdpInteriorResult result)
+    private static (string? ContactSheet, string? Error) TryWritePreviews(KdpExportRequest request, KdpBookInput input, KdpInteriorResult result, IReadOnlyList<KdpPicture> pictures)
     {
         try
         {
+            WritePreviews(request.OutFolder, pictures);
             KdpPreviews.Remove(request.OutFolder);
             return (request.Previews ? KdpPreviews.Write(request.OutFolder, input, result).ContactSheetPath : null, null);
         }

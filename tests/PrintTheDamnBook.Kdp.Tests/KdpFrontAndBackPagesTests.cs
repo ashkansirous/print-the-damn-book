@@ -58,7 +58,7 @@ public class KdpFrontAndBackPagesTests
 
         using var pdf = PdfDocument.Open(result.Pdf);
         var page = PageOf(pdf, result, KdpPageRole.Credits);
-        Assert.Equal("Story by Ashkan Sirous Illustrations by Ashkan Sirous October 2026 © 2026 Ashkan Sirous. All rights reserved.", Words(page));
+        Assert.Equal("Story by Ashkan Sirous Illustrations by Ashkan Sirous October 2026 © 2026 Elinsoft Ltd. All rights reserved.", Words(page));
         Assert.Empty(page.GetImages());
         var name = page.Letters.First(l => l.Value == "A" && l.PointSize > 19);
         Assert.Equal(20, name.PointSize, 0.5);

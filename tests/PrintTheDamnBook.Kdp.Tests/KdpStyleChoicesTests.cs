@@ -351,6 +351,30 @@ public class KdpStyleChoicesTests
     }
 
     [Fact]
+    public void Blocked_previews_are_a_warning_and_kdp_json_still_holds_the_run_speaker_colours()
+    {
+        var folder = SyntheticBook.NewFolder();
+        try
+        {
+            var outFolder = Path.Combine(folder, "out");
+            Directory.CreateDirectory(outFolder);
+            File.WriteAllText(Path.Combine(outFolder, "previews"), "a file where the folder should go");
+            var styles = new KdpStyleChanges(new Dictionary<string, string?> { ["Seagull"] = "#2F6B34" }, null, null);
+
+            var result = KdpExporter.Export(new KdpExportRequest(Dino(folder), "en", outFolder, Previews: true, Styles: styles));
+            var saved = KdpBookSettings.Read(Path.Combine(outFolder, KdpBookSettings.FileName));
+
+            Assert.NotNull(result.PreviewError);
+            Assert.Contains("previews were not written", File.ReadAllText(result.ReportPath), StringComparison.Ordinal);
+            Assert.Equal("#2F6B34", saved.Styles.SpeakerColours["Seagull"]);
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    [Fact]
     public void A_style_sheet_that_cannot_be_written_is_reported_and_never_stops_the_other_files()
     {
         var folder = SyntheticBook.NewFolder();

@@ -133,7 +133,7 @@ public class KdpFrontPagesTests
 
         Assert.Equal(2, matter.Roles.Count);
         Assert.Equal("October 2026", matter.DateLine);
-        Assert.Equal("© 2026 Ashkan Sirous. All rights reserved.", matter.RightsLine);
+        Assert.Equal("© 2026 Elinsoft Ltd. All rights reserved.", matter.RightsLine);
         Assert.Empty(KdpFrontMatterWording.For("T", null, 2031).Roles);
     }
 

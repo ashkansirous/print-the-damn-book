@@ -49,10 +49,18 @@ they should be easy to tell apart side by side.
 **Main character.** The story's hero, not necessarily the most talkative: the one the story is about, from the pictures and the title. The sheet names the
 fallback (most lines); keep it unless the pictures say otherwise, and say why you changed it.
 
-**Title picture.** One story picture and a circle in it. The circle shows the main character: face and body framed with a little air, a calm background behind,
-and no other character cut in half by the circle's edge. Prefer a picture where the character looks out or toward the reader. The circle's diameter is a fraction of
-the picture's width (a Dino picture is portrait, so the width is the shorter side); a circle between 0.55 and 1.0 of the width is usual. Measure on the 480 px copy
-as the sheet says: `cx = x / 480`, `cy = (y - 20) / the picture's height in the copy`, `d = diameter / 480`, each between 0 and 1, and keep the whole circle inside the
+**Title picture.** One story picture and a circle in it. The circle is small on the page (about 230 pt across), so it must hold the main character and little else:
+
+- choose the diameter just larger than the main character, so the character fills most of the circle (not a wide scene with the character small in it);
+- centre the circle on the character's body (not on the picture's centre): `cx`, `cy` is the middle of the character;
+- the whole character inside the ring with a small margin: no wing, hat, tail or foot cut by the edge;
+- nothing else meaningful in the circle: no other character, ship or object, not even partly; a calm background behind.
+
+Prefer a picture where the character looks out or toward the reader. What the numbers are measured against (the code, `KdpTitleCircle.Square` and `KdpTitlePicture`): the
+circle is cut from the picture itself, whole and uncut (not the part the KDP page keeps). `cx` is the circle's centre as a fraction 0 to 1 of the picture's width from its
+left edge, `cy` the same as a fraction of the picture's height from its top edge, and `d` the diameter as a fraction of the picture's shorter side (a Dino picture is
+portrait, so the width). The cut is a square of side `d x shorter side`, centred on that point and then moved inside the picture if it would stick out. Measure on the 480 px copy
+as the sheet says: `cx = x / 480`, `cy = (y - 20) / the picture's height in the copy` (the 20 px is the label strip above the picture), `d = diameter / 480`, each between 0 and 1, and keep the whole circle inside the
 picture (`cx - d/2 >= 0`, `cx + d/2 <= 1`, and `cy` so that the circle fits in the height).
 
 ## Report

@@ -189,6 +189,14 @@ Desk (decided by this planning session, 2026-11-25; the owner can change any of 
   for Kathryn and plum for Billy were refused (OKLab < 0.10 from the triplet colours); its retry for Kathryn (`#8E2766`) would have
   been refused too (hue inside the red band, 0.0997 from the purple), so the coordinator took the nearest passing shade of the same
   plum-magenta, `#7E1F5E`. The agent file now names the 0.10 distance.
+- **Owner, 2026-11-25, after seeing the X Marks build:** "the main character of these books is the seagal. the rest is ok."
+  X Marks' main character is Seagull (not the agent's Kathryn), so The End is in Seagull's colour and the title picture frames
+  Seagull. Everything else in the build is accepted as is.
+- **Owner, 2026-11-25, on the Seagull build:** (1) the round title picture was badly framed (Seagull cut at the ring, ship and
+  Kathryn's hat in the circle): "the agent should consider that it needs a circle that small and have the main character in it". The
+  `kdp-style-check` agent now frames the main character tightly and the `kdp-style` skill checks the built page-01 preview and corrects
+  the circle once. (2) The credits page's © line names the company: "© <year> Elinsoft Ltd. All rights reserved." (company name from the
+  Drive doc "Elinsoft – Company Facts": ELINSOFT LTD), not "Ashkan Sirous"; the Story by / Illustrations by credits stay the author's.
 - `kdp.json` wrote a duplicate `SpeakerColours` key (computed property serialised); fixed with `[JsonIgnore]` and a test.
 
 #### Changed while building
@@ -205,9 +213,16 @@ Desk (decided by this planning session, 2026-11-25; the owner can change any of 
 #### Review
 
 - *From review:* findings files `D:\print-the-damn-book-worktrees\reviews\s46-pass1-high.md` and
-  `D:\print-the-damn-book-worktrees\reviews\s46-pass2-medium.md`. Pass 1 (high): 0 blocker, 6 nits; 1, 2, 3, 5, 6 fixed; 4 skipped
-  (`KdpInterior.cs:95`, `FrontPagesFor` re-runs the style setup per `DrawingFor` call: a speed cost only, the output is the same).
+  `D:\print-the-damn-book-worktrees\reviews\s46-pass2-medium.md`. Pass 1 (high): 0 blocker, 6 nits; 1, 2, 3, 5, 6 fixed.
   Pass 2 (medium): 1 important (right-to-left names on the Dino page) and 6 nits, all fixed. Post-review: the duplicate `SpeakerColours` key in `kdp.json` was fixed (see *Found during the build*).
+  Check passes 3, 4 and 5: `D:\print-the-damn-book-worktrees\reviews\s46-pass3-check.md` (1 important, 5 nits, all fixed in f960212),
+  `D:\print-the-damn-book-worktrees\reviews\s46-pass4-check.md` (2, 4, 5, 6 fixed in d9a0ad6; 1 fixed after it: the previews are a
+  caught side output, so `kdp.json` is always saved), `D:\print-the-damn-book-worktrees\reviews\s46-pass5-check.md` (5 nits, none blocking).
+- Skipped #4 (`D:\print-the-damn-book-worktrees\reviews\s46-pass1-high.md`): "warnings go to a throwaway list" (each preview re-runs the
+  style setup; a speed cost only, every call gets the same pages).
+- Skipped #3 (`D:\print-the-damn-book-worktrees\reviews\s46-pass4-check.md`): "that the style agent reads as real" (the next
+  `--style-sheet` run removes and rewrites `styles/speakers.md`, and the failure is a warning in `check-report.md`).
+- **Owner, 2026-11-25, on the Seagull title circle and Elinsoft © build:** "approved! merge it". The X Marks (en) build is accepted.
 
 #### For CLAUDE.md
 

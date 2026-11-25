@@ -42,7 +42,11 @@ place; see `kdp-build`). English books only for now (Slice 46: other languages g
    and writes nothing; a refused colour goes back to the agent once with that reason (a fresh agent, the one speaker only), and if it is refused again the speaker
    is reported as an owner question and keeps the fallback colour. `--speaker "<name>=clear"`, `--main-character clear` and `--title-picture clear` remove a saved
    choice (only in redo-all mode). The choices are saved in `kdp.json` (written last), so every later run keeps them.
-5. **Confirm** the run's warnings: no `styles: ... (fallback)` line is left for what was decided. A warning that a saved colour is refused names the speaker and the rule.
+5. **Check the title circle once.** Build with `--previews` (the apply run of step 4 plus `--previews`, or one more run) so `previews/interior/page-01.png` exists, then dispatch a
+   fresh `kdp-style-check` agent (one agent) to look at that built page-01 only. If the main character is cut by the ring or does not fill most of the circle, it answers one
+   corrected `title = <page> <cx>,<cy>,<d> — <reason>` line; apply it once with `--title-picture <page>=<cx>,<cy>,<d>` and stop (no second check, no further rounds). If
+   the circle is right it answers `title ok`.
+6. **Confirm** the run's warnings: no `styles: ... (fallback)` line is left for what was decided. A warning that a saved colour is refused names the speaker and the rule.
 
 ## Stop rules
 
