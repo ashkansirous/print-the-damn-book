@@ -2,6 +2,15 @@
 
 Every open "Not yet verified" check, one block per slice, newest first. Remove a line when it passes on a device or the user confirms it.
 
+### Slice 43: Amazon KDP: the robot fills the whole draft ([slice](slices/43-kdp-robot-full-draft.md))
+
+- [owner] ISBN confirm clicks inside the dialog (needs the owner's go for a live robot run on X Marks English).
+- [owner] Pricing leaves territories and every price untouched, and does not record them as set (same go).
+- [owner] Categories tick the right placement box when two show "Fiction" (same go).
+- [owner] The bookshelf adopts the existing "Title: Subtitle" row (same go).
+- [owner] The stop counter counts stops before a kdpId exists (same go).
+- [owner] Categories already set by hand on 4TK6278TV2X are kept (`ownerCategoriesKept`); the detection is unit-tested on doubles only, not yet seen live.
+
 ### Slice 37: Amazon KDP: the crop agent also places the cover text and picks its colours ([slice](slices/37-kdp-cover-text-by-agent.md))
 
 - [owner] The owner looks at the 16 rebuilt covers (contact sheet) and says whether they look right.
