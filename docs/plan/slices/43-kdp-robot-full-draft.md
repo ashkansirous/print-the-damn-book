@@ -154,7 +154,7 @@ category's "Fiction" placement, a guessed control.
 
 #### Built 2026-11-26
 
-*Built 2026-11-26, not merged; live checks below not yet run.* The full KDP draft run for X Marks the Treasure! English (draft
+*Built 2026-11-26, merged as PR #110 (e57fda7); live checks below not yet run.* The full KDP draft run for X Marks the Treasure! English (draft
 4TK6278TV2X) was saved on 2026-11-26. The owner finished the series and previewer steps by hand under `record`; the recordings are in
 `kdp/recordings/`. Tests: 164/164 robot, 23/23 listing.
 
@@ -168,7 +168,7 @@ category's "Fiction" placement, a guessed control.
   the owner's picks after reading KDP's exact names.
 - The listing reading age may be 1-6 if the owner picked 6 (read live).
 
-#### Lines to lift later into CLAUDE.md
+#### For CLAUDE.md (lifted 2026-11-26)
 
 - The robot never writes prices or territories (the owner's).
 - The recorder redacts passwords, one-time codes, emails and sign-in pages.

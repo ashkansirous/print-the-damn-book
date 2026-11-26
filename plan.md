@@ -38,6 +38,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 40 | Amazon KDP: series, "Also by" page, author page, short link to the Dino app | planned | | | [40](docs/plan/slices/40-kdp-series-and-cross-links.md) |
 | 41 | Amazon KDP: "More books" on the last page, and the crop agent places the back-cover words and the Dino QR | verified: built (PR #93), 16 books rebuilt, owner accepted 2026-11-20 | 93 | | [41](docs/plan/slices/41-kdp-more-books-and-back-placement.md) |
 | 42 | Amazon KDP: one text size for every story page of a book | verified: built (PR #100), owner accepted 2026-11-20 | 100 | | [42](docs/plan/slices/42-kdp-one-text-size-per-book.md) |
+| 43 | Amazon KDP: the robot fills the whole draft (series, name prefix, categories, content, pricing) and keywords that mean the right thing | built (PR #110); live re-check needs the owner's go | 110 | | [43](docs/plan/slices/43-kdp-robot-full-draft.md) |
 | 44 | Amazon KDP: the build skills report their steps to the agent board, with process keys | planned (owner 2026-11-22; waits for agent-progress-board Slice 55) | | | [44](docs/plan/slices/44-kdp-board-steps.md) |
 
 Notes:
@@ -52,12 +53,12 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 28 checks across 15 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 34 checks across 16 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
 - Owner question, Slice 46: should a follow-on quote with no speaker (`"Stop!" said Granny. "Come back!"`, 104 of the English quotes across 16 books, X Marks story page 2) take the previous speaker's colour? Today it stays in ink with a warning; not built ([slice 46](docs/plan/slices/46-kdp-styled-story-text.md), *Found during the build*).
 - The (c) line still says Ashkan Sirous in `docs/design/kdp-story-text/Matter.dc.html`, `docs/design/kdp-story-text/MatterToday.dc.html` and `docs/store/listing.md:18`; the code now says Elinsoft Ltd. ([slice 46](docs/plan/slices/46-kdp-styled-story-text.md)).
 - Text size answered: every story page of every book is 24 pt (Slice 42, built PR #100; [slice 42](docs/plan/slices/42-kdp-one-text-size-per-book.md)).
 - `tools/kdp-robot` should refuse a folder whose `check-report.md` has an `## Errors` section: `planDraft` (`src/draft.mjs:45-52`) checks only that `interior.pdf` and `cover.pdf` exist ([slice 42](docs/plan/slices/42-kdp-one-text-size-per-book.md), Follow-ups).
-- Slice 38 (KDP robot) is open again and top priority (owner, 2026-11-25): `draft` refuses to run until the Content and Pricing page maps are confirmed from a capture; next step needs the owner signed in to KDP and the owner's go for one book (X Marks the Treasure!, English): [KDP bookshelf](https://kdp.amazon.com/en_US/bookshelf) ([slice 38](docs/plan/slices/38-kdp-robot-draft.md)).
+- Slice 38 (KDP robot): the robot saved X Marks the Treasure! English as a KDP draft on 2026-11-26 (built in Slice 43, PR #110). Open points and the live re-check, which needs the owner's go for that book, live in [slice 43](docs/plan/slices/43-kdp-robot-full-draft.md) (*Open points*, *Not yet verified*); [KDP bookshelf](https://kdp.amazon.com/en_US/bookshelf) ([slice 38](docs/plan/slices/38-kdp-robot-draft.md)).
 - KDP robot open points (owner can change; [slice 40](docs/plan/slices/40-kdp-series-and-cross-links.md)): the other 14 books stay in series "Dino Stories"; Love from Seagull Island is book 1 of "Little Seagull’s Big Adventures" and X Marks the Treasure book 2. Arabic and Farsi paperbacks don't exist on KDP, so those wait for the Kindle edition (Slice 32's gate).
 - Amazon KDP spin-offs that belong to other repos (Scope Inbox doc of 2026-11-18, *Spin-offs*), not planned there yet: print-resolution art for Three Little Pigs, Town Mouse, Ugly Duckling and X Marks the Treasure, and author/credit fields per book (ReadTheStupidText / dino-reader); audiobook collections (dino-reader). Later here: hardcover treasury and 3-in-1 collection, KDP upload is now planned as the Playwright robot, Slices 38-40.
 - Slice 26, planned again by the feedback loop of night 2026-11-19-2055 (parked by the loop of 2026-11-18-1302): the unfixed last-pass review findings of Slices 23 and 25 (an Own page choice lost on retype, a language select left on the wrong language after a cancelled switch, a possible `book.json` write on open), the unexplained blank-line collapse, and the `$GuestChecks` list gap. The next night builds it ([slice 26](docs/plan/slices/26-s23-s25-review-followups.md)).
