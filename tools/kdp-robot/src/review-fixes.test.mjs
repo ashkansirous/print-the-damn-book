@@ -80,8 +80,8 @@ test('7: a row with no shown language, or one that only starts with the title, i
   const loose = matchRows(rows.slice(0, 2), cat, () => 'Fox');
   assert.equal(loose.matched.length, 2, 'the loose rules (the status command) still match both');
   const strict = matchRows(rows.slice(0, 3), cat, () => 'Fox', { strict: true });
-  assert.deepEqual(strict.matched, []);
-  assert.deepEqual(strict.doubtful.map((r) => r.kdpId), ['AAAAAAAAAA', 'BBBBBBBBBB']);
+  assert.deepEqual(strict.matched.map((m) => m.row.kdpId), ['AAAAAAAAAA'], 'kdpx-medium 1: the one row with no language and the exact title is adopted');
+  assert.deepEqual(strict.doubtful.map((r) => r.kdpId), ['BBBBBBBBBB'], 'a title that only starts with this one is never adopted');
   assert.deepEqual(strict.unmatched.map((r) => r.kdpId), ['CCCCCCCCCC'], 'a known other language is simply not this book');
   const exact = matchRows([rows[3]], cat, () => 'Fox', { strict: true });
   assert.deepEqual(exact.matched.map((m) => m.row.kdpId), ['DDDDDDDDDD']);

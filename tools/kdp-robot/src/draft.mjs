@@ -13,8 +13,6 @@ import { BOOKSHELF, BOOKSHELF_URL, CONTROL_CONFIRMED, PAGE as BOOKSHELF_PAGE, kd
 import { CATEGORY, CONTRIBUTOR, DETAILS_SPECS, SERIES, PAGE as DETAILS_PAGE, PRIMARY_AUTHOR, contributorRowSelector, contributorSpecs, keywordSpec, splitName } from './pages/details.mjs';
 import { CONTENT, CONTENT_SPECS, PAGE as CONTENT_PAGE } from './pages/content.mjs';
 import { PRICING_SPECS, PAGE as PRICING_PAGE } from './pages/pricing.mjs';
-
-const isOwnerPricingKey = (key) => key.startsWith('price-') || key === 'territories';
 import { FieldNotFound, readField, readFields, single, writeField } from './fieldio.mjs';
 import { readBookshelfRows } from './commands.mjs';
 import { matchRows, parseBookshelfRows } from './bookshelf.mjs';
@@ -22,6 +20,8 @@ import {
   assertEditable, baselineOf, fileHash, hasIsbn, IdConflict, isbnPlan, judgeFileCheck, judgeSave, keepKdpId, KdpNoSignal, liveCategories, liveTrim, needsUpload,
   requireConfirmedPages, requireKdpId, singleRow, StoppedAtUnconfirmedPage, stateForTitle, waitForVerdict,
 } from './checks.mjs';
+
+const isOwnerPricingKey = (key) => key.startsWith('price-') || key === 'territories';
 
 /** Every page map `draft` needs; each carries `confirmed: false` until it was checked against a capture. */
 export const NEEDED_PAGES = [BOOKSHELF_PAGE, DETAILS_PAGE, CONTENT_PAGE, PRICING_PAGE];
@@ -410,7 +410,8 @@ async function shelfRowOf(page, plan, { book, lang }) {
   const raw = await readBookshelfRows(page);
   const rows = parseBookshelfRows(raw);
   const title = plan.fields.find((f) => f.key === 'title')?.value;
-  const { matched, doubtful } = matchRows(rows, { books: [{ id: book, languages: [lang] }] }, () => title, { strict: true });
+  const subtitle = plan.fields.find((f) => f.key === 'subtitle')?.value;
+  const { matched, doubtful } = matchRows(rows, { books: [{ id: book, languages: [lang] }] }, () => title, { strict: true, subtitleOf: () => subtitle });
   return { raw, rows, doubtful, row: singleRow(matched, `${book} ${lang}`) };
 }
 
@@ -418,7 +419,7 @@ async function shelfRowOf(page, plan, { book, lang }) {
 export async function settleTitle(page, plan, ctx, { book, lang }) {
   const { raw, rows, row, doubtful } = await shelfRowOf(page, plan, { book, lang });
   if (!row && !ctx.kdpId && doubtful.length > 0) {
-    throw new Error(`the bookshelf has ${doubtful.length} paperback row(s) that look like ${book} ${lang} (${doubtful.map((r) => `"${r.title}" ${r.kdpId}`).join(', ')}) but the shelf shows no language, or the title only starts with this one; the robot never edits a title it cannot tell is this one. If one of them is it, put its id in kdp/state as kdpId; otherwise rename it on KDP`);
+    throw new Error(`the bookshelf has ${doubtful.length} paperback row(s) that look like ${book} ${lang} (${doubtful.map((r) => `"${r.title}" ${r.kdpId}`).join(', ')}) but either two rows show no language and fit this title alike, or the title only starts with this one (it is not "Title" or "Title: Subtitle" exactly); the robot never edits a title it cannot tell is this one. If one of them is it, put its id in kdp/state as kdpId; otherwise rename it on KDP`);
   }
   if (!row && !ctx.kdpId && !CONTROL_CONFIRMED.titleLinks && raw.length > 0) {
     throw new Error(`the bookshelf shows ${raw.length} title link(s) but none is this title, and kdp/state has no id for ${book} ${lang}. The bookshelf title-link selector is not confirmed against a non-empty shelf yet, so the robot cannot tell a missing title from a selector miss and creates nothing. Find this title on the bookshelf and put its id in kdp/state as kdpId, or empty the bookshelf`);

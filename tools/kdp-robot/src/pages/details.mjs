@@ -86,7 +86,8 @@ export const CATEGORY = {
   // After a leaf the dialog shows "Placement" with checkboxes ("0 out of 3 category placements selected"); a pick is kept only with one
   // ticked (screenshot 2026-11-20). The boxes differ per leaf, so the listing names it after "|" on each category line.
   selected: '#section-categories',
-  pathLine: /[>›]/,
+  // A pick is the whole path ("Books › Children's Books › Animals"): starts with the root and has at least two separators, so help text or an inline error that merely holds one angle quote is not read as a pick.
+  pathLine: /^Books\s*[>›].+[>›]/,
 };
 
 /**

@@ -161,3 +161,8 @@ category's "Fiction" placement, a guessed control.
   clicked "Choose categories".
 - Open: catalog `price` is still the one USD 9.99 (item per the 2026-11-26 price decision: one price per marketplace copied from the live
   Pricing page); the robot never writes prices, but the catalog and `check-listing.mjs` price rule are not yet changed (needs a live read).
+
+#### From review
+
+- Skipped #2 (`reviews/kdpx-medium.md`): "Series fields are never written even when SERIES.confirmed is true." - the slice fixes `SERIES.confirmed` at false and the series is the owner's to set; no write step is built.
+- Skipped #5 (`reviews/kdpx-medium.md`): "The stopped-run counter only counts errors thrown inside `runPages`." - a sign-in or captcha stop is the owner's step, not a robot failure, so the one-fix-one-rerun cap does not apply to it.
