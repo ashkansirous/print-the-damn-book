@@ -37,7 +37,7 @@ The repo is public (2026-10-22), so the site and the app download from public Gi
 | 39 | Amazon KDP robot: every language, and keeping published books up to date | planned | | | [39](docs/plan/slices/39-kdp-robot-languages-and-updates.md) |
 | 40 | Amazon KDP: series, "Also by" page, author page, short link to the Dino app | planned | | | [40](docs/plan/slices/40-kdp-series-and-cross-links.md) |
 | 41 | Amazon KDP: "More books" on the last page, and the crop agent places the back-cover words and the Dino QR | verified: built (PR #93), 16 books rebuilt, owner accepted 2026-11-20 | 93 | | [41](docs/plan/slices/41-kdp-more-books-and-back-placement.md) |
-| 42 | Amazon KDP: one text size for every story page of a book | built (PR #100) | 100 | | [42](docs/plan/slices/42-kdp-one-text-size-per-book.md) |
+| 42 | Amazon KDP: one text size for every story page of a book | verified: built (PR #100), owner accepted 2026-11-20 | 100 | | [42](docs/plan/slices/42-kdp-one-text-size-per-book.md) |
 | 44 | Amazon KDP: the build skills report their steps to the agent board, with process keys | planned (owner 2026-11-22; waits for agent-progress-board Slice 55) | | | [44](docs/plan/slices/44-kdp-board-steps.md) |
 
 Notes:
@@ -52,7 +52,7 @@ Notes:
 
 ## Outstanding work
 
-- **Not yet tried on a device:** 30 checks across 16 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
+- **Not yet tried on a device:** 28 checks across 15 slices, in [docs/plan/unverified.md](docs/plan/unverified.md).
 - Owner question, Slice 46: should a follow-on quote with no speaker (`"Stop!" said Granny. "Come back!"`, 104 of the English quotes across 16 books, X Marks story page 2) take the previous speaker's colour? Today it stays in ink with a warning; not built ([slice 46](docs/plan/slices/46-kdp-styled-story-text.md), *Found during the build*).
 - The (c) line still says Ashkan Sirous in `docs/design/kdp-story-text/Matter.dc.html`, `docs/design/kdp-story-text/MatterToday.dc.html` and `docs/store/listing.md:18`; the code now says Elinsoft Ltd. ([slice 46](docs/plan/slices/46-kdp-styled-story-text.md)).
 - Text size answered: every story page of every book is 24 pt (Slice 42, built PR #100; [slice 42](docs/plan/slices/42-kdp-one-text-size-per-book.md)).

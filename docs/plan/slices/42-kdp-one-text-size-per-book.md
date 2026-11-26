@@ -1,6 +1,6 @@
 ### Slice 42 — Amazon KDP: one text size for every story page of a book
 
-*Built 2026-11-20, merged as PR #100 (4425035), 980 tests pass. Item C (rebuild all 16 books) done before merge on the reviewed code is re-run after merge.*
+*Status: verified. Built 2026-11-20, merged as PR #100 (4425035), 980 tests pass. Item C (rebuild all 16 books) was done before merge on the reviewed code. Owner accepted 2026-11-20, after seeing the 24 pt rebuild: "yes, it looks good."*
 
 **Touches:** `src/PrintTheDamnBook.Core/Kdp/`, `src/PrintTheDamnBook.Kdp/`, `tests/PrintTheDamnBook.Kdp.Tests/`,
 `tests/PrintTheDamnBook.Core.Tests/`, `src/PrintTheDamnBook.Cli/`, `.claude/agents/kdp-visual-check.md`,
@@ -85,8 +85,7 @@ there are no jumps. A long sentence may wrap"; or an 18 pt floor; or as is. Owne
 
 #### Not yet verified
 
-- [owner] The owner looks at the rebuilt story pages.
-- [session] Item C re-run after merge: rebuild all 16 books on merged `main` with their saved `kdp.json` and confirm none has a page that doesn't fit (the pre-merge rebuild was on the reviewed code).
+(none: owner accepted 2026-11-20)
 
 #### For CLAUDE.md
 
