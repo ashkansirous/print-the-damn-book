@@ -1,0 +1,89 @@
+{
+  "page": "pricing",
+  "source": "x-marks-the-treasure-en",
+  "kdpId": "4TK6278TV2X",
+  "controls": [
+    {
+      "key": "textbox|price-input-usd",
+      "kind": "input",
+      "role": "textbox",
+      "name": "Price for Amazon.com in USD",
+      "label": "",
+      "id": "price-input-usd",
+      "field": "",
+      "inDialog": false,
+      "order": 48,
+      "values": [
+        "9.99",
+        "10.50"
+      ]
+    },
+    {
+      "key": "textbox|price-input-gbp",
+      "kind": "input",
+      "role": "textbox",
+      "name": "Price for Amazon.co.uk in GBP",
+      "label": "",
+      "id": "price-input-gbp",
+      "field": "",
+      "inDialog": false,
+      "order": 49,
+      "values": [
+        "7.99",
+        "8.10"
+      ]
+    },
+    {
+      "key": "textbox|price-input-eur",
+      "kind": "input",
+      "role": "textbox",
+      "name": "Price for Amazon.com.be in EUR",
+      "label": "",
+      "id": "price-input-eur",
+      "field": "",
+      "inDialog": false,
+      "order": 50,
+      "values": [
+        "9,99"
+      ]
+    },
+    {
+      "key": "textbox|price-input-sek",
+      "kind": "input",
+      "role": "textbox",
+      "name": "Price for Amazon.se in SEK",
+      "label": "",
+      "id": "price-input-sek",
+      "field": "",
+      "inDialog": false,
+      "order": 56,
+      "values": [
+        "110"
+      ]
+    },
+    {
+      "key": "button|Save as Draft",
+      "kind": "click",
+      "role": "button",
+      "name": "Save as Draft",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 60,
+      "values": []
+    },
+    {
+      "key": "button|< Back to Content",
+      "kind": "click",
+      "role": "button",
+      "name": "< Back to Content",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 87,
+      "values": []
+    }
+  ]
+}

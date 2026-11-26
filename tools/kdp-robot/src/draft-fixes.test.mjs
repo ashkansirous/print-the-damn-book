@@ -8,10 +8,10 @@ import { join } from 'node:path';
 import { safeCheck, safeClick, clickButton, guardField } from './browser.mjs';
 import { PublishRefused } from './guard.mjs';
 import { FieldNotFound } from './fieldio.mjs';
-import { assignIsbn, chooseCategories, savePage, uploadFiles, untickUnlisted } from './draft.mjs';
+import { assignIsbn, savePage, uploadFiles } from './draft.mjs';
 import { KdpNoSignal, KdpRejected, IsbnConflict, hasIsbn, isbnPlan, judgeFileCheck, judgeSave, needsUpload, requireKdpId, waitForVerdict, fileHash, stateForTitle, liveCategories } from './checks.mjs';
 import { classifyPage } from './bookshelf.mjs';
-import { CONTENT_SPECS } from './pages/content.mjs';
+import { CONTENT, CONTENT_SPECS } from './pages/content.mjs';
 import { nextState } from './state.mjs';
 
 function fakeLocator({ text = '', aria = null, count = 1, checked = true, children = {} } = {}) {
@@ -59,25 +59,8 @@ test('2: a control with no Publish word but none of the allowed labels is refuse
   await guardField(fakeLocator({ aria: 'Book Title' }), 'title', [/book title/i]);
 });
 
-test('1: the category flow clicks only through the guard', async () => {
-  const pub = fakeLocator({ text: 'Publish' });
-  const dialog = fakeLocator({ children: { text: () => pub } });
-  const page = { getByRole: (role) => (role === 'dialog' ? dialog : fakeLocator({ text: 'Choose categories' })) };
-  await assert.rejects(chooseCategories(page, [['Children', 'Animals', 'Foxes']]), PublishRefused);
-  assert.deepEqual(pub.calls, []);
-});
-
-test('untickUnlisted stops on a ticked "Publish" checkbox and never unticks it', async () => {
-  const box = fakeLocator({ text: 'Publish', aria: 'Publish' });
-  const dialog = fakeLocator();
-  dialog.locator = () => ({ all: async () => [box] });
-  await assert.rejects(untickUnlisted(dialog, [['Children', 'Animals', 'Foxes']]), PublishRefused);
-  assert.deepEqual(box.calls, []);
-  const old = fakeLocator({ text: 'Bears', aria: 'Bears' });
-  dialog.locator = () => ({ all: async () => [old] });
-  await untickUnlisted(dialog, [['Children', 'Animals', 'Foxes']]);
-  assert.deepEqual(old.calls, ['uncheck']);
-});
+// The category flow tests (guard, exact single match, no deleting of picks) moved to categories-cascade.test.mjs: KDP's dialog is a
+// cascade of drop-downs (capture 2026-11-20), not the tick boxes these tests were written for.
 
 test('2/3: judgeSave and judgeFileCheck read error alerts and success markers', () => {
   assert.equal(judgeSave({ alerts: ['Subtitle is too long'], bodyText: 'Your changes have been saved' }).state, 'error');
@@ -143,26 +126,6 @@ test('4: no KDP id after the details save stops the run; a found id is recorded 
   assert.deepEqual(recorded, [{ savedWithoutId: true }, { kdpId: 'ABC1234567' }]); // marker before the click, then the id (which clears it)
 });
 
-function categoryPage({ textCount = 1, leafCount = 1, checked = true }) {
-  const leaf = fakeLocator({ count: leafCount, checked, text: 'Foxes' });
-  const part = fakeLocator({ count: textCount, text: 'Children' });
-  const dialog = fakeLocator({ children: { text: (t) => (t === 'Children' ? part : fakeLocator({ count: textCount, text: t })), checkbox: () => leaf } });
-  const page = { getByRole: (role) => (role === 'dialog' ? dialog : fakeLocator({ text: 'Choose categories' })) };
-  return { page, leaf, part };
-}
-
-test('5: a category is picked only on an exact single match; none or several stops the run', async () => {
-  const path = [['Children', 'Animals', 'Foxes']];
-  const ok = categoryPage({});
-  await chooseCategories(ok.page, path);
-  assert.deepEqual(ok.leaf.calls, ['check']);
-  await assert.rejects(chooseCategories(categoryPage({ leafCount: 0 }).page, path), FieldNotFound);
-  const two = categoryPage({ leafCount: 2 });
-  await assert.rejects(chooseCategories(two.page, path), FieldNotFound);
-  assert.deepEqual(two.leaf.calls, []);
-  await assert.rejects(chooseCategories(categoryPage({ textCount: 2 }).page, path), FieldNotFound);
-  await assert.rejects(chooseCategories(categoryPage({ checked: false }).page, path), /not ticked/);
-});
 
 test('6: live categories are matched by exact text first, else by position; none read means not set', () => {
   const fields = [{ key: 'category-1', value: 'A > B' }, { key: 'category-2', value: 'C > D' }];
@@ -170,11 +133,9 @@ test('6: live categories are matched by exact text first, else by position; none
   assert.deepEqual(liveCategories([], fields), {});
 });
 
-test('7: each AI group name matches exactly one of the content groups', () => {
-  const groups = ['AI-generated text', 'AI-generated images', 'AI-generated translations', 'Publishing rights'];
-  for (const key of ['ai-text', 'ai-images', 'ai-translations']) {
-    assert.equal(groups.filter((g) => CONTENT_SPECS[key].group.test(g)).length, 1, key);
-  }
+test('7: the AI question is one Yes/No radio group on the real page (has-ai-content)', () => {
+  assert.equal(CONTENT_SPECS['ai-content'].css, 'input[name="has-ai-content"]');
+  assert.deepEqual(CONTENT_SPECS['ai-content'].values, { Yes: 'yes', No: 'no' });
 });
 
 test('9: a KDP host page with no known marker is not ok; a signed-out landing page is signin', () => {
@@ -196,29 +157,47 @@ test('12: the free ISBN is assigned only when the page and kdp/state both show n
 });
 
 /** A content page: the assign button, an optional confirm button, and a body that shows the ISBN once `shows(clicks)` says so. */
-function isbnPage({ confirm, shows }) {
-  const assign = fakeLocator({ text: 'Assign me a KDP ISBN' });
-  const ok = fakeLocator({ text: 'Assign ISBN', count: confirm ? 1 : 0 });
+function isbnPage({ confirm, shows, dialogLabel = 'Assign ISBN' }) {
+  // Like real KDP: the page's own "Assign ISBN" stays on the page behind the modal, and the modal has its own button
+  // (the same label by default). The confirm may only be pressed inside the dialog.
+  const assign = fakeLocator({ text: 'Assign ISBN' });
   const clicks = [];
   assign.click = async () => clicks.push('assign');
-  ok.click = async () => clicks.push('confirm');
+  const inDialog = (name) => {
+    const open = confirm && clicks.includes('assign');
+    const ok = fakeLocator({ text: dialogLabel, count: open && name === dialogLabel ? 1 : 0 });
+    ok.click = async () => clicks.push('confirm');
+    return ok;
+  };
+  const dialog = { getByRole: (role, o) => inDialog(o.name) };
   return {
     clicks,
-    getByRole: (role, o) => (o.name === 'Assign ISBN' ? ok : assign),
-    locator: (s) => (s === 'body' ? { innerText: async () => (shows(clicks) ? 'ISBN: 978-1-2345-6789-0' : 'nothing') } : { count: async () => 0, allInnerTexts: async () => [] }),
+    getByRole: (role, o) => (o.name === 'Assign ISBN' ? assign : fakeLocator({ count: 0 })),
+    locator: (s) => {
+      if (s === 'body') return { innerText: async () => (shows(clicks) ? 'ISBN: 978-1-2345-6789-0' : 'nothing') };
+      if (s === CONTENT.dialogScope) return dialog;
+      return { count: async () => 0, allInnerTexts: async () => [] };
+    },
   };
 }
 
 test('2: the ISBN is recorded only after a 978/979 number is read back, confirm dialog included', async () => {
   const plain = isbnPage({ confirm: false, shows: (c) => c.includes('assign') });
   const rec1 = [];
-  await assignIsbn(plain, { record: (p) => rec1.push(p), isbnTimeoutMs: 20, isbnConfirmWaitMs: 5, pollMs: 1 });
+  await assignIsbn(plain, { isbnConfirmButton: 'Create', record: (p) => rec1.push(p), isbnTimeoutMs: 20, isbnConfirmWaitMs: 5, pollMs: 1 });
   assert.deepEqual(plain.clicks, ['assign']);
   assert.equal(rec1.length, 1);
   assert.ok(rec1[0].fields.isbn);
-  const withDialog = isbnPage({ confirm: true, shows: (c) => c.includes('confirm') });
+  // Owner's recording 2026-11-21: KDP's "Assign ISBN" opens a dialog whose button has the same label, so the default is two clicks.
+  // Finding 1 (review kdpx-high): the second click must be the one in the dialog, never the page's own button behind it.
+  const recorded = isbnPage({ confirm: true, shows: (c) => c.includes('confirm') });
+  const rec0 = [];
+  await assignIsbn(recorded, { record: (p) => rec0.push(p), isbnTimeoutMs: 20, isbnConfirmWaitMs: 5, pollMs: 1 });
+  assert.deepEqual(recorded.clicks, ['assign', 'confirm']);
+  assert.equal(rec0.length, 1);
+  const withDialog = isbnPage({ confirm: true, shows: (c) => c.includes('confirm'), dialogLabel: 'Create' });
   const rec2 = [];
-  await assignIsbn(withDialog, { record: (p) => rec2.push(p), isbnTimeoutMs: 20, isbnConfirmWaitMs: 5, pollMs: 1 });
+  await assignIsbn(withDialog, { isbnConfirmButton: 'Create', record: (p) => rec2.push(p), isbnTimeoutMs: 20, isbnConfirmWaitMs: 5, pollMs: 1 });
   assert.deepEqual(withDialog.clicks, ['assign', 'confirm']);
   assert.equal(rec2.length, 1);
 });
@@ -235,7 +214,7 @@ function isbnUnderOverlay(overlayReads) {
   const page = isbnPage({ confirm: false, shows: () => true });
   let reads = 0;
   const base = page.locator;
-  page.locator = (s) => (s === 'body' ? base(s) : { count: async () => (reads++ < overlayReads ? 1 : 0), allInnerTexts: async () => [] });
+  page.locator = (s) => (s === 'body' || s === CONTENT.dialogScope ? base(s) : { count: async () => (reads++ < overlayReads ? 1 : 0), allInnerTexts: async () => [] });
   return page;
 }
 

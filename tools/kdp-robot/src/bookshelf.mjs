@@ -37,30 +37,55 @@ export function parseBookshelfRows(rawRows) {
 
 const norm = (t) => String(t).toLowerCase().replace(/\s+/g, ' ').trim();
 
+// The bookshelf row shows no language (capture 2026-11-20), so an unknown one fits any language: a book with the same title in two
+// languages then lands in `ambiguous`, never on the first.
 const sameLanguage = (row, lang) => {
+  if (row.language === 'unknown') return true;
   const name = LANGUAGE_NAMES[lang];
   return Boolean(name) && (row.language === name || (name === 'Persian' && row.language === 'Farsi'));
 };
 
+// KDP lists a title as "Title: Subtitle", so a row also fits when it starts with the title and a colon.
+const sameTitle = (rowTitle, title) => norm(rowTitle) === norm(title) || norm(rowTitle).startsWith(`${norm(title)}:`);
+
+// Strict (the editing path, review kdpx-high 7): the exact title and a language the shelf actually shows. A row with no language, or
+// one that only starts with the title, is never taken as this book.
+// Slice 43 (review kdpx-medium 1): KDP writes "Title: Subtitle" and often shows no language, so strict accepts the exact title or exactly
+// "<title>: <subtitle>"; a language the row shows must match, and a row showing none counts only if it is the only such row (below).
+const exactTitle = (rowTitle, title, subtitle) => norm(rowTitle) === norm(title) || (Boolean(subtitle) && norm(rowTitle) === `${norm(title)}: ${norm(subtitle)}`);
+
 /** The catalog pairs a row stands for: same title, same language, paperback. */
-function candidatesFor(row, pairs, titleOf) {
+function candidatesFor(row, pairs, titleOf, strict, subtitleOf) {
   if (row.format !== 'paperback') return [];
-  return pairs.filter((p) => norm(titleOf(p.book, p.lang)) === norm(row.title) && sameLanguage(row, p.lang));
+  const [title, language] = strict ? [exactTitle, sameLanguage] : [sameTitle, sameLanguage];
+  return pairs.filter((p) => title(row.title, titleOf(p.book, p.lang), subtitleOf?.(p.book, p.lang)) && language(row, p.lang));
+}
+
+/** Strict only: rows that matched with no language shown are adopted only when one such row fits that pair; two or more go to `doubtful`. */
+function demoteSharedUnknown(out) {
+  const unknown = out.matched.filter((m) => m.row.language === 'unknown');
+  const sameKey = (a, b) => a.book === b.book && a.lang === b.lang;
+  const shared = unknown.filter((m) => unknown.filter((o) => sameKey(o, m)).length > 1);
+  out.matched = out.matched.filter((m) => !shared.includes(m));
+  out.doubtful.push(...shared.map((m) => m.row));
 }
 
 /**
  * Pair paperback rows with catalog (book, lang) pairs by title AND language AND format. titleOf(book, lang) -> string.
- * Returns {matched, unmatched, ambiguous}: a row that fits two or more pairs goes to `ambiguous`, never to the first.
+ * Returns {matched, unmatched, ambiguous, doubtful}: a row that fits two or more pairs goes to `ambiguous`, never to the first.
+ * With `strict`, a row that fits only the loose rules (no language shown, or a "Title: ..." prefix) goes to `doubtful` and is not matched.
  */
-export function matchRows(rows, catalog, titleOf) {
+export function matchRows(rows, catalog, titleOf, { strict = false, subtitleOf } = {}) {
   const pairs = catalog.books.flatMap((b) => b.languages.map((lang) => ({ book: b.id, lang })));
-  const out = { matched: [], unmatched: [], ambiguous: [] };
+  const out = { matched: [], unmatched: [], ambiguous: [], doubtful: [] };
   for (const row of rows) {
-    const hits = candidatesFor(row, pairs, titleOf);
+    const hits = candidatesFor(row, pairs, titleOf, strict, subtitleOf);
     if (hits.length === 1) out.matched.push({ ...hits[0], row });
     else if (hits.length > 1) out.ambiguous.push(row);
+    else if (strict && candidatesFor(row, pairs, titleOf, false).length > 0) out.doubtful.push(row);
     else out.unmatched.push(row);
   }
+  if (strict) demoteSharedUnknown(out);
   return out;
 }
 

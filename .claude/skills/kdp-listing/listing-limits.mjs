@@ -111,6 +111,14 @@ function categoryWords(categoriesText) {
   return lines.flatMap((l) => contentWords(l.replace(/^\s*(?:\d+[.)]|[-*])\s+/, '').replace(/\([^)]*\)/g, '')));
 }
 
+/** A keyword the owner chose himself carries "(owner override)": it is exempt from the repeated-words rule only (never from the banned words). */
+export const OWNER_OVERRIDE = /\s*\(owner override\)\s*$/i;
+export const isOwnerKeyword = (k) => OWNER_OVERRIDE.test(k);
+export const keywordText = (k) => k.replace(OWNER_OVERRIDE, '').trim();
+
+/** A paper book has no sound: a keyword for read-aloud, audio or sound books sends buyers to the wrong product (owner, 2026-11-20; Slice 43). */
+export const BANNED_KEYWORD = /\b(?:read[- ]?alouds?|audio(?:books?)?|sound\s+books?|talking\s+books?|listen(?:ing)?)\b/i;
+
 /** Words of a keyword that equal, or share a stem prefix of 4+ letters with, a word KDP forbids repeating. */
 function repeatedWords(keyword, used) {
   const usedStems = [...used].map(stem);
@@ -120,9 +128,35 @@ function repeatedWords(keyword, used) {
   });
 }
 
-function aiDisclosureErrors(text) {
-  const missing = ['Text', 'Images', 'Translations'].filter((k) => !new RegExp(`^\\s*(?:[-*]\\s+)?${k}:\\s*yes\\b`, 'im').test(text));
-  return missing.length ? [`AI-generated content must say Yes for text, images and translations (missing: ${missing.join(', ')})`] : [];
+/** KDP's answer for AI-generated work that the owner only told and AI wrote, illustrated and translated (owner, 2026-11-21; Slice 43 K). */
+export const AI_ENTIRE = 'Entire work, with minimal or no editing';
+export const AI_NONE = 'None';
+export const AI_FIELDS = ['Text', 'Images', 'Translations'];
+
+/** One answer per AI field: "None", the KDP option after "Yes," (cut at a bracket), or '' when the line is missing or says plain Yes/No. */
+export function aiAnswers(text) {
+  const answer = (field) => {
+    const line = new RegExp(`^\\s*(?:[-*]\\s+)?${field}:\\s*(.*)$`, 'im').exec(text)?.[1].trim() ?? '';
+    if (/^none\b/i.test(line)) return AI_NONE;
+    return /^yes\s*,\s*([^(]+?)\s*(?:\(.*)?$/i.exec(line)?.[1] ?? '';
+  };
+  return Object.fromEntries(AI_FIELDS.map((f) => [f, answer(f)]));
+}
+
+/** Ids of the catalog books whose story the owner wrote himself (`ownerWrittenText: true`; owner, 2026-11-26; Slice 43 K correction). */
+export const ownerWrittenIds = (catalog) => new Set((catalog?.books ?? []).filter((b) => b.ownerWrittenText === true).map((b) => b.id));
+
+/** The book folder a listing path belongs to: kdp/listings/<book-id>/<lang>.md. */
+export const listingBookId = (file) => String(file).replace(/\\/g, '/').split('/').at(-2) ?? '';
+
+/**
+ * Images: Entire work. Text: Entire work, but None for a book the owner wrote himself (KDP calls text the author wrote and refined with
+ * AI "AI-assisted", which needs no disclosure). Translations: None for English (the story was told in English), Entire work otherwise.
+ */
+function aiDisclosureErrors(text, language, ownerWritten) {
+  const answers = aiAnswers(text);
+  const want = { Text: ownerWritten ? AI_NONE : AI_ENTIRE, Images: AI_ENTIRE, Translations: /^english\b/i.test(language ?? '') ? AI_NONE : AI_ENTIRE };
+  return AI_FIELDS.filter((f) => answers[f] !== want[f]).map((f) => `AI-generated content: ${f} must say "${want[f] === AI_NONE ? AI_NONE : `Yes, ${want[f]}`}" (found "${answers[f] || 'nothing'}")`);
 }
 
 function priceErrors(priceSection, pages) {
@@ -144,7 +178,7 @@ function priceErrors(priceSection, pages) {
   return errors;
 }
 
-export function checkListing(markdown) {
+export function checkListing(markdown, { ownerWritten = false } = {}) {
   const errors = [];
   const s = parseSections(markdown);
   for (const h of REQUIRED_HEADINGS) {
@@ -173,17 +207,18 @@ export function checkListing(markdown) {
   const seen = new Set();
   const contributors = s['Authors and contributors'].split('\n').map((l) => l.replace(ROLE_LABEL, '')).join('\n');
   const used = new Set([...contentWords(title), ...contentWords(subtitle), ...contentWords(contributors), ...categoryWords(s['Categories'])]);
-  for (const k of keywords) {
+  for (const raw of keywords) {
+    const k = keywordText(raw);
     if (k.includes('"')) errors.push(`keyword has a quotation mark: ${k}`);
+    if (BANNED_KEYWORD.test(k)) errors.push(`keyword "${k}" describes something a paper book is not (read aloud, audio, sound or talking book)`);
     if (seen.has(k.toLowerCase())) errors.push(`keyword repeated: ${k}`);
     seen.add(k.toLowerCase());
-    const dup = repeatedWords(k, used);
+    const dup = isOwnerKeyword(raw) ? [] : repeatedWords(k, used);
     if (dup.length) errors.push(`keyword "${k}" repeats words (or their plural/stem) already in title, subtitle, contributors or categories: ${dup.join(', ')}`);
   }
 
   const categories = s['Categories'].split('\n').filter((l) => /^\s*(?:\d+[.)]|[-*])\s+/.test(l));
   if (categories.length !== LIMITS.categoryCount) errors.push(`${categories.length} categories, KDP takes ${LIMITS.categoryCount}`);
-
   const pages = Number(/(\d+)\s*pages\b/i.exec(s['Pages'])?.[1]);
   if (!(pages >= LIMITS.minPages && pages <= LIMITS.maxPages)) {
     errors.push(`page count "${s['Pages']}" is not a number from ${LIMITS.minPages} to ${LIMITS.maxPages}`);
@@ -191,6 +226,6 @@ export function checkListing(markdown) {
     errors.push(...priceErrors(s['List price (USD)'], pages));
   }
 
-  errors.push(...aiDisclosureErrors(s['AI-generated content']));
+  errors.push(...aiDisclosureErrors(s['AI-generated content'], s['Language'], ownerWritten));
   return errors;
 }

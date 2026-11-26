@@ -6,12 +6,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { StoppedAtUnconfirmedPage } from './checks.mjs';
-import { DRAFT_STEPS, categoriesAllowed, primaryAuthorErrors, runSteps } from './draft.mjs';
+import { DRAFT_STEPS, categoriesAllowed, primaryAuthorErrors, runSteps, seriesAllowed } from './draft.mjs';
 import { FieldNotFound, readField, writeField } from './fieldio.mjs';
 import { PublishRefused } from './guard.mjs';
 import { clickAction } from './browser.mjs';
 import { BOOKSHELF, CONTROL_CONFIRMED, PAGE as BOOKSHELF_PAGE } from './pages/bookshelf.mjs';
-import { CONTRIBUTOR, DETAILS_SPECS, PAGE as DETAILS_PAGE, PRIMARY_AUTHOR, contributorSpecs, keywordSpec } from './pages/details.mjs';
+import { CATEGORY, CONTRIBUTOR, DETAILS_SPECS, SERIES, PAGE as DETAILS_PAGE, PRIMARY_AUTHOR, contributorSpecs, keywordSpec } from './pages/details.mjs';
 import { PAGE as CONTENT_PAGE } from './pages/content.mjs';
 import { PAGE as PRICING_PAGE } from './pages/pricing.mjs';
 
@@ -39,11 +39,11 @@ function fakePage({ counts = {}, attrs = {}, enabled = true } = {}) {
   return { calls, locator: (sel) => loc(sel), frameLocator: (f) => ({ locator: (s) => loc(`${f} >> ${s}`) }), getByLabel: () => { throw new Error('getByLabel must not be used for a css spec'); } };
 }
 
-test('maps: only bookshelf and details are confirmed (capture 2026-11-20)', () => {
+test('maps: bookshelf and details are confirmed (capture 2026-11-20); content and pricing are confirmed from the recordings', () => {
   assert.equal(BOOKSHELF_PAGE.confirmed, true);
   assert.equal(DETAILS_PAGE.confirmed, true);
-  assert.equal(CONTENT_PAGE.confirmed, false);
-  assert.equal(PRICING_PAGE.confirmed, false);
+  assert.equal(CONTENT_PAGE.confirmed, true);
+  assert.equal(PRICING_PAGE.confirmed, true);
 });
 
 test('bookshelf: the create control is the link "+ Create new title or series", not a button', () => {
@@ -85,18 +85,35 @@ test('a disabled select is refused, not "set" with force', async () => {
 });
 
 test('bookshelf: confirmation is per control; the status cell and title links are not confirmed, the Create page button is', () => {
-  assert.deepEqual(CONTROL_CONFIRMED, { signedInMarker: true, createButton: true, paperbackChoice: true, statusCell: false, titleLinks: false });
+  assert.deepEqual(CONTROL_CONFIRMED, { signedInMarker: true, createButton: true, paperbackChoice: true, statusCell: true, titleLinks: true });
   assert.equal(BOOKSHELF.paperbackChoice, 'Create paperback');
 });
 
-test('categories: unconfirmed dialog (or no id yet) skips them, marks them unset and says why', () => {
+test('categories: confirmed dialog; with no id yet they are skipped, marked unset and the summary says why; with an id they are set', () => {
+  assert.equal(CATEGORY.confirmed, true); // title-categories.html: the select cascade, Add another category, Save categories
   const todo = [{ key: 'category-1' }, { key: 'title' }];
   const ctx = { messages: [], kdpId: null };
   assert.equal(categoriesAllowed(todo, ctx), false);
   assert.equal(todo[0].verified, false);
   assert.equal(todo[1].verified, undefined);
-  assert.deepEqual(ctx.messages, ['not set: categories dialog not captured']);
+  assert.deepEqual(ctx.messages, ['not set: categories wait for the first save of the title (the button is disabled before it)']);
   assert.equal(categoriesAllowed([{ key: 'title' }], { messages: [] }), false);
+  assert.equal(categoriesAllowed([{ key: 'category-1' }], { messages: [], kdpId: 'ABCDE12345' }), true);
+});
+
+test('series: the series-setup page is not captured, so the series fields are skipped, marked unset and said so (Slice 43)', () => {
+  assert.equal(SERIES.confirmed, false);
+  const todo = [{ key: 'series' }, { key: 'series-number' }, { key: 'title' }];
+  const ctx = { messages: [] };
+  assert.equal(seriesAllowed(todo, ctx), false);
+  assert.deepEqual(todo.map((f) => f.verified), [false, false, undefined]);
+  assert.match(ctx.messages[0], /not set: series/);
+  assert.equal(seriesAllowed([{ key: 'title' }], { messages: [] }), false);
+});
+
+test('prefix boxes: the primary author and every contributor row have one, found by the ids from the capture', () => {
+  assert.equal(PRIMARY_AUTHOR.prefix.css, '[id="data-print-book-primary-author-prefix"]');
+  assert.equal(contributorSpecs(0).prefix.css, '[id="data-print-book-contributors-0-prefix"]');
 });
 
 test('the first contributor must be an Author, checked by the plan before any browser opens', () => {
@@ -173,7 +190,7 @@ test('draft with every map confirmed runs all three pages and captures nothing',
   assert.deepEqual(ran, ['details', 'content', 'pricing']);
 });
 
-test('the real step list is details, content, pricing; with the shipped maps content is where the run stops', () => {
+test('the real step list is details, content, pricing; with the shipped maps every step is confirmed', () => {
   assert.deepEqual(DRAFT_STEPS.map((s) => s.page.name), ['details', 'content', 'pricing']);
-  assert.equal(DRAFT_STEPS.find((s) => !s.page.confirmed).page.name, 'content');
+  assert.equal(DRAFT_STEPS.find((s) => !s.page.confirmed), undefined);
 });

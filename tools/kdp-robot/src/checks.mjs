@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { KDP_ID } from './pages/bookshelf.mjs';
 
 const ERROR_WORDS = /\b(error|failed|failure|couldn.t|could not|can.t|cannot|invalid|unable|not valid|problem|issue|required|too long|too short|must be|missing)\b/i;
-const SAVED = /(draft|changes|book|information)\s+(has been|have been|was|were|is)?\s*saved|saved as (a )?draft|saved successfully/i;
+const SAVED = /(draft|changes|book|information)\s+(has been|have been|was|were|is)?\s*saved|saved as (a )?draft|saved successfully|save successful/i; // KDP's real alert after Save as Draft is "Save Successful!" (live run 2026-11-20)
 const UPLOADED = {
   manuscript: /manuscript[^.\n]{0,80}(success|uploaded|complete|processed)/i,
   cover: /cover[^.\n]{0,80}(success|uploaded|complete|processed)/i,
@@ -178,7 +178,7 @@ export function stateForTitle(rows, kdpId) {
 
 /** Which selected-category text on the page stands for category i: an exact match first, else the one in that position. */
 export function liveCategories(selected, fields) {
-  const norm = (t) => t.split(/\s*[>›]\s*/).map((p) => p.trim()).join(' > ');
+  const norm = (t) => t.split(/\s*[>›]\s*/).map((p) => p.trim()).join(' > ').replace(/^Books > /, ''); // KDP shows the root "Books"
   const list = selected.map(norm);
   const live = {};
   fields.forEach((f, i) => {

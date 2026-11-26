@@ -1,0 +1,290 @@
+{
+  "page": "details",
+  "source": "x-marks-the-treasure-en",
+  "kdpId": "4TK6278TV2X",
+  "controls": [
+    {
+      "key": "textbox|data-print-book-edition-number",
+      "kind": "input",
+      "role": "textbox",
+      "name": "1",
+      "label": "",
+      "id": "data-print-book-edition-number",
+      "field": "data[print_book][edition_number]",
+      "inDialog": false,
+      "order": 0,
+      "values": [
+        "1"
+      ]
+    },
+    {
+      "key": "button|categories-modal-button",
+      "kind": "click",
+      "role": "button",
+      "name": "Edit categories",
+      "label": "",
+      "id": "categories-modal-button",
+      "field": "",
+      "inDialog": false,
+      "order": 1,
+      "values": []
+    },
+    {
+      "key": "button|Children's Books",
+      "kind": "click",
+      "role": "button",
+      "name": "Children's Books",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 2,
+      "values": []
+    },
+    {
+      "key": "button|Remove",
+      "kind": "click",
+      "role": "button",
+      "name": "Remove",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 3,
+      "values": []
+    },
+    {
+      "key": "button|Geography & Cultures",
+      "kind": "click",
+      "role": "button",
+      "name": "Geography & Cultures",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 4,
+      "values": []
+    },
+    {
+      "key": "option|dropdown1_1",
+      "kind": "click",
+      "role": "option",
+      "name": "Activities, Crafts & Games",
+      "label": "",
+      "id": "dropdown1_1",
+      "field": "",
+      "inDialog": true,
+      "order": 5,
+      "values": []
+    },
+    {
+      "key": "button|Activities, Crafts & Games",
+      "kind": "click",
+      "role": "button",
+      "name": "Activities, Crafts & Games",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 6,
+      "values": []
+    },
+    {
+      "key": "option|dropdown2_2",
+      "kind": "click",
+      "role": "option",
+      "name": "Animals",
+      "label": "",
+      "id": "dropdown2_2",
+      "field": "",
+      "inDialog": true,
+      "order": 7,
+      "values": []
+    },
+    {
+      "key": "checkbox|Fiction",
+      "kind": "check",
+      "role": "checkbox",
+      "name": "Fiction",
+      "label": "Fiction",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 8,
+      "values": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "key": "button|Select one",
+      "kind": "click",
+      "role": "button",
+      "name": "Select one",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 10,
+      "values": []
+    },
+    {
+      "key": "option|dropdown3_4",
+      "kind": "click",
+      "role": "option",
+      "name": "Birds",
+      "label": "",
+      "id": "dropdown3_4",
+      "field": "",
+      "inDialog": true,
+      "order": 11,
+      "values": []
+    },
+    {
+      "key": "button|Animals",
+      "kind": "click",
+      "role": "button",
+      "name": "Animals",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 12,
+      "values": []
+    },
+    {
+      "key": "option|dropdown4_0",
+      "kind": "click",
+      "role": "option",
+      "name": "Select one",
+      "label": "",
+      "id": "dropdown4_0",
+      "field": "",
+      "inDialog": true,
+      "order": 13,
+      "values": []
+    },
+    {
+      "key": "checkbox|Action & Adventure",
+      "kind": "check",
+      "role": "checkbox",
+      "name": "Action & Adventure",
+      "label": "Action & Adventure",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 15,
+      "values": [
+        "true"
+      ]
+    },
+    {
+      "key": "button|Save categories",
+      "kind": "click",
+      "role": "button",
+      "name": "Save categories",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 16,
+      "values": []
+    },
+    {
+      "key": "button|save-and-continue-announce",
+      "kind": "click",
+      "role": "button",
+      "name": "Save and Continue",
+      "label": "",
+      "id": "save-and-continue-announce",
+      "field": "",
+      "inDialog": false,
+      "order": 17,
+      "values": []
+    },
+    {
+      "key": "button|a-autoid-2-announce",
+      "kind": "click",
+      "role": "button",
+      "name": "Add to series",
+      "label": "",
+      "id": "a-autoid-2-announce",
+      "field": "",
+      "inDialog": false,
+      "order": 61,
+      "values": []
+    },
+    {
+      "key": "button|Select series",
+      "kind": "click",
+      "role": "button",
+      "name": "Select series",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 62,
+      "values": []
+    },
+    {
+      "key": "button|Back",
+      "kind": "click",
+      "role": "button",
+      "name": "Back",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 63,
+      "values": []
+    },
+    {
+      "key": "button|Create series",
+      "kind": "click",
+      "role": "button",
+      "name": "Create series",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 64,
+      "values": []
+    },
+    {
+      "key": "button|Main content",
+      "kind": "click",
+      "role": "button",
+      "name": "Main content",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 65,
+      "values": []
+    },
+    {
+      "key": "button|Go to series setup",
+      "kind": "click",
+      "role": "button",
+      "name": "Go to series setup",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 66,
+      "values": []
+    },
+    {
+      "key": "option|data-print-book-reading-interest-age-end-input-native_6",
+      "kind": "click",
+      "role": "option",
+      "name": "6",
+      "label": "",
+      "id": "data-print-book-reading-interest-age-end-input-native_6",
+      "field": "",
+      "inDialog": true,
+      "order": 75,
+      "values": []
+    }
+  ]
+}

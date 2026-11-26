@@ -18,11 +18,13 @@ export function checkEntryShape(entry, ctx) {
   const at = `book "${entry.id}"`;
   if (!ctx.bookIds.has(entry.id)) errors.push(`${at}: unknown book folder`);
   for (const key of ['price', 'finish']) if (key in entry) errors.push(`${at}: ${key} is set once at the top of catalog.json; a book may not override it`);
+  if ('ownerWrittenText' in entry && typeof entry.ownerWrittenText !== 'boolean') errors.push(`${at}: ownerWrittenText must be true or false`);
   if (!Array.isArray(entry.languages)) return [...errors, `${at}: languages must be a list`];
   if (!isPublishable(entry)) return errors;
   if (!entry.dino) errors.push(`${at}: dino file name missing`);
   else if (!isPlainFileName(entry.dino)) errors.push(`${at}: dino must be a plain file name, with no folder or ".."`);
   if (!Array.isArray(entry.contributors) || entry.contributors.length === 0) errors.push(`${at}: contributors missing`);
+  errors.push(...prefixErrors(entry), ...seriesShapeErrors(entry));
   return errors;
 }
 
@@ -50,14 +52,48 @@ function checkLanguages(entry, price, ctx) {
   return errors;
 }
 
+/** "series": null, or { "number": 2, "names": { "en": "Series name" } }: one name per language, one number per book (Slice 43, from Slice 40). */
+export function seriesShapeErrors(entry) {
+  const s = entry.series;
+  if (s == null) return [];
+  const at = `book "${entry.id}" series`;
+  const errors = [];
+  if (!Number.isInteger(s.number) || s.number < 1) errors.push(`${at}: number must be a whole number from 1`);
+  if (!s.names || typeof s.names !== 'object') return [...errors, `${at}: names must map a language to the series name`];
+  for (const lang of entry.languages ?? []) {
+    if (typeof s.names[lang] !== 'string' || s.names[lang].trim() === '') errors.push(`${at}: no name for language "${lang}"`);
+  }
+  return errors;
+}
+
 function checkSeries(books) {
   const seen = new Map();
   const errors = [];
   for (const b of books) {
-    if (!b.series || b.series.number == null) continue;
-    const key = `${b.series.name}#${b.series.number}`;
-    if (seen.has(key)) errors.push(`series "${b.series.name}" number ${b.series.number} is used by "${seen.get(key)}" and "${b.id}"`);
-    else seen.set(key, b.id);
+    if (!b.series || !Number.isInteger(b.series.number) || !b.series.names) continue;
+    for (const [lang, name] of Object.entries(b.series.names)) {
+      const key = `${lang}|${name}#${b.series.number}`;
+      if (seen.has(key)) errors.push(`series "${name}" (${lang}) number ${b.series.number} is used by "${seen.get(key)}" and "${b.id}"`);
+      else seen.set(key, b.id);
+    }
+  }
+  return errors;
+}
+
+export const PREFIX_MAX_LENGTH = 4; // KDP's Prefix box has maxlength 4 (capture 2026-11-20)
+/** Ashkan Sirous carries "Mr." as author and as illustrator on every book (owner, 2026-11-20). */
+export const REQUIRED_PREFIXES = { 'Ashkan Sirous': 'Mr.' };
+
+/** A contributor's optional "prefix" is a short plain string; a name with a required prefix must carry exactly it. */
+export function prefixErrors(entry) {
+  const errors = [];
+  for (const c of entry.contributors ?? []) {
+    const at = `book "${entry.id}" contributor "${c.name}" (${c.role})`;
+    if ('prefix' in c && (typeof c.prefix !== 'string' || c.prefix.trim() === '' || c.prefix.length > PREFIX_MAX_LENGTH || /[<>]/.test(c.prefix))) {
+      errors.push(`${at}: prefix must be 1 to ${PREFIX_MAX_LENGTH} plain characters`);
+    }
+    const required = REQUIRED_PREFIXES[c.name];
+    if (required && c.prefix !== required) errors.push(`${at}: prefix must be "${required}"`);
   }
   return errors;
 }

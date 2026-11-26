@@ -21,6 +21,11 @@ Needs the book in `kdp/catalog.json` with the language listed (`node tools/kdp-r
 5. **Draft:** `node tools/kdp-robot/src/cli.mjs draft <book> <lang>`. A sign-in, captcha or unknown page stops it and prints what the owner does in the
    open window; the robot watches the page and carries on by itself once the owner has finished there (no key to press). A field it cannot find stops the run with the field's name; fix the selector in
    `tools/kdp-robot/src/pages/`, never by guessing.
+   **Bounded runs (Slice 43 I, owner 2026-11-21): one fix, one rerun, about 50k tokens per book.** A stopped run saves what it did and prints one
+   `STOP:` line (also the first line of the summary). Make at most one fix (the page maps in `src/pages/recorded/` are generated from the owner's
+   recording with `gen-maps`, never hand-edited) and one rerun; the robot refuses a third run until the owner passes `--reset-stops`. If the rerun
+   stops too, or the book has used about 50k tokens, stop and hand that one `STOP:` line to the owner. Never run `capture` again to hunt for controls;
+   a missing control means a new recording: `node tools/kdp-robot/src/cli.mjs record <book> <lang>` (the owner fills the title in by hand).
 6. **Read the summary** `tmp/kdp-robot/<book>-<lang>/summary.md` to the owner (fields old and new, files uploaded, KDP's own messages, e.g. the cover check),
    with the direct link it prints: `https://kdp.amazon.com/en_US/title-setup/paperback/<KDP id>/details`. Run `status` afterwards to confirm the title shows as a draft.
 7. Tell the owner: nothing is published; they press Publish on that page when they want it live.

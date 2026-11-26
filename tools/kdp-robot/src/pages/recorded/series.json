@@ -1,0 +1,59 @@
+{
+  "page": "series",
+  "source": "x-marks-the-treasure-en",
+  "kdpId": "4TK6278TV2X",
+  "controls": [
+    {
+      "key": "textbox|data-series-title",
+      "kind": "input",
+      "role": "textbox",
+      "name": "Series title",
+      "label": "Series title",
+      "id": "data-series-title",
+      "field": "data[series_title]",
+      "inDialog": false,
+      "order": 67,
+      "values": [
+        "Little Seagull's Big Adventures"
+      ]
+    },
+    {
+      "key": "radio|data[is_series_ordered]",
+      "kind": "check",
+      "role": "radio",
+      "name": "Un-ordered: Do not display numbers with the titles, as the books can be read in any order. Titles will be displayed in the order they appear. Example: The Sherlock Holmes series.",
+      "label": "Un-ordered: Do not display numbers with the titles, as the books can be read in any order. Titles will be displayed in the order they appear. Example: The Sherlock Holmes series.",
+      "id": "",
+      "field": "data[is_series_ordered]",
+      "inDialog": false,
+      "order": 68,
+      "values": [
+        "false"
+      ]
+    },
+    {
+      "key": "button|save-as-draft-button-announce",
+      "kind": "click",
+      "role": "button",
+      "name": "Save as draft",
+      "label": "",
+      "id": "save-as-draft-button-announce",
+      "field": "",
+      "inDialog": false,
+      "order": 73,
+      "values": []
+    },
+    {
+      "key": "button|Go to title setup",
+      "kind": "click",
+      "role": "button",
+      "name": "Go to title setup",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": true,
+      "order": 74,
+      "values": []
+    }
+  ]
+}

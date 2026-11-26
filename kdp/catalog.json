@@ -1,5 +1,5 @@
 {
-  "_note": "Only what no other file holds. Titles come from each book's titles.json (book.json for English), listing text from kdp/listings/<book>/<lang>.md. A book is publishable once languages is non-empty: then dino and contributors are required. price (USD) and finish are one value for every book, set only here (owner, 2026-11-20); a book may not override them. series is Slice 40.",
+  "_note": "Only what no other file holds. Titles come from each book's titles.json (book.json for English), listing text from kdp/listings/<book>/<lang>.md. A book is publishable once languages is non-empty: then dino and contributors are required. price (USD) and finish are one value for every book, set only here (owner, 2026-11-20); a book may not override them. series is null or { number, names: { <language>: name } } (Slice 43: Love from Seagull Island 1 and X Marks the Treasure! 2; the other books stay empty until the owner confirms a series). A contributor may carry a prefix (Ashkan Sirous: Mr.). ownerWrittenText: true marks a book whose story the owner wrote himself (Love from Seagull Island, X Marks the Treasure!, Freddy and the Slipper; owner, 2026-11-26): its listing answers Text \"None\" (check-listing.mjs requires it).",
   "price": 9.99,
   "finish": "glossy",
   "books": [
@@ -9,11 +9,12 @@
       "id": "freddy-and-the-slipper",
       "dino": "Freddy and the Slipper v10.hd.dino",
       "languages": ["en"],
+      "ownerWrittenText": true,
       "series": null,
       "contributors": [
         { "role": "Author", "name": "Elham Shafiei Gol" },
-        { "role": "Author", "name": "Ashkan Sirous" },
-        { "role": "Illustrator", "name": "Ashkan Sirous" }
+        { "role": "Author", "name": "Ashkan Sirous", "prefix": "Mr." },
+        { "role": "Illustrator", "name": "Ashkan Sirous", "prefix": "Mr." }
       ]
     },
     { "id": "gingerbread-man", "dino": "The Gingerbread Man v15.hd.dino", "languages": [], "series": null, "contributors": [] },
@@ -22,12 +23,22 @@
     { "id": "jack-and-the-beanstalk", "dino": "Jack and the Beanstalk v15.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "lion-and-mouse", "dino": "The Lion and the Mouse v15.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "little-red-hen", "dino": "The Little Red Hen v15.hd.dino", "languages": [], "series": null, "contributors": [] },
-    { "id": "love-from-seagull-island", "dino": "Love from Seagull Island v3.hd.dino", "languages": [], "series": null, "contributors": [] },
+    { "id": "love-from-seagull-island", "dino": "Love from Seagull Island v3.hd.dino", "languages": [], "ownerWrittenText": true, "series": { "number": 1, "names": { "en": "Little Seagull’s Big Adventures" } }, "contributors": [] },
     { "id": "red-riding-hood", "dino": "Little Red Riding Hood v15.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "three-little-pigs", "dino": "The Three Little Pigs v19.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "tortoise-and-hare", "dino": "The Tortoise and the Hare v15.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "town-mouse-country-mouse", "dino": "The Town Mouse and the Country Mouse v15.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "ugly-duckling", "dino": "The Ugly Duckling v15.hd.dino", "languages": [], "series": null, "contributors": [] },
-    { "id": "x-marks-the-treasure", "dino": "X Marks the Treasure! v16.hd.dino", "languages": [], "series": null, "contributors": [] }
+    {
+      "id": "x-marks-the-treasure",
+      "dino": "X Marks the Treasure! v16.hd.dino",
+      "languages": ["en"],
+      "ownerWrittenText": true,
+      "series": { "number": 2, "names": { "en": "Little Seagull’s Big Adventures" } },
+      "contributors": [
+        { "role": "Author", "name": "Ashkan Sirous", "prefix": "Mr." },
+        { "role": "Illustrator", "name": "Ashkan Sirous", "prefix": "Mr." }
+      ]
+    }
   ]
 }

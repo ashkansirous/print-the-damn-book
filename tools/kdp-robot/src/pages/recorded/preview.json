@@ -1,0 +1,31 @@
+{
+  "page": "preview",
+  "source": "x-marks-the-treasure-en",
+  "kdpId": "4TK6278TV2X",
+  "controls": [
+    {
+      "key": "link|Exit Print Previewer",
+      "kind": "click",
+      "role": "link",
+      "name": "Exit Print Previewer",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 39,
+      "values": []
+    },
+    {
+      "key": "textbox|Approve",
+      "kind": "click",
+      "role": "textbox",
+      "name": "Approve",
+      "label": "Approve",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 46,
+      "values": []
+    }
+  ]
+}

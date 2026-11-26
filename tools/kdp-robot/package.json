@@ -9,6 +9,8 @@
     "login": "node src/cli.mjs login",
     "status": "node src/cli.mjs status",
     "capture": "node src/cli.mjs capture",
+    "record": "node src/cli.mjs record",
+    "gen-maps": "node src/cli.mjs gen-maps",
     "draft": "node src/cli.mjs draft"
   },
   "dependencies": {

@@ -18,14 +18,21 @@ export async function runLogin() {
   }
 }
 
+/** Runs in the page: one {href, title, text, status} per top-level shelf row (see BOOKSHELF in pages/bookshelf.mjs). */
+export function readShelfRowsInPage(trs, sel) {
+  return trs.map((tr) => ({
+    href: tr.querySelector(sel.titleLinks)?.href ?? '',
+    title: tr.querySelector(sel.titleText)?.innerText ?? '',
+    text: tr.innerText ?? '',
+    status: tr.querySelector(sel.statusCell)?.innerText ?? '',
+  }));
+}
+
 export async function readBookshelfRows(page) {
   await page.goto(BOOKSHELF_URL);
   await ensureKdpPage(page);
   await pace();
-  return page.$$eval(BOOKSHELF.titleLinks, (links, statusCell) => links.map((a) => {
-    const row = a.closest('tr, [role="row"], .a-row') ?? a.parentElement;
-    return { href: a.href, title: a.textContent ?? '', text: row?.innerText ?? '', status: row?.querySelector(statusCell)?.innerText ?? '' };
-  }), BOOKSHELF.statusCell);
+  return page.$$eval(BOOKSHELF.rows, readShelfRowsInPage, BOOKSHELF);
 }
 
 /**

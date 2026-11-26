@@ -1,0 +1,27 @@
+{
+  "kdpId": "4TK6278TV2X",
+  "state": "draft",
+  "fields": {
+    "language": "ba118bf7fc9c1aed",
+    "title": "e205accb0e4c6f1d",
+    "subtitle": "a12982833818bfee",
+    "contributor-1": "c9222301346d01f0",
+    "contributor-2": "c9222301346d01f0",
+    "description": "978181810f82b44c",
+    "rights": "551afd04a1c5d281",
+    "keyword-1": "72e03573ce3bf679",
+    "keyword-2": "d1873eacb5afa74f",
+    "keyword-3": "c4a18a0f777e5c4c",
+    "keyword-4": "e43248e9575b5f41",
+    "keyword-5": "cb48a1a53dad5c64",
+    "keyword-6": "801e6e0ea9cadea2",
+    "keyword-7": "5a82fad5c95d3195",
+    "age-min": "6b86b273ff34fce1",
+    "age-max": "ef2d127de37b942b",
+    "explicit": "1ea442a134b2a184"
+  },
+  "files": {},
+  "readAt": "2026-11-20T21:07:57.815Z",
+  "stoppedRuns": 3,
+  "lastStop": "locator.click: Timeout 30000ms exceeded."
+}
