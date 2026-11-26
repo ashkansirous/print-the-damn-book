@@ -152,8 +152,34 @@ category's "Fiction" placement, a guessed control.
   both files uploaded with KDP's previewer accepting them, price 9.99; read from the robot's summary and `status`.
 - `[owner]` presses Publish.
 
+#### Built 2026-11-26
+
+*Built 2026-11-26, not merged; live checks below not yet run.* The full KDP draft run for X Marks the Treasure! English (draft
+4TK6278TV2X) was saved on 2026-11-26. The owner finished the series and previewer steps by hand under `record`; the recordings are in
+`kdp/recordings/`. Tests: 164/164 robot, 23/23 listing.
+
+#### Open points
+
+- Freddy and the Slipper's listing now fails `planDraft` until its first category (Foxes & Wolves) has a placement.
+- The catalog still holds one 9.99 price while the owner set prices per marketplace by hand (read from the live Pricing page).
+- The series write is blocked by the guard on "Submit updates" (owner's decision, see item C).
+- The `draft` command ignores `--content` and reads the worktree's `tmp/kdp-out`.
+- The listing categories differ from the owner's picks on KDP (Birds > Fiction, and Action & Adventure): update the X Marks listing to
+  the owner's picks after reading KDP's exact names.
+- The listing reading age may be 1-6 if the owner picked 6 (read live).
+
+#### Lines to lift later into CLAUDE.md
+
+- The robot never writes prices or territories (the owner's).
+- The recorder redacts passwords, one-time codes, emails and sign-in pages.
+
 #### Not yet verified
 
+- `[owner]` ISBN confirm clicks inside the dialog (needs the owner's go for a live robot run on X Marks English).
+- `[owner]` Pricing leaves territories and every price untouched, and does not record them as set (same go).
+- `[owner]` Categories tick the right placement box when two show "Fiction" (same go).
+- `[owner]` The bookshelf adopts the existing "Title: Subtitle" row (same go).
+- `[owner]` The stop counter counts stops before a kdpId exists (same go).
 - Done 2026-11-26 by the owner: Texts on the X Marks draft (4TK6278TV2X) set to "None" by hand (today's recording, event 82). The robot
   does not write the AI selects.
 - `[owner]` Categories already set by hand on 4TK6278TV2X are kept (`ownerCategoriesKept`: "Edit categories", or the modal button with no
@@ -164,5 +190,10 @@ category's "Fiction" placement, a guessed control.
 
 #### From review
 
+review read: `reviews/kdpx-high.md` findings 11/11; `reviews/kdpx-medium.md` findings 5/5.
+
+- High pass (`reviews/kdpx-high.md`): fixed 1-8, 10 and 11.
+- Skipped #9 (`reviews/kdpx-high.md`): "Two gaps from removing the white barcode box." - the cover barcode test belongs to the cover code (item L), not this slice.
+- Medium pass (`reviews/kdpx-medium.md`): fixed 1, 3 and 4.
 - Skipped #2 (`reviews/kdpx-medium.md`): "Series fields are never written even when SERIES.confirmed is true." - the slice fixes `SERIES.confirmed` at false and the series is the owner's to set; no write step is built.
 - Skipped #5 (`reviews/kdpx-medium.md`): "The stopped-run counter only counts errors thrown inside `runPages`." - a sign-in or captcha stop is the owner's step, not a robot failure, so the one-fix-one-rerun cap does not apply to it.
