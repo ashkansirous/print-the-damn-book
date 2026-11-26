@@ -129,10 +129,24 @@ export async function safeClick(locator, intended, allowed) {
   await pace();
 }
 
-export async function safeCheck(locator, intended, allowed) {
+/**
+ * Capture only: opens a dialog, list or choice so its markup can be saved; the caller closes it again. It never saves or sends
+ * anything. The Publish words are still refused in everything the control shows, but no allow-list applies (these controls are not
+ * ones the draft run uses). `capture` never calls it for "Assign ISBN" or any Save control.
+ */
+export async function safeOpen(locator, intended) {
+  const texts = await resolvedTexts(locator, intended);
+  assertNotPublish(texts.slice(1), []);
+  log(`capture: open "${intended}"`);
+  await locator.click();
+  await pace();
+}
+
+/** `options.force`: for KDP's styled checkboxes whose real input sits under an icon that takes the click (the guard above has already run). */
+export async function safeCheck(locator, intended, allowed, options = {}) {
   await assertControl(locator, intended, allowed);
   log(`check "${intended}"`);
-  await locator.check();
+  await locator.check(options);
   await pace();
 }
 

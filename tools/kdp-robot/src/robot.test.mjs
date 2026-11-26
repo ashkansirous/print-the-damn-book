@@ -21,10 +21,10 @@ test('Freddy listing parses into plain values', () => {
   const l = readListing(REPO_ROOT, 'freddy-and-the-slipper', 'en');
   assert.equal(l.title, 'Freddy and the Slipper');
   assert.equal(l.keywords.length, 7);
-  assert.deepEqual(l.categories[0], ["Children's Books", 'Animals', 'Foxes']);
-  assert.equal(l.ageMin, 3);
+  assert.deepEqual(l.categories[0], ["Children's Books", 'Animals', 'Foxes & Wolves']);
+  assert.equal(l.ageMin, 1); // owner, 2026-11-20: every book is ages 1 to 5. AI text below: the owner wrote Freddy's story (2026-11-26)
   assert.equal(l.ageMax, 5);
-  assert.deepEqual(l.ai, { text: true, images: true, translations: true });
+  assert.deepEqual(l.ai, { text: 'None', images: 'Entire work, with minimal or no editing', translations: 'None' });
   assert.equal(l.price, 9.99);
   assert.equal(l.pages, 34);
   assert.equal(l.contributors.length, 3);
@@ -37,6 +37,30 @@ test('fields cover every page and take price and finish from the catalog', () =>
   assert.equal(fields.find((f) => f.key === 'finish').value, 'Glossy');
   assert.equal(catalog.price, 9.99);
   assert.equal(fields.filter((f) => f.key.startsWith('keyword-')).length, 7);
+});
+
+const xMarks = catalog.books.find((b) => b.id === 'x-marks-the-treasure');
+
+test('Slice 43: X Marks the Treasure! keeps the owner keyword, its series, "Mr." and ages 1 to 5 in the fields', () => {
+  const listing = readListing(REPO_ROOT, 'x-marks-the-treasure', 'en');
+  assert.equal(listing.keywords[0], 'toddler bedtime picture book'); // the "(owner override)" mark is never typed into KDP
+  assert.ok(!listing.keywords.some((k) => /read[- ]?aloud|audio|sound/i.test(k)));
+  assert.equal(listing.subtitle, 'A Pirate Picture Book About a Seagull, a Rumbling Crew and a Pile of Pancakes');
+  const fields = buildFields(listing, { ...xMarks, price: catalog.price, finish: catalog.finish, lang: 'en' });
+  const value = (key) => fields.find((f) => f.key === key)?.value;
+  assert.equal(value('series'), 'Little Seagull’s Big Adventures');
+  assert.equal(value('series-number'), '2');
+  assert.equal(value('contributor-1'), 'Mr. Ashkan Sirous');
+  assert.equal(value('contributor-2'), 'Mr. Ashkan Sirous');
+  assert.deepEqual([value('age-min'), value('age-max')], ['1', '5']);
+  assert.equal(fields.filter((f) => f.key.startsWith('category-')).length, 3);
+});
+
+test('Slice 43: a book with no series has no series fields; the catalog gives every Ashkan Sirous row "Mr."', () => {
+  const fields = buildFields(readListing(REPO_ROOT, 'freddy-and-the-slipper', 'en'), { ...freddy, price: 9.99, finish: 'glossy', lang: 'en' });
+  assert.ok(!fields.some((f) => f.key.startsWith('series')));
+  assert.deepEqual(catalog.books.flatMap((b) => b.contributors).filter((c) => c.name === 'Ashkan Sirous').map((c) => c.prefix), ['Mr.', 'Mr.', 'Mr.', 'Mr.']);
+  assert.equal(catalog.books.find((b) => b.id === 'love-from-seagull-island').series.number, 1);
 });
 
 test('diff: same, changed and new', () => {
@@ -59,7 +83,7 @@ test('bookshelf rows: titles, formats, states, duplicates', () => {
   assert.equal(rows.length, 2);
   assert.deepEqual(rows[0], { kdpId: 'ABC1234567', format: 'paperback', title: 'Freddy and the Slipper', language: 'English', state: 'draft' });
   assert.equal(rows[1].state, 'in_review');
-  const { matched, unmatched } = matchRows(rows, catalog, () => 'freddy and the slipper');
+  const { matched, unmatched } = matchRows(rows, catalog, (book) => (book === 'freddy-and-the-slipper' ? 'freddy and the slipper' : book));
   assert.equal(matched.length, 1);
   assert.equal(matched[0].book, 'freddy-and-the-slipper');
   assert.equal(unmatched.length, 1);
@@ -131,16 +155,18 @@ test('a missing or ambiguous field stops the run and types nothing', async () =>
 test('draft plan: unknown book, language not in catalog, missing files', () => {
   assert.match(planDraft(REPO_ROOT, catalog, 'nope', 'en').errors[0], /not in kdp\/catalog/);
   assert.match(planDraft(REPO_ROOT, catalog, 'freddy-and-the-slipper', 'de').errors[0], /not set to publish/);
-  const plan = planDraft(REPO_ROOT, catalog, 'freddy-and-the-slipper', 'en');
+  // X Marks the Treasure! has a complete listing; Freddy's first category still has no placement, which the plan now refuses (review kdpx-high 10).
+  const plan = planDraft(REPO_ROOT, catalog, 'x-marks-the-treasure', 'en');
   assert.ok(plan.fields.length > 20);
   assert.ok(plan.errors.every((e) => e.startsWith('missing ')));
+  assert.match(planDraft(REPO_ROOT, catalog, 'freddy-and-the-slipper', 'en').errors[0], /names no placement/);
 });
 
 test('dry run writes a summary and opens no browser', async () => {
   const root = mkdtempSync(join(tmpdir(), 'kdp-dry-'));
-  mkdirSync(join(root, 'kdp', 'listings', 'freddy-and-the-slipper'), { recursive: true });
-  writeFileSync(join(root, 'kdp', 'listings', 'freddy-and-the-slipper', 'en.md'), readFileSync(join(REPO_ROOT, 'kdp', 'listings', 'freddy-and-the-slipper', 'en.md')));
-  const { summary, run } = await runDraft(root, catalog, 'freddy-and-the-slipper', 'en', { dryRun: true });
+  mkdirSync(join(root, 'kdp', 'listings', 'x-marks-the-treasure'), { recursive: true });
+  writeFileSync(join(root, 'kdp', 'listings', 'x-marks-the-treasure', 'en.md'), readFileSync(join(REPO_ROOT, 'kdp', 'listings', 'x-marks-the-treasure', 'en.md')));
+  const { summary, run } = await runDraft(root, catalog, 'x-marks-the-treasure', 'en', { dryRun: true });
   assert.ok(run.diff.every((d) => d.status === 'new'));
   assert.match(readFileSync(summary, 'utf8'), /dry run/);
   assert.equal(run.messages.length, 2);

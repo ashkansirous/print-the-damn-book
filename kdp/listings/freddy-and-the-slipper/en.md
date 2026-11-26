@@ -20,7 +20,7 @@ A Rhyming Picture Book About a Fox, a Grumbly Tummy and Dinnertime
 
 ## Series
 
-Dino Stories
+None (left empty until the owner confirms a series for this book; Slice 43)
 
 ## Authors and contributors
 
@@ -34,15 +34,15 @@ Freddy the fox is clever, kind and very sure he is not hungry. Dinner? No, thank
 
 But when the lights go out, a rumble-grumble starts under the sheet. It is Tummy, and Tummy wants to eat! Soon Freddy is tiptoeing through the dark kitchen and out into the garden, hoping for something tasty. What he finds there is brown, chewy and very much not what he expected.
 
-A funny, bouncy rhyming story for ages 3 to 5 about picky eating, listening to your tummy and the joy of a good dinner. Read it at bedtime, at the table or anywhere a little one needs a giggle. Along the way, children meet four shoe words: slipper, sandal, clog and flip-flop.
+A funny, bouncy rhyming story for ages 1 to 5 about picky eating, listening to your tummy and the joy of a good dinner. Read it at bedtime, at the table or anywhere a little one needs a giggle. Along the way, children meet four shoe words: slipper, sandal, clog and flip-flop.
 
 14 full-colour pictures, one for every page of the story.
 
 ## Keywords
 
-1. picky eater read aloud
+1. fussy eater kids tale
 2. bedtime tales for preschool
-3. funny tale ages 3-5
+3. funny tale toddlers ages 1-5
 4. kids who refuse meals
 5. toddler mealtime laughs
 6. shoe words vocabulary
@@ -50,21 +50,26 @@ A funny, bouncy rhyming story for ages 3 to 5 about picky eating, listening to y
 
 ## Categories
 
-Pick the closest match in KDP's own category list in the form (the list is only visible after login); these are the three to look for:
+The exact names in KDP's own category drop-downs (read from the categories dialog of a draft title on 2026-11-20, owner signed in):
 
-1. Children's Books > Animals > Foxes (or the nearest Animals sub-category)
-2. Children's Books > Humorous Stories (or the nearest Humor sub-category)
-3. Children's Books > Growing Up & Facts of Life > Health (or the nearest Daily Life / Mealtime sub-category)
+Each line ends with the placement box KDP shows after the leaf (after "|"). Foxes & Wolves showed no box when probed (a further
+drop-down may follow), so its placement is still to be read before this book is drafted.
+
+1. Children's Books > Animals > Foxes & Wolves
+2. Children's Books > Humor | General
+3. Children's Books > Growing Up & Facts of Life > Health | General
 
 ## Reading age
 
-Minimum 3, maximum 5 (the store catalog's `ageMin` and `ageMax`).
+Minimum 1, maximum 5 (owner, 2026-11-20: "the age range of the books are 3-5 ... but there is no reason for that. it can be from 1 years old"; KDP's minimum list offers Baby, 1 to 5, read from the captured details page).
 
 ## AI-generated content
 
-- Text: Yes
-- Images: Yes
-- Translations: Yes (the slice's approved decision: AI disclosure is Yes for text, images and translations)
+- Text: None (the owner wrote the story and refined it with AI; KDP calls that AI-assisted, which needs no disclosure; owner, 2026-11-26)
+- Images: Yes, Entire work, with minimal or no editing
+- Translations: None (English is the original language; other language editions answer Entire work, with minimal or no editing)
+
+Owner, 2026-11-21 (Slice 43 K): "I told the story, ai rewrote the sentences and then translated it and illustrated it"; told in English.
 
 ## Publishing rights
 

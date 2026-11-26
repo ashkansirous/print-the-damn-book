@@ -1,7 +1,7 @@
 // The Publish guard. The robot never publishes: a control whose name looks like publish/submit in any KDP UI language
 // is refused, and only the buttons in ALLOWED_BUTTONS may be clicked at all.
 
-const PUBLISH_WORDS = [
+export const PUBLISH_WORDS = [
   /publish/i, /submi(t|ss)/i, /ver(ö|o)ffentlich/i, /publi(er|ca|ez)/i, /pubblica/i, /publiceer/i, /publiceren/i, /publicer/i,
   /publicera/i, /julkaise/i, /opublikuj/i, /publikuj/i, /yay[ıi]nla/i, /опубликов/i, /отправить/i, /nach\s+pr(ü|u)fung/i,
   /soumettre/i, /enviar/i, /invia/i, /indienen/i, /absenden/i, /einreichen/i, /出版/, /公開/, /発行/, /发布/, /發布/, /提交/, /게시/, /نشر/,
@@ -12,6 +12,8 @@ export const ALLOWED_BUTTONS = [
   'Save and Continue',
   'Choose categories',
   'Save categories',
+  'Go to series setup',
+  'Add another category',
   'Create',
   'Paperback',
   'Create paperback',

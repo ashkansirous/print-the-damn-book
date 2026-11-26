@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { OwnerNeeded, ensureKdpPage, waitForOwner } from './browser.mjs';
 import { matchRows, parseBookshelfRows } from './bookshelf.mjs';
 import { hasIsbn, IsbnConflict } from './checks.mjs';
-import { chooseCategories, createTitle, decideIsbn, recordableFields, savePage } from './draft.mjs';
+import { createTitle, decideIsbn, recordableFields, savePage } from './draft.mjs';
 import { writeField } from './fieldio.mjs';
 import { PublishRefused } from './guard.mjs';
 import { kdpIdFromUrl } from './pages/bookshelf.mjs';
@@ -149,18 +149,6 @@ test('6: fill, select and radio on a control that resolves to Publish are refuse
   const fine = ctl({ aria: 'Book Title' });
   await writeField({ getByLabel: () => fine }, 'title', { kind: 'text', label: 'Book Title' }, 'Foxes');
   assert.deepEqual(fine.calls, ['fill']);
-});
-
-test('7: categories the catalog does not list are unticked first; listed ones stay', async () => {
-  const old = ctl({ aria: 'Dogs' });
-  const keep = ctl({ aria: 'Foxes' });
-  const leaf = ctl({ aria: 'Foxes' });
-  const dialog = { count: async () => 1, locator: () => ({ all: async () => [old, keep] }), getByText: (t) => ctl({ text: t }), getByRole: () => leaf };
-  const page = { getByRole: (role) => (role === 'dialog' ? dialog : ctl({ text: 'Choose categories' })) };
-  await chooseCategories(page, [['Children', 'Foxes']]);
-  assert.deepEqual(old.calls, ['uncheck']);
-  assert.deepEqual(keep.calls, []);
-  assert.deepEqual(leaf.calls, ['check']);
 });
 
 test('9: the KDP id is recorded as soon as the title exists, before any save', async () => {

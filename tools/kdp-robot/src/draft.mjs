@@ -1,23 +1,25 @@
 // `draft <book> <lang>`: plan (pure, tested) and the browser run that saves one paperback as a KDP draft. Never publishes.
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+import { checkListing } from '../../../.claude/skills/kdp-listing/listing-limits.mjs';
 import { join, resolve, sep } from 'node:path';
 import { checkDefaults, checkEntryShape, findBook, kdpOutFolder } from './catalog.mjs';
 import { buildFields, changedOnly, diffFields, fieldHashes, hashValue } from './fields.mjs';
-import { looksLikePublish, PublishRefused } from './guard.mjs';
-import { readListing } from './repo.mjs';
+import { listingPath, readListing } from './repo.mjs';
 import { nextState, readState, writeState } from './state.mjs';
-import { writeSummary } from './summary.mjs';
-import { clickAction, clickButton, ensureKdpPage, guardField, log, openSession, pace, safeCheck, safeClick, safeUncheck, shot, sleep } from './browser.mjs';
+import { MAX_STOPPED_RUNS, stopLineOf, writeSummary } from './summary.mjs';
+import { clickAction, clickButton, ensureKdpPage, guardField, log, openSession, pace, safeCheck, safeClick, shot, sleep } from './browser.mjs';
 import { capturePage, captureDir } from './capture.mjs';
 import { BOOKSHELF, BOOKSHELF_URL, CONTROL_CONFIRMED, PAGE as BOOKSHELF_PAGE, kdpIdFromUrl, titleUrl } from './pages/bookshelf.mjs';
-import { CATEGORY, CONTRIBUTOR, DETAILS_SPECS, PAGE as DETAILS_PAGE, PRIMARY_AUTHOR, contributorRowSelector, contributorSpecs, keywordSpec, splitName } from './pages/details.mjs';
+import { CATEGORY, CONTRIBUTOR, DETAILS_SPECS, SERIES, PAGE as DETAILS_PAGE, PRIMARY_AUTHOR, contributorRowSelector, contributorSpecs, keywordSpec, splitName } from './pages/details.mjs';
 import { CONTENT, CONTENT_SPECS, PAGE as CONTENT_PAGE } from './pages/content.mjs';
-import { PRICING_SPECS, PAGE as PRICING_PAGE, formatPrice } from './pages/pricing.mjs';
+import { PRICING_SPECS, PAGE as PRICING_PAGE } from './pages/pricing.mjs';
+
+const isOwnerPricingKey = (key) => key.startsWith('price-') || key === 'territories';
 import { FieldNotFound, readField, readFields, single, writeField } from './fieldio.mjs';
 import { readBookshelfRows } from './commands.mjs';
 import { matchRows, parseBookshelfRows } from './bookshelf.mjs';
 import {
-  assertEditable, baselineOf, fileHash, hasIsbn, IdConflict, isbnPlan, judgeFileCheck, judgeSave, keepKdpId, liveCategories, liveTrim, needsUpload,
+  assertEditable, baselineOf, fileHash, hasIsbn, IdConflict, isbnPlan, judgeFileCheck, judgeSave, keepKdpId, KdpNoSignal, liveCategories, liveTrim, needsUpload,
   requireConfirmedPages, requireKdpId, singleRow, StoppedAtUnconfirmedPage, stateForTitle, waitForVerdict,
 } from './checks.mjs';
 
@@ -40,6 +42,8 @@ export function planDraft(root, catalog, book, lang) {
   // The catalog checks that need no other book's folders: the price and finish, and this book's shape. Any error stops the run.
   const catalogErrors = [...checkDefaults(catalog), ...checkEntryShape(entry, { bookIds: new Set([entry.id]) }), ...primaryAuthorErrors(entry)];
   if (catalogErrors.length) return { errors: catalogErrors };
+  const listingErrors = listingProblems(root, entry, lang);
+  if (listingErrors.length) return { errors: listingErrors };
   const listing = readListing(root, book, lang);
   const folder = join(root, kdpOutFolder(entry, lang));
   const files = { interior: join(folder, 'interior.pdf'), cover: join(folder, 'cover.pdf') };
@@ -48,8 +52,22 @@ export function planDraft(root, catalog, book, lang) {
   if (outside.length) return { errors: outside.map((f) => `${f} is outside tmp/kdp-out; the upload is refused`) };
   const missing = Object.values(files).filter((f) => !existsSync(f));
   for (const f of missing) errors.push(`missing ${f}: run the kdp-build skill first`);
-  const priced = { ...entry, price: catalog.price, finish: catalog.finish }; // one price and one finish for every book
+  const priced = { ...entry, price: catalog.price, finish: catalog.finish, lang }; // one price and one finish for every book
   return { entry, listing, files, fields: buildFields(listing, priced), folder, errors };
+}
+
+/**
+ * The kdp-listing checker's verdict, before any field is built (review kdpx-high 5 and 10): a missing or old-format AI section never
+ * becomes "No", and a category line with no "| placement" stops here, not after the categories dialog is open.
+ */
+export function listingProblems(root, entry, lang) {
+  const file = listingPath(root, entry.id, lang);
+  if (!existsSync(file)) return [`no listing at ${file}: write it with the kdp-listing skill first`];
+  const found = checkListing(readFileSync(file, 'utf8'), { ownerWritten: entry.ownerWrittenText === true });
+  if (found.length) return found.map((e) => `listing ${entry.id}/${lang}: ${e}`);
+  const lines = readListing(root, entry.id, lang).categoryPlacements;
+  const bare = lines.flatMap((p, i) => (p ? [] : [`listing ${entry.id}/${lang}: category ${i + 1} names no placement (write "| Fiction" or the box KDP shows after the leaf)`]));
+  return bare;
 }
 
 /** KDP's "Primary Author" boxes take the first contributor, so it must be an Author; checked here so a dry run and the plan see it, not mid-run. */
@@ -74,10 +92,13 @@ function contributorTarget(field) {
   return { specs: contributorSpecs(i - 1), row: i - 1 };
 }
 
-async function readContributor(page, field) {
+export async function readContributor(page, field) {
   const { specs, row } = contributorTarget(field);
   try {
-    const name = `${await readField(page, 'first', specs.first)} ${await readField(page, 'last', specs.last)}`;
+    // The prefix is compared only when the catalog defines one: otherwise an owner-typed "Dr." would read as a change.
+    const prefix = field.prefix ? await readField(page, 'prefix', specs.prefix) : '';
+    const parts = [prefix, await readField(page, 'first', specs.first), await readField(page, 'last', specs.last)];
+    const name = parts.map((p) => p.trim()).filter(Boolean).join(' ');
     if (row === null) return name;
     const role = await readField(page, 'role', specs.role);
     return role.toLowerCase() === field.role.toLowerCase() ? name : `${name} [role: ${role}]`;
@@ -101,8 +122,9 @@ async function readDetailsLive(page, fields) {
 }
 
 async function readCategoriesLive(page, fields) {
-  const selected = await page.locator(CATEGORY.selected).allInnerTexts();
-  return liveCategories(selected.map((t) => t.trim()).filter(Boolean), fields.filter(isKind('category-')));
+  const texts = await page.locator(CATEGORY.selected).allInnerTexts();
+  const paths = texts.flatMap((t) => t.split('\n')).map((l) => l.trim()).filter((l) => CATEGORY.pathLine.test(l)); // a pick shows as "Books › Children's Books › Animals › Birds"
+  return liveCategories(paths, fields.filter(isKind('category-')));
 }
 
 /** After the save, a category counts as set only when the page shows it; the rest is marked so state never records it. */
@@ -125,51 +147,90 @@ async function ensureContributorRow(page, row) {
   throw new FieldNotFound(`contributor row #${row + 1}`, await page.locator(contributorRowSelector(row)).count());
 }
 
-async function fillContributor(page, field) {
+export async function fillContributor(page, field) {
   const { specs, row } = contributorTarget(field);
   if (row !== null) await ensureContributorRow(page, row);
-  const { first, last } = splitName(field.value);
+  const { first, last } = splitName(field.name);
+  if (field.prefix) await writeField(page, `${field.key} prefix`, specs.prefix, field.prefix); // never blank a prefix the owner typed (review kdpx-high 8)
   await writeField(page, `${field.key} first name`, specs.first, first);
   await writeField(page, `${field.key} last name`, specs.last, last);
   if (row !== null) await writeField(page, `${field.key} role`, specs.role, field.role);
 }
 
-/** One category: each branch of the path by exact text, then exactly one checkbox with the exact leaf name, ticked. */
-async function pickCategory(dialog, path) {
-  const name = path.join(' > ');
-  for (const part of path.slice(0, -1)) await safeClick(await single(dialog.getByText(part, { exact: true }), `category ${name}: "${part}"`), part, [part]);
-  const leaf = await single(dialog.getByRole('checkbox', { name: path.at(-1), exact: true }), `category ${name}`);
-  await safeCheck(leaf, path.at(-1), [path.at(-1)]);
-  if (!(await leaf.isChecked())) throw new FieldNotFound(`category ${name} (not ticked after the click)`, 0);
-}
-
-const TICKED_BOXES = '[role="checkbox"][aria-checked="true"], input[type="checkbox"]:checked';
-
-async function boxName(box) {
-  const label = await box.getAttribute('aria-label').catch(() => null);
-  return (label ?? (await box.evaluate((el) => el.closest('label')?.innerText ?? el.parentElement?.innerText ?? '').catch(() => ''))).trim();
-}
-
-/**
- * A ticked category the catalog does not list is unticked first (through the guard), so the old pick never stays beside the new one.
- * The labels kept come from the catalog only. A page-named box with Publish or Submit text stops the run; the page's own name is
- * never an exemption (guard `refusal`).
- */
-export async function untickUnlisted(dialog, categories) {
-  const listed = new Set(categories.map((p) => p.at(-1)));
-  for (const box of await dialog.locator(TICKED_BOXES).all()) {
-    const name = await boxName(box);
-    if (listed.has(name)) continue;
-    if (looksLikePublish(name)) throw new PublishRefused(name.slice(0, 80), 'a ticked box on the page looks like a Publish or Submit control');
-    await safeUncheck(box, 'category', [name]);
+/** Each pick adds the next drop-down a moment later (the live run of 2026-11-20 found it missing right after the click): wait for it, then stop with its name. */
+async function waitForSelect(dialog, index, what) {
+  const until = Date.now() + CATEGORY.selectWaitMs;
+  while ((await dialog.locator(CATEGORY.select).count()) <= index) {
+    if (Date.now() >= until) throw new FieldNotFound(what, 0);
+    await sleep(100);
   }
 }
 
-export async function chooseCategories(page, categories) {
+/**
+ * One category path: KDP's dialog is a cascade of drop-downs (capture 2026-11-20: select react-aui-0 "Children's Books", the next
+ * "Animals", the next "Birds"); each pick adds the next select until a leaf. `base` is the index of this picker's first select
+ * (a second category adds its own selects after the first one's). Each select goes through the guard; the option is picked by exact label.
+ * Returns the index where the next picker starts.
+ */
+async function pickCategoryPath(dialog, path, placement, base) {
+  const name = path.join(' > ');
+  for (const [level, label] of path.entries()) {
+    await waitForSelect(dialog, base + level, `category ${name}: the drop-down for "${label}"`);
+    const select = dialog.locator(CATEGORY.select).nth(base + level);
+    await guardField(select, `category ${name}: ${label}`, [CATEGORY.selectName]);
+    await select.selectOption({ label }); // Playwright docs: /microsoft/playwright, Locator.selectOption (exact option label)
+    await pace();
+  }
+  await tickPlacement(dialog, dialog.locator(CATEGORY.select).nth(base + path.length - 1), name, placement);
+  return base + path.length;
+}
+
+/**
+ * The placement box of the picker just filled (review kdpx-high 6). Earlier pickers' boxes stay in the dialog, so a second "Fiction"
+ * matches twice: the lookup is scoped to the leaf drop-down's own row (its nearest ancestor holding a checkbox), the newest match is
+ * taken, and a box that is already ticked is never taken (a leaf that offers no such box must not tick an earlier picker's).
+ */
+async function placementBox(dialog, leaf, name, placement) {
+  const row = leaf.locator('xpath=ancestor::*[.//input[@type="checkbox"]][1]'); // Playwright docs: /microsoft/playwright, xpath locator
+  const scope = (await row.count()) === 1 ? row : dialog;
+  const boxes = scope.getByRole('checkbox', { name: placement, exact: true });
+  const found = await boxes.count();
+  if (found === 0) throw new FieldNotFound(`category ${name}: the "${placement}" placement`, 0);
+  const box = boxes.last();
+  if (await box.isChecked()) throw new FieldNotFound(`category ${name}: the "${placement}" placement (the only box found is already ticked, so it belongs to another category)`, found);
+  return box;
+}
+
+/**
+ * A pick counts only once a placement is ticked: the leaf shows "Placement" with Fiction and Nonfiction boxes, and the dialog says
+ * "0 out of 3 category placements selected" until one is ticked (live check 2026-11-20: the first draft run picked three paths, saved
+ * the dialog and no category was kept). The boxes differ per leaf (Birds: Fiction, Nonfiction; Travel: Fiction; Explore the World:
+ * Atlases, General), so the listing names the placement after a "|" on each category line. Ticked right after the path, while only
+ * that picker's boxes are visible.
+ */
+async function tickPlacement(dialog, leaf, name, placement) {
+  if (!placement) throw new Error(`category ${name}: the listing names no placement (write "| Fiction" or the box KDP shows after the leaf)`);
+  const box = await placementBox(dialog, leaf, name, placement);
+  await safeCheck(box, `category ${name}: ${placement}`, [placement], { force: true }); // the icon over the input takes the click (live run 2026-11-20)
+  if (!(await box.isChecked())) throw new FieldNotFound(`category ${name}: the "${placement}" placement (not ticked after the click)`, 0);
+  await pace();
+}
+
+/** The dialog opens with "Select one" in its first drop-down on a title with no categories; a title that has some is left to the owner (the robot never deletes a pick). */
+async function assertNoCategoriesYet(dialog) {
+  const shown = (await dialog.locator(CATEGORY.select).first().locator('option:checked').innerText()).trim();
+  if (shown !== CATEGORY.emptyOption) throw new Error(`the categories dialog already shows "${shown}" as a first pick; the robot never deletes a pick, so change the categories on KDP, then run draft again`);
+}
+
+export async function chooseCategories(page, categories, placements = []) {
   await clickButton(page, CATEGORY.openButton);
   const dialog = await single(page.getByRole(CATEGORY.dialog), 'category dialog');
-  await untickUnlisted(dialog, categories);
-  for (const path of categories) await pickCategory(dialog, path);
+  await assertNoCategoriesYet(dialog);
+  let base = 0;
+  for (const [i, path] of categories.entries()) {
+    if (i > 0) await clickButton(page, CATEGORY.addButton);
+    base = await pickCategoryPath(dialog, path, placements[i], base);
+  }
   await clickButton(page, CATEGORY.saveButton);
 }
 
@@ -201,6 +262,37 @@ function collectMessages(ctx, alerts) {
   for (const a of alerts) if (!ctx.messages.includes(a)) ctx.messages.push(a);
 }
 
+const VISIBLE_PROBLEMS = '[role="alert"]:visible, .a-alert-inline-error:visible, .a-alert-error:visible, .a-form-error:visible, [id$="-error"]:visible';
+
+/** Every visible message, invalid field and open dialog on the whole page, one short line each; empty texts and repeats are dropped. */
+export function describePage({ texts = [], invalid = [], dialogs = [] }) {
+  const clean = (t) => String(t).replace(/\s+/g, ' ').trim().slice(0, 200);
+  const lines = [
+    ...texts.map((t) => clean(t)),
+    ...invalid.map((id) => `invalid field ${id}`),
+    ...dialogs.map((t) => clean(t)).filter(Boolean).map((t) => `open dialog: ${t}`),
+  ].filter(Boolean);
+  return [...new Set(lines)];
+}
+
+/** After a save click with no marker: what the whole page shows (inline errors, invalid fields, an open dialog) goes into the error and the summary, with a full-page screenshot. */
+async function explainNoSignal(page, ctx, pageName, error) {
+  try {
+    const found = describePage({
+      texts: await page.locator(VISIBLE_PROBLEMS).allInnerTexts(),
+      invalid: await page.locator('[aria-invalid="true"]').evaluateAll((els) => els.map((el) => el.id || el.name)),
+      dialogs: await page.locator('[role="dialog"]:visible').allInnerTexts(),
+    });
+    const where = join(ctx.dir, 'shots', `${pageName}-after-save-full.png`);
+    await page.screenshot({ path: where, fullPage: true });
+    ctx.screens.push(where);
+    collectMessages(ctx, found.map((l) => `after the save click: ${l}`));
+    error.message += `. The page shows: ${found.join(' | ') || 'no visible alert, invalid field or dialog'} (full-page screenshot ${where})`;
+  } catch (e) {
+    log(`could not read the page after the failed save: ${e.message}`);
+  }
+}
+
 /** Save as Draft counts only when KDP shows a saved marker; an error alert or no marker stops the run with KDP's words. */
 export async function savePage(page, pageName, ctx, diff = null) {
   const baseline = baselineOf(judgeSave, await readSettled(page, ctx)); // a marker already on the page never counts as this save; read with no overlay
@@ -212,6 +304,7 @@ export async function savePage(page, pageName, ctx, diff = null) {
       pollMs: ctx.pollMs, baseline, onMessages: (a) => collectMessages(ctx, a),
     });
   } catch (e) {
+    if (e instanceof KdpNoSignal) await explainNoSignal(page, ctx, pageName, e);
     try {
       await noteIdAfterFailure(page, ctx); // the save may have created the title even though KDP's verdict was an error or nothing
     } catch (conflict) {
@@ -317,13 +410,16 @@ async function shelfRowOf(page, plan, { book, lang }) {
   const raw = await readBookshelfRows(page);
   const rows = parseBookshelfRows(raw);
   const title = plan.fields.find((f) => f.key === 'title')?.value;
-  const { matched } = matchRows(rows, { books: [{ id: book, languages: [lang] }] }, () => title);
-  return { raw, rows, row: singleRow(matched, `${book} ${lang}`) };
+  const { matched, doubtful } = matchRows(rows, { books: [{ id: book, languages: [lang] }] }, () => title, { strict: true });
+  return { raw, rows, doubtful, row: singleRow(matched, `${book} ${lang}`) };
 }
 
 /** The one bookshelf row of this title (title + language + paperback) fixes the id; its state must be draft or unknown. */
 export async function settleTitle(page, plan, ctx, { book, lang }) {
-  const { raw, rows, row } = await shelfRowOf(page, plan, { book, lang });
+  const { raw, rows, row, doubtful } = await shelfRowOf(page, plan, { book, lang });
+  if (!row && !ctx.kdpId && doubtful.length > 0) {
+    throw new Error(`the bookshelf has ${doubtful.length} paperback row(s) that look like ${book} ${lang} (${doubtful.map((r) => `"${r.title}" ${r.kdpId}`).join(', ')}) but the shelf shows no language, or the title only starts with this one; the robot never edits a title it cannot tell is this one. If one of them is it, put its id in kdp/state as kdpId; otherwise rename it on KDP`);
+  }
   if (!row && !ctx.kdpId && !CONTROL_CONFIRMED.titleLinks && raw.length > 0) {
     throw new Error(`the bookshelf shows ${raw.length} title link(s) but none is this title, and kdp/state has no id for ${book} ${lang}. The bookshelf title-link selector is not confirmed against a non-empty shelf yet, so the robot cannot tell a missing title from a selector miss and creates nothing. Find this title on the bookshelf and put its id in kdp/state as kdpId, or empty the bookshelf`);
   }
@@ -338,15 +434,44 @@ async function runDetails(page, plan, state, ctx) {
   const diff = diffFields(fields, await readDetailsLive(page, fields));
   const todo = changedOnly(diff);
   log(`details: ${todo.length} of ${diff.length} fields to set`);
-  for (const f of todo.filter((x) => !x.key.startsWith('category-'))) {
+  seriesAllowed(todo, ctx); // false until the series-setup page is captured: the series fields are skipped and said so
+  for (const f of todo.filter((x) => !isKind('category-')(x) && !isSeriesField(x))) {
     await applyDetail(page, f);
     await pace();
   }
-  const setCategories = categoriesAllowed(todo, ctx);
-  if (setCategories) await chooseCategories(page, plan.listing.categories);
+  const setCategories = !(await ownerCategoriesKept(page, todo, ctx)) && categoriesAllowed(todo, ctx);
+  if (setCategories) await chooseCategories(page, plan.listing.categories, plan.listing.categoryPlacements);
   await savePage(page, 'details', ctx, diff);
   if (setCategories) await verifyCategories(page, todo, ctx);
   return diff;
+}
+
+/**
+ * A title that already has categories shows "Edit categories" instead of "Choose categories" (owner's recording 2026-11-21). Those
+ * picks are the owner's and the robot never deletes a pick, so it leaves them, marks them unverified and says so. Returns true then.
+ */
+export async function ownerCategoriesKept(page, todo, ctx) {
+  const wanted = todo.filter(isKind('category-'));
+  if (!wanted.length) return false;
+  const button = page.locator('#categories-modal-button');
+  // Run 2026-11-26 22:12 still clicked "Choose categories" after the label read: the label is searched (not anchored) in the text and the
+  // aria-label, and a page with the modal button but no "Choose categories" button counts as owner-set too.
+  const label = ((await button.first().textContent({ timeout: 5000 }).catch(() => '')) ?? '').trim();
+  const aria = (await button.first().getAttribute('aria-label', { timeout: 1000 }).catch(() => '')) ?? '';
+  const present = await button.count().catch(() => 0);
+  const choose = await page.getByRole('button', { name: CATEGORY.openButton }).count().catch(() => 0);
+  if (!categoriesOwnerSet({ label: `${label} ${aria}`, present, choose })) return false;
+  for (const f of wanted) f.verified = false;
+  collectMessages(ctx, ['not set: categories (the title already has categories, set by the owner; the robot never changes them)']);
+  log('categories: owner-set picks kept, dialog not opened');
+  return true;
+}
+
+/** True when the page shows the owner's picks: an "Edit categories" label, or the modal button with no "Choose categories" button. */
+export function categoriesOwnerSet({ label, present, choose }) {
+  if (/edit categories/i.test(label)) return true;
+  if (/choose categories/i.test(label)) return false;
+  return present > 0 && choose === 0;
 }
 
 /**
@@ -360,6 +485,22 @@ export function categoriesAllowed(todo, ctx) {
   if (CATEGORY.confirmed && ctx.kdpId) return true;
   for (const f of wanted) f.verified = false;
   collectMessages(ctx, [CATEGORY.confirmed ? 'not set: categories wait for the first save of the title (the button is disabled before it)' : 'not set: categories dialog not captured']);
+  return false;
+}
+
+const isSeriesField = (f) => f.key === 'series' || f.key === 'series-number';
+
+/**
+ * KDP's series flow (capture 2026-11-20): "Add series details" > "Create series" > "Main content" > "Go to series setup", which saves the
+ * title and opens a series-setup page that a read-only capture cannot reach. Until that page is captured, series fields are not
+ * written: they are marked unset (kdp/state never records them) and the summary says so. Returns whether they may be written.
+ */
+export function seriesAllowed(todo, ctx) {
+  const wanted = todo.filter(isSeriesField);
+  if (!wanted.length) return false;
+  if (SERIES.confirmed) return true;
+  for (const f of wanted) f.verified = false;
+  collectMessages(ctx, ['not set: series (KDP\'s series-setup button "Submit updates" matches the Publish guard, so the robot never presses it; the owner sets the series)']);
   return false;
 }
 
@@ -386,19 +527,23 @@ async function chooseCoverOption(page) {
 
 /** The confirm dialog of the assignment, when KDP shows one within a few seconds; its button goes through the guard like every click. */
 async function confirmIsbn(page, ctx) {
-  const confirm = page.getByRole('button', { name: CONTENT.isbnConfirmButton, exact: true });
+  const label = ctx.isbnConfirmButton ?? CONTENT.isbnConfirmButton;
+  if (!label) return;
+  // The page's own "Assign ISBN" button stays behind the modal and has the same label: look and click inside the dialog only.
+  const dialog = page.locator(CONTENT.dialogScope);
+  const confirm = dialog.getByRole('button', { name: label, exact: true });
   const until = Date.now() + (ctx.isbnConfirmWaitMs ?? CONTENT.isbnConfirmWaitMs);
   while ((await confirm.count()) === 0) {
     if (Date.now() >= until) return;
     await sleep(ctx.pollMs ?? 250);
   }
-  await clickButton(page, CONTENT.isbnConfirmButton);
+  await clickButton(dialog, label);
 }
 
 async function waitForIsbn(page, ctx) {
   const started = Date.now();
   while (!hasIsbn((await readSettled(page, ctx)).bodyText)) { // never a number read under the overlay
-    if (Date.now() - started > (ctx.isbnTimeoutMs ?? CONTENT.isbnTimeoutMs)) throw new Error('no 978/979 ISBN shows after "Assign me a KDP ISBN" and its confirm step; nothing was recorded. Look at the title on KDP before running draft again');
+    if (Date.now() - started > (ctx.isbnTimeoutMs ?? CONTENT.isbnTimeoutMs)) throw new Error('no 978/979 ISBN shows after "Assign ISBN" and its confirm step; nothing was recorded. Look at the title on KDP before running draft again');
     await pace();
   }
 }
@@ -412,8 +557,8 @@ export async function assignIsbn(page, ctx) {
 }
 
 async function chooseTrimSize(page) {
-  await safeClick(page.getByRole('button', { name: CONTENT.trimSizeButton }).first(), 'trim size', [CONTENT.trimSizeButton]);
-  await safeClick(page.getByText(CONTENT.trimOption).first(), 'trim size option', [CONTENT.trimOption]);
+  await safeClick(page.getByRole('combobox', { name: CONTENT.trimSizeCombobox }), 'trim size', [CONTENT.trimShown]);
+  await safeClick(page.getByRole('option', { name: CONTENT.trimOption }), 'trim size option', [CONTENT.trimShown]);
 }
 
 /** 'assign' | 'skip'. The ISBN plan is asked only when the isbn row is not 'same', so an ISBN text the regex misses never blocks a price-only run. */
@@ -429,7 +574,12 @@ async function applyContentField(page, f, isbn, ctx) {
   if (f.key === 'isbn') {
     if (isbn === 'assign') await assignIsbn(page, ctx);
   } else if (f.key === 'trim') await chooseTrimSize(page);
-  else await writeField(page, f.key, CONTENT_SPECS[f.key], f.value);
+  else if (!CONTENT_SPECS[f.key]) {
+    // The three AI answers (Texts, Images, Translations) have no map of their own: the owner set them by hand (recording 2026-11-21).
+    f.verified = false;
+    collectMessages(ctx, [`not set: ${f.label} (left as set on KDP by the owner)`]);
+    return;
+  } else await writeField(page, f.key, CONTENT_SPECS[f.key], f.value);
   await pace();
 }
 
@@ -463,15 +613,23 @@ export async function uploadFiles(page, plan, state, ctx) {
   return uploaded;
 }
 
-async function runPricing(page, plan, state, ctx) {
+export async function runPricing(page, plan, state, ctx) {
   const fields = plan.fields.filter((f) => f.page === 'pricing');
   const live = await readFields(page, fields.map((f) => f.key), PRICING_SPECS);
   const diff = diffFields(fields, live);
-  for (const f of changedOnly(diff)) {
-    await writeField(page, f.key, PRICING_SPECS[f.key], f.key === 'price-us' ? formatPrice(f.value) : f.value);
+  // Owner, 2026-11-26: "take my numbers". Prices and the territories choice are the owner's on KDP; the robot only reads them back.
+  // A row left alone is marked not set, so kdp/state never records a value KDP does not hold (review kdpx-high 2).
+  const changed = changedOnly(diff);
+  const skipped = changed.filter((f) => isOwnerPricingKey(f.key));
+  for (const f of skipped) f.verified = false;
+  if (skipped.length) collectMessages(ctx, skipped.map((f) => `not set: ${f.label} (left as the owner set it on KDP: "${f.old}")`));
+  const writable = changed.filter((f) => !isOwnerPricingKey(f.key));
+  for (const f of writable) {
+    await writeField(page, f.key, PRICING_SPECS[f.key], f.value);
     await pace();
   }
-  await savePage(page, 'pricing', ctx);
+  if (writable.length > 0) await savePage(page, 'pricing', ctx);
+  else log('pricing: nothing to change (prices are the owner\'s, never written), not saved');
   return diff;
 }
 
@@ -480,7 +638,15 @@ async function liveState(page, ctx) {
   ctx.state = stateForTitle(parseBookshelfRows(await readBookshelfRows(page)), ctx.kdpId);
 }
 
-export async function runDraft(root, catalog, book, lang, { dryRun = false, pages = START_PAGES } = {}) {
+/** Slice 43 I: after MAX_STOPPED_RUNS stopped runs in a row the book goes to the owner; no further browser run until --reset-stops. */
+export function assertRunsLeft(state, resetStops = false) {
+  const stopped = state?.stoppedRuns ?? 0;
+  if (stopped >= MAX_STOPPED_RUNS && !resetStops) {
+    throw new Error(`this book stopped ${stopped} times in a row (last: ${state.lastStop ?? 'unknown'}); one fix and one rerun are used up: hand this line to the owner, who reruns with --reset-stops`);
+  }
+}
+
+export async function runDraft(root, catalog, book, lang, { dryRun = false, pages = START_PAGES, resetStops = false, browser = browserRun } = {}) {
   // Only the bookshelf map is needed to start; each later page is checked when the run reaches it (`runSteps`).
   if (!dryRun) requireConfirmedPages(pages);
   const plan = planDraft(root, catalog, book, lang);
@@ -495,7 +661,9 @@ export async function runDraft(root, catalog, book, lang, { dryRun = false, page
     run.messages = plan.errors.map((e) => `dry run: ${e}`);
     return { summary: writeSummary(root, run), run };
   }
-  return browserRun(root, plan, state, run);
+  assertRunsLeft(state, resetStops);
+  run.previousStops = resetStops ? 0 : (state?.stoppedRuns ?? 0); // --reset-stops gives the "one fix, one rerun" budget back
+  return browser(root, plan, state, run);
 }
 
 async function browserRun(root, plan, state, run) {
@@ -544,11 +712,32 @@ export const DRAFT_STEPS = [
  * the page is captured (read-only) and the run stops, telling the owner to confirm that map. The page after "details" only exists
  * once the draft is saved, so its capture can only be made here.
  */
+/**
+ * KDP's Content and Pricing pages are drawn by script after the page loads: run 2026-11-26 read Content while it still showed only a
+ * spinner and found no AI question. Each later page waits until one control from its capture is in the page (60 s, then a clear stop).
+ */
+// Run 3 (2026-11-26): an "attached" wait passed at once while the spinner still showed, so the wait is for a visible control.
+// KDP's radios are styled inputs; their label is what shows, so the content page waits for the label that holds the Yes radio.
+export const PAGE_READY = { content: 'label:has(input[name="has-ai-content"][value="yes"])', pricing: '#price-input-usd' };
+export const PAGE_READY_TIMEOUT_MS = 60 * 1000;
+
+export async function waitForPageReady(page, step) {
+  const css = PAGE_READY[step.page.name];
+  const target = css && typeof page.locator === 'function' ? page.locator(css)?.first?.() : null;
+  if (typeof target?.waitFor !== 'function') return; // the unit tests' fake pages have no waitFor
+  try {
+    await target.waitFor({ state: 'visible', timeout: PAGE_READY_TIMEOUT_MS });
+  } catch {
+    throw new Error(`the ${step.page.name} page did not finish loading within ${PAGE_READY_TIMEOUT_MS / 1000} s (no ${css}); nothing was typed on it`);
+  }
+}
+
 export async function runSteps(page, plan, state, ctx, run, { steps = DRAFT_STEPS, capture = capturePage } = {}) {
   for (const [i, step] of steps.entries()) {
     if (i > 0) {
       await page.goto(titleUrl(ctx.kdpId, step.page.name));
       await ensureKdpPage(page);
+      await waitForPageReady(page, step);
     }
     if (!step.page.confirmed) {
       const { html } = await capture(page, captureDir(ctx.root), `draft-${step.page.name}`);
@@ -560,14 +749,18 @@ export async function runSteps(page, plan, state, ctx, run, { steps = DRAFT_STEP
 
 async function recordStopped(page, ctx, run, e) {
   log(`stopped: ${e.message}`);
+  run.stop = stopLineOf(e);
+  log(`STOP LINE for the owner: ${run.stop}`);
   run.messages.push(`STOPPED: ${e.message}`);
   run.screenshots.push(await shot(page, join(ctx.dir, 'shots'), 'stopped').catch(() => '(screenshot failed)'));
 }
 
 /** Only fields whose page was saved are recorded; a run that stopped midway never claims the rest. */
-function writeFinalState(root, ctx, run) {
-  const patch = { kdpId: ctx.kdpId, fields: recordableFields(run.diff), ...(ctx.state === 'unknown' ? {} : { state: ctx.state }) };
-  if (ctx.kdpId) writeState(root, run.book, run.lang, nextState(readState(root, run.book, run.lang), patch));
+export function writeFinalState(root, ctx, run) {
+  const stops = run.stop ? { stoppedRuns: (run.previousStops ?? 0) + 1, lastStop: run.stop } : { stoppedRuns: 0, lastStop: null };
+  const patch = { kdpId: ctx.kdpId, fields: recordableFields(run.diff), ...stops, ...(ctx.state === 'unknown' ? {} : { state: ctx.state }) };
+  // A stop before the title has an id still counts (review kdpx-high 3): the counter is kept with a null id.
+  if (ctx.kdpId || run.stop) writeState(root, run.book, run.lang, nextState(readState(root, run.book, run.lang), patch));
 }
 
 function writeRunSummary(root, run) {

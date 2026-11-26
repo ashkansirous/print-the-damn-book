@@ -161,3 +161,19 @@ test('known progress texts do not block a success marker, unknown alerts still d
   assert.equal(judgeSave({ alerts: progress }).state, 'saved');
   assert.equal(judgeSave({ alerts: ['Your changes have been saved', 'Something odd'] }).state, 'pending');
 });
+
+test('KDP\'s real "Save Successful!" alert counts as the saved marker (first save, id arrives in the URL)', async () => {
+  const alerts = ['In Progress...', 'Not Started...', 'Save Successful!'];
+  assert.equal(judgeSave({ alerts, bodyText: 'Paperback Details' }).state, 'saved');
+  const events = [];
+  const page = boxPage({ boxes: [], url: ID_URL, events });
+  const orig = page.locator;
+  page.locator = (sel) => {
+    if (sel === 'body') return { innerText: async () => 'Paperback Details' };
+    if (sel === CONTENT.messageBoxes) return { allInnerTexts: async () => (events.includes('click') ? alerts : []) };
+    return orig(sel);
+  };
+  const ctx = ctxOf({ savedWithoutId: true });
+  await savePage(page, 'details', ctx);
+  assert.equal(ctx.kdpId, 'J7D02A7MVND');
+});

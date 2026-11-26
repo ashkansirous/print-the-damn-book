@@ -48,6 +48,19 @@ the free ISBN; add a row per book, language and format).
 
 - Description: no spoilers, no app advertising, no price, no reviews. Plain paragraphs (the supported HTML tag list was not read).
 - Keywords never repeat a word (or its plural or stem) of the title, subtitle, contributors or categories; the checker enforces it.
-- AI disclosure is Yes for text, images and translations (slice 31 decision); the checker requires all three.
+- A keyword must describe the paper book. Before writing any keyword, read Amazon's book search suggestions for it
+  (`https://completion.amazon.com/api/2017/suggestions?alias=stripbooks&prefix=<keyword>`) and drop it when they show another kind of
+  product ("read aloud" suggests "books that read aloud to kids", i.e. sound books, read 2026-11-20). The checker refuses read aloud,
+  audio, sound book, talking book and listening words. A keyword the owner gave in his own words stays even when it repeats a title
+  word: mark it "(owner override)" (exempt from the repeated-words rule only; the robot never types the mark). (Owner, 2026-11-20; Slice 43)
+- The series line is the series name and number from `kdp/catalog.json` ("Little Seagull’s Big Adventures (book 2)"), or "None" when the
+  catalog has none; never a name the owner has not given.
+- AI disclosure is answered per field (owner, 2026-11-21; Slice 43 K): Text and Images "Yes, Entire work, with minimal or no editing";
+  Translations "None" in English, "Yes, Entire work, with minimal or no editing" in every other language. The checker requires exactly these.
+  **Exception (owner, 2026-11-26):** a book whose catalog entry has `ownerWrittenText: true` (Love from Seagull Island, X Marks the Treasure!,
+  Freddy and the Slipper: "I wrote the story, you helped me rewrite and edit it") answers Text "None": KDP calls text the author wrote and
+  refined with AI "AI-assisted", which needs no disclosure (G200672390, read 2026-11-26). `check-listing.mjs` reads the catalog and requires it.
+- Reading age is minimum 1, maximum 5 for every book, not the store catalog's ages (owner, 2026-11-20: "it can be from 1 years old");
+  the description and keywords say "ages 1 to 5" too.
 - The price is the lowest paying one from `proposePrice`; keeping another needs the words "owner override" in the price section.
 - Anything the form needs that no page confirms goes in the report, not guessed into the file as fact.

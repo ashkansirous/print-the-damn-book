@@ -1,0 +1,219 @@
+{
+  "page": "content",
+  "source": "x-marks-the-treasure-en",
+  "kdpId": "4TK6278TV2X",
+  "controls": [
+    {
+      "key": "combobox|Trim Size",
+      "kind": "click",
+      "role": "combobox",
+      "name": "Trim Size",
+      "label": "Trim Size",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 18,
+      "values": []
+    },
+    {
+      "key": "option|8.5 x 8.5 in ( 21.59 x 21.59 cm )",
+      "kind": "click",
+      "role": "option",
+      "name": "8.5 x 8.5 in ( 21.59 x 21.59 cm )",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 19,
+      "values": []
+    },
+    {
+      "key": "combobox|Select",
+      "kind": "click",
+      "role": "combobox",
+      "name": "Select",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 20,
+      "values": []
+    },
+    {
+      "key": "option|None",
+      "kind": "click",
+      "role": "option",
+      "name": "None",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 23,
+      "values": []
+    },
+    {
+      "key": "option|Many AI-generated images, with minimal or no editing",
+      "kind": "click",
+      "role": "option",
+      "name": "Many AI-generated images, with minimal or no editing",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 25,
+      "values": []
+    },
+    {
+      "key": "textbox|Nano banana",
+      "kind": "input",
+      "role": "textbox",
+      "name": "Nano banana",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 26,
+      "values": [
+        "Nano banana"
+      ]
+    },
+    {
+      "key": "option|Entire work, with minimal or no editing",
+      "kind": "click",
+      "role": "option",
+      "name": "Entire work, with minimal or no editing",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 28,
+      "values": []
+    },
+    {
+      "key": "textbox|Claude",
+      "kind": "input",
+      "role": "textbox",
+      "name": "Claude",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 29,
+      "values": [
+        "Claude"
+      ]
+    },
+    {
+      "key": "button|Upload manuscript",
+      "kind": "click",
+      "role": "button",
+      "name": "Upload manuscript",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 30,
+      "values": []
+    },
+    {
+      "key": "file|C:\\fakepath\\interior.pdf",
+      "kind": "upload",
+      "role": "file",
+      "name": "C:\\fakepath\\interior.pdf",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 31,
+      "values": [
+        "interior.pdf"
+      ]
+    },
+    {
+      "key": "button|Upload your cover file",
+      "kind": "click",
+      "role": "button",
+      "name": "Upload your cover file",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 32,
+      "values": []
+    },
+    {
+      "key": "file|C:\\fakepath\\cover.pdf",
+      "kind": "upload",
+      "role": "file",
+      "name": "C:\\fakepath\\cover.pdf",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 33,
+      "values": [
+        "cover.pdf"
+      ]
+    },
+    {
+      "key": "button|Save and Continue",
+      "kind": "click",
+      "role": "button",
+      "name": "Save and Continue",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 34,
+      "values": []
+    },
+    {
+      "key": "button|Assign ISBN",
+      "kind": "click",
+      "role": "button",
+      "name": "Assign ISBN",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 35,
+      "values": []
+    },
+    {
+      "key": "button|Launch Previewer",
+      "kind": "click",
+      "role": "button",
+      "name": "Launch Previewer",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 37,
+      "values": []
+    },
+    {
+      "key": "combobox|Entire work, with minimal or no editing",
+      "kind": "click",
+      "role": "combobox",
+      "name": "Entire work, with minimal or no editing",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 81,
+      "values": []
+    },
+    {
+      "key": "button|< Back to Details",
+      "kind": "click",
+      "role": "button",
+      "name": "< Back to Details",
+      "label": "",
+      "id": "",
+      "field": "",
+      "inDialog": false,
+      "order": 88,
+      "values": []
+    }
+  ]
+}

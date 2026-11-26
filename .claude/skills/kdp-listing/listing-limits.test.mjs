@@ -1,12 +1,35 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { checkListing, printingCost, proposePrice, royalty } from './listing-limits.mjs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { checkListing as check, listingBookId, ownerWrittenIds, printingCost, proposePrice, royalty } from './listing-limits.mjs';
 
 const freddy = new URL('../../../kdp/listings/freddy-and-the-slipper/en.md', import.meta.url);
+const owner = ownerWrittenIds(JSON.parse(readFileSync(new URL('../../../kdp/catalog.json', import.meta.url), 'utf8')));
+/** Freddy is one of the owner's three books, so its listing is checked as one (Text "None"). */
+const checkListing = (text, opts = { ownerWritten: true }) => check(text, opts);
 
 test('the Freddy listing passes', () => {
   assert.deepEqual(checkListing(readFileSync(freddy, 'utf8')), []);
+});
+
+test('every listing under kdp/listings passes', () => {
+  const root = new URL('../../../kdp/listings/', import.meta.url);
+  for (const dir of readdirSync(root, { withFileTypes: true }).filter((d) => d.isDirectory())) {
+    for (const file of readdirSync(new URL(`${dir.name}/`, root)).filter((f) => f.endsWith('.md'))) {
+      assert.deepEqual(check(readFileSync(new URL(`${dir.name}/${file}`, root), 'utf8'), { ownerWritten: owner.has(dir.name) }), [], `${dir.name}/${file}`);
+    }
+  }
+});
+
+test('the owner wrote three books: Text is None for them and never Entire work (owner, 2026-11-26; Slice 43 K)', () => {
+  assert.deepEqual([...owner].sort(), ['freddy-and-the-slipper', 'love-from-seagull-island', 'x-marks-the-treasure']);
+  assert.equal(listingBookId('kdp/listings/x-marks-the-treasure/en.md'), 'x-marks-the-treasure');
+  assert.equal(listingBookId('D:\\r\\kdp\\listings\\freddy-and-the-slipper\\en.md'), 'freddy-and-the-slipper');
+  const text = readFileSync(freddy, 'utf8');
+  assert.ok(check(text, { ownerWritten: false }).some((e) => e.includes('Text must say "Yes, Entire work')), 'a book the owner did not write still needs Entire work');
+  const entire = text.replace(/- Text: None[^\n]*/, '- Text: Yes, Entire work, with minimal or no editing');
+  assert.ok(check(entire, { ownerWritten: true }).some((e) => e.includes('Text must say "None"')));
+  assert.deepEqual(check(entire, { ownerWritten: false }), []);
 });
 
 test('printing cost uses the large-trim premium colour bands', () => {
@@ -29,24 +52,44 @@ test('a bad listing fails every limit it breaks', () => {
   assert.ok(errors.some((e) => e.includes('price 9.5')));
 });
 
+const KEYWORD_1 = '1. fussy eater kids tale';
 const original = () => readFileSync(freddy, 'utf8');
 const edit = (from, to) => checkListing(original().replace(from, () => to));
 
-test('AI disclosure needs Yes for text, images and translations', () => {
-  assert.ok(edit('- Translations: Yes', '- Translations: No').some((e) => e.includes('Translations')));
-  assert.ok(edit('- Images: Yes', '- Images: No').some((e) => e.includes('Images')));
-  assert.ok(edit('- Text: Yes\n', '').some((e) => e.includes('Text')));
+test('AI disclosure answers per field: Entire work for text and images, None for translations in English', () => {
+  assert.ok(edit('- Translations: None', '- Translations: Yes, Entire work, with minimal or no editing').some((e) => e.includes('Translations')));
+  assert.ok(edit('- Images: Yes, Entire work, with minimal or no editing', '- Images: Yes').some((e) => e.includes('Images')));
+  assert.ok(edit(/- Text: None[^\n]*\n/, '').some((e) => e.includes('Text')));
+  assert.ok(edit(/- Text: None[^\n]*/, '- Text: Yes, Many AI-generated images, with minimal or no editing').some((e) => e.includes('Text')));
+});
+
+test('AI disclosure for another language needs Entire work for translations', () => {
+  const german = original().replace('## Language\n\nEnglish', '## Language\n\nGerman');
+  assert.ok(checkListing(german).some((e) => e.includes('Translations')));
+  const answered = german.replace(/- Translations: None[^\n]*/, '- Translations: Yes, Entire work, with minimal or no editing');
+  assert.ok(!checkListing(answered).some((e) => e.includes('Translations')));
 });
 
 test('keywords may not repeat title, subtitle or category words, plurals included', () => {
-  assert.ok(edit('1. picky eater read aloud', "1. picky eater children's story").some((e) => e.includes('children')));
-  assert.ok(edit('1. picky eater read aloud', '1. funny foxes').some((e) => e.includes('foxes')));
-  assert.ok(edit('1. picky eater read aloud', '1. toddler humor').some((e) => e.includes('humor')));
-  assert.ok(edit('1. picky eater read aloud', '1. fox hunting stories').some((e) => e.includes('fox')));
+  assert.ok(edit(KEYWORD_1, '1. funny foxes').some((e) => e.includes('foxes')));
+  assert.ok(edit(KEYWORD_1, '1. toddler humor').some((e) => e.includes('humor')));
+  assert.ok(edit(KEYWORD_1, '1. fox hunting stories').some((e) => e.includes('fox')));
+});
+
+test('an owner-chosen keyword may repeat words, but only with "(owner override)", and never a banned word', () => {
+  assert.ok(edit(KEYWORD_1, '1. toddler bedtime picture book').some((e) => e.includes('picture')));
+  assert.deepEqual(edit(KEYWORD_1, '1. toddler bedtime picture book (owner override)'), []);
+  assert.ok(edit(KEYWORD_1, '1. read aloud tale (owner override)').some((e) => e.includes('paper book')));
 });
 
 test('role labels in contributors are not treated as used words', () => {
-  assert.deepEqual(edit('1. picky eater read aloud', '1. author interview tips'), []);
+  assert.deepEqual(edit(KEYWORD_1, '1. author interview tips'), []);
+});
+
+test('a keyword for something a paper book is not is refused (Slice 43)', () => {
+  for (const bad of ['read aloud bedtime tale', 'read-aloud stories', 'audio bedtime', 'sound book toddlers', 'talking books kids', 'listen along tale']) {
+    assert.ok(edit(KEYWORD_1, `1. ${bad}`).some((e) => e.includes('paper book')), bad);
+  }
 });
 
 test('keyword count and category count are enforced', () => {
@@ -68,7 +111,8 @@ test('a price other than the proposed one needs an owner override and a matching
 });
 
 test('AI disclosure matches a whole list line, not a word ending in Text', () => {
-  assert.ok(edit('- Text: Yes', '- Context: Yes').some((e) => e.includes('Text')));
+  assert.ok(edit('- Text: None', '- Context: None').some((e) => e.includes('Text')));
+  assert.ok(!edit('- Text: None', '- Context: None').some((e) => e.includes('Images')));
 });
 
 test('the sum text must show the royalty as a whole number', () => {

@@ -45,10 +45,35 @@ test('language with no titles.json entry or no listing', () => {
 });
 
 test('duplicate series numbers and duplicate ids', () => {
-  const s = { name: 'Dino Stories', number: 1 };
+  const s = { names: { en: 'Dino Stories' }, number: 1 };
   const errors = checkCatalog(cat([book('a', { series: s }), book('b', { series: s }), book('a')]), ctx());
   assert.ok(errors.some((e) => e.includes('number 1 is used by "a" and "b"')));
   assert.ok(errors.some((e) => e.includes('"a" appears twice')));
+  const other = { names: { en: 'Another series' }, number: 1 };
+  assert.deepEqual(checkCatalog(cat([book('a', { series: s }), book('b', { series: other })]), ctx()), []);
+});
+
+test('series shape: a number from 1 and a name for every language of the book (Slice 43)', () => {
+  const bad = (series) => checkCatalog(cat([book('a', { series }), book('b')]), ctx());
+  assert.ok(bad({ names: { en: 'S' }, number: 0 }).some((e) => e.includes('number must be a whole number')));
+  assert.ok(bad({ names: { de: 'S' }, number: 1 }).some((e) => e.includes('no name for language "en"')));
+  assert.ok(bad({ number: 1 }).some((e) => e.includes('names must map a language')));
+  assert.deepEqual(bad({ names: { en: 'S' }, number: 2 }), []);
+});
+
+test('ownerWrittenText is a plain true or false (Slice 43 K)', () => {
+  const withFlag = (v) => checkCatalog(cat([book('a', { ownerWrittenText: v }), book('b')]), ctx());
+  assert.deepEqual(withFlag(true), []);
+  assert.ok(withFlag('yes').some((e) => e.includes('ownerWrittenText must be true or false')));
+});
+
+test('contributor prefix: short and plain, and Ashkan Sirous always carries "Mr." (Slice 43)', () => {
+  const withC = (c) => checkCatalog(cat([book('a', { contributors: [c] }), book('b')]), ctx());
+  assert.ok(withC({ role: 'Author', name: 'Ashkan Sirous' }).some((e) => e.includes('prefix must be "Mr."')));
+  assert.ok(withC({ role: 'Author', name: 'Ashkan Sirous', prefix: 'Dr.' }).some((e) => e.includes('prefix must be "Mr."')));
+  assert.deepEqual(withC({ role: 'Author', name: 'Ashkan Sirous', prefix: 'Mr.' }), []);
+  assert.ok(withC({ role: 'Author', name: 'Y', prefix: 'Professor' }).some((e) => e.includes('1 to 4 plain characters')));
+  assert.ok(withC({ role: 'Author', name: 'Y', prefix: '' }).some((e) => e.includes('1 to 4 plain characters')));
 });
 
 test('publishable entry needs dino and contributors; others do not', () => {

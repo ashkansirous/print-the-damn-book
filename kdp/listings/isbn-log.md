@@ -5,3 +5,4 @@ One line per book, language and format. The owner fills the ISBN in after KDP as
 | Book id | Language | Format | ISBN | Assigned on |
 | --- | --- | --- | --- | --- |
 | freddy-and-the-slipper | en | paperback | | |
+| x-marks-the-treasure | en | paperback | | |

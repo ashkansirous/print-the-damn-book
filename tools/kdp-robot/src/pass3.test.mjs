@@ -66,10 +66,11 @@ test('1: settleTitle adopts the one matching row, stops on two rows, and refuses
   assert.equal(fresh.kdpId, null);
 });
 
-test('2: while the title links are unconfirmed, a shelf with other titles and no saved id stops before Create', async () => {
+test('2: the title links are confirmed (capture 2026-11-20): a shelf with only other titles and no saved id means a new title', async () => {
   const stranger = { href: href('CCCCCCCCCC'), title: 'Other book', text: 'English', status: 'Draft' };
   const none = { kdpId: null };
-  await assert.rejects(settleTitle(livePage([stranger]), plan, none, { book: 'fox', lang: 'en' }), /not confirmed against a non-empty shelf/);
+  await settleTitle(livePage([stranger]), plan, none, { book: 'fox', lang: 'en' });
+  assert.equal(none.kdpId, null);
   const known = { kdpId: 'AAAAAAAAAA' };
   await assert.rejects(settleTitle(livePage([stranger]), plan, known, { book: 'fox', lang: 'en' }), NotEditable); // a saved id is checked as before
 });
@@ -94,9 +95,9 @@ test('10: the state comes from the status cell with an exact label, not from wor
   assert.equal(parseBookshelfRows([{ href: href('AAAAAAAAAA'), title: 'Fox', text: 'English Live' }])[0].state, 'unknown');
 });
 
-test('page maps: bookshelf and details are confirmed from the 2026-11-20 capture, content and pricing are not; draft refuses with the page named', async () => {
+test('page maps: bookshelf and details are confirmed from the 2026-11-20 capture, content and pricing from the recordings; draft refuses with the page named', async () => {
   assert.deepEqual(NEEDED_PAGES.map((p) => p.name), ['bookshelf', 'details', 'content', 'pricing']);
-  assert.deepEqual(NEEDED_PAGES.map((p) => p.confirmed), [true, true, false, false]);
+  assert.deepEqual(NEEDED_PAGES.map((p) => p.confirmed), [true, true, true, true]);
   for (const p of NEEDED_PAGES) {
     const only = NEEDED_PAGES.map((x) => ({ ...x, confirmed: x !== p }));
     assert.throws(() => requireConfirmedPages(only), (e) => e instanceof PageMapNotConfirmed && e.message === `page map not confirmed: ${p.name}; run capture first`);
@@ -106,10 +107,10 @@ test('page maps: bookshelf and details are confirmed from the 2026-11-20 capture
   await assert.rejects(runDraft('/nowhere', { books: [] }, 'fox', 'en', { pages: [{ name: 'content', confirmed: false }] }), /page map not confirmed: content; run capture first/);
 });
 
-test('the real lists: the up-front check passes with today\'s maps, and the unconfirmed content page is what stops the run later', () => {
+test('the real lists: the up-front check passes with today\'s maps, and no draft step is left unconfirmed', () => {
   assert.deepEqual(START_PAGES.map((p) => p.name), ['bookshelf']);
   assert.doesNotThrow(() => requireConfirmedPages(START_PAGES));
-  assert.deepEqual(DRAFT_STEPS.filter((s) => !s.page.confirmed).map((s) => s.page.name), ['content', 'pricing']);
+  assert.deepEqual(DRAFT_STEPS.filter((s) => !s.page.confirmed).map((s) => s.page.name), []);
   assert.ok(START_PAGES.every((p) => NEEDED_PAGES.includes(p)));
 });
 
@@ -165,4 +166,17 @@ test('capture: the only buttons it uses (Choose categories, Cancel) pass the gua
   assertSafeClick('Cancel');
   assert.throws(() => assertSafeClick('Publish Your Paperback Book'));
   assert.throws(() => assertSafeClick('Save categories and publish'));
+});
+
+test('capture: a setup page is saved only after form controls appeared (an empty script-built shell is not a capture)', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kdp-cap-'));
+  const order = [];
+  const page = {
+    content: async () => { order.push('content'); return '<html>x</html>'; },
+    evaluate: async () => ({ w: 800, h: 600 }),
+    screenshot: async () => {},
+    waitForFunction: async () => { order.push('settle'); },
+  };
+  await capturePage(page, dir, 'title-content');
+  assert.deepEqual(order, ['settle', 'content']);
 });
