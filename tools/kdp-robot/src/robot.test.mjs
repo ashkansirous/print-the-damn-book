@@ -59,7 +59,12 @@ test('Slice 43: X Marks the Treasure! keeps the owner keyword, its series, "Mr."
 test('Slice 43: a book with no series has no series fields; the catalog gives every Ashkan Sirous row "Mr."', () => {
   const fields = buildFields(readListing(REPO_ROOT, 'freddy-and-the-slipper', 'en'), { ...freddy, price: 9.99, finish: 'glossy', lang: 'en' });
   assert.ok(!fields.some((f) => f.key.startsWith('series')));
-  assert.deepEqual(catalog.books.flatMap((b) => b.contributors).filter((c) => c.name === 'Ashkan Sirous').map((c) => c.prefix), ['Mr.', 'Mr.', 'Mr.', 'Mr.']);
+  const prefixes = catalog.books.flatMap((b) => b.contributors).filter((c) => c.name === 'Ashkan Sirous').map((c) => c.prefix);
+  for (const id of ['x-marks-the-treasure', 'freddy-and-the-slipper', 'love-from-seagull-island']) {
+    const rows = catalog.books.find((b) => b.id === id).contributors.filter((c) => c.name === 'Ashkan Sirous');
+    assert.equal(rows.length, 2, `${id} lists Ashkan Sirous as author and illustrator`);
+  }
+  assert.ok(prefixes.every((p) => p === 'Mr.'), `every Ashkan Sirous row has "Mr.": ${prefixes.join(', ')}`);
   assert.equal(catalog.books.find((b) => b.id === 'love-from-seagull-island').series.number, 1);
 });
 

@@ -1,0 +1,27 @@
+{
+  "kdpId": "C72THQWVP4B",
+  "state": "unknown",
+  "fields": {
+    "language": "ba118bf7fc9c1aed",
+    "title": "04a6b8f994fa5a9b",
+    "subtitle": "88cf460a91d19d61",
+    "contributor-1": "c9222301346d01f0",
+    "contributor-2": "c9222301346d01f0",
+    "description": "86c54e7b17a1326b",
+    "rights": "551afd04a1c5d281",
+    "keyword-1": "03148f30f92de89b",
+    "keyword-2": "8e988d352366de2f",
+    "keyword-3": "ffe21507bda8d5d1",
+    "keyword-4": "81cbfa623876182c",
+    "keyword-5": "08fdb79f78d8857f",
+    "keyword-6": "44c08f5b0c262e2b",
+    "keyword-7": "c2d30f5476bcc238",
+    "age-min": "6b86b273ff34fce1",
+    "age-max": "ef2d127de37b942b",
+    "explicit": "1ea442a134b2a184",
+    "isbn": "2881e97e52d29745"
+  },
+  "files": {},
+  "stoppedRuns": 2,
+  "lastStop": "Refused to click \"Trim Size 6 x 9 in ( 15.24 x 22.86 cm )\": the control the page resolved to is not one of the labels the robot may use here"
+}
