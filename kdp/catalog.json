@@ -23,7 +23,17 @@
     { "id": "jack-and-the-beanstalk", "dino": "Jack and the Beanstalk v15.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "lion-and-mouse", "dino": "The Lion and the Mouse v15.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "little-red-hen", "dino": "The Little Red Hen v15.hd.dino", "languages": [], "series": null, "contributors": [] },
-    { "id": "love-from-seagull-island", "dino": "Love from Seagull Island v3.hd.dino", "languages": [], "ownerWrittenText": true, "series": { "number": 1, "names": { "en": "Little Seagull’s Big Adventures" } }, "contributors": [] },
+    {
+      "id": "love-from-seagull-island",
+      "dino": "Love from Seagull Island v3.hd.dino",
+      "languages": ["en"],
+      "ownerWrittenText": true,
+      "series": { "number": 1, "names": { "en": "Little Seagull’s Big Adventures" } },
+      "contributors": [
+        { "role": "Author", "name": "Ashkan Sirous", "prefix": "Mr." },
+        { "role": "Illustrator", "name": "Ashkan Sirous", "prefix": "Mr." }
+      ]
+    },
     { "id": "red-riding-hood", "dino": "Little Red Riding Hood v15.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "three-little-pigs", "dino": "The Three Little Pigs v19.hd.dino", "languages": [], "series": null, "contributors": [] },
     { "id": "tortoise-and-hare", "dino": "The Tortoise and the Hare v15.hd.dino", "languages": [], "series": null, "contributors": [] },

@@ -167,6 +167,15 @@ category's "Fiction" placement, a guessed control.
 - The listing categories differ from the owner's picks on KDP (Birds > Fiction, and Action & Adventure): update the X Marks listing to
   the owner's picks after reading KDP's exact names.
 - The listing reading age may be 1-6 if the owner picked 6 (read live).
+- Live run, Love from Seagull Island (en), 2026-11-27, new title C72THQWVP4B (owner's go: "ok, upload it. dont approve yet"):
+  - Run 1: on a brand-new title the categories button is disabled until the first save, so the robot saved Details without
+    categories and KDP's Content page then blocked with "We found an issue on an earlier page of your title setup". The robot should
+    save once and then pick the categories in the same run.
+  - Run 2 (no code change): categories picked and saved, but each read back as "not shown as set after the save"; AI-generated
+    texts, images and translations were left unset ("left as set on KDP by the owner") on a title the owner never touched; the free
+    ISBN was assigned; it stopped at the trim size: "Refused to click "Trim Size 6 x 9 in ( 15.24 x 22.86 cm )": the control the page
+    resolved to is not one of the labels the robot may use here" (KDP now shows Trim Size as a drop-down named after its current
+    value). Files not uploaded. Retry cap reached; the owner finishes Content and Pricing by hand.
 
 #### For CLAUDE.md (lifted 2026-11-26)
 
