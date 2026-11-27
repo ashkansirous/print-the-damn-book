@@ -21,7 +21,7 @@ test('Freddy listing parses into plain values', () => {
   const l = readListing(REPO_ROOT, 'freddy-and-the-slipper', 'en');
   assert.equal(l.title, 'Freddy and the Slipper');
   assert.equal(l.keywords.length, 7);
-  assert.deepEqual(l.categories[0], ["Children's Books", 'Animals', 'Foxes & Wolves']);
+  assert.deepEqual(l.categories[0], ["Children's Books", 'Animals', 'Foxes & Wolves', 'Foxes']);
   assert.equal(l.ageMin, 1); // owner, 2026-11-20: every book is ages 1 to 5. AI text below: the owner wrote Freddy's story (2026-11-26)
   assert.equal(l.ageMax, 5);
   assert.deepEqual(l.ai, { text: 'None', images: 'Entire work, with minimal or no editing', translations: 'None' });
@@ -160,11 +160,12 @@ test('a missing or ambiguous field stops the run and types nothing', async () =>
 test('draft plan: unknown book, language not in catalog, missing files', () => {
   assert.match(planDraft(REPO_ROOT, catalog, 'nope', 'en').errors[0], /not in kdp\/catalog/);
   assert.match(planDraft(REPO_ROOT, catalog, 'freddy-and-the-slipper', 'de').errors[0], /not set to publish/);
-  // X Marks the Treasure! has a complete listing; Freddy's first category still has no placement, which the plan now refuses (review kdpx-high 10).
-  const plan = planDraft(REPO_ROOT, catalog, 'x-marks-the-treasure', 'en');
-  assert.ok(plan.fields.length > 20);
-  assert.ok(plan.errors.every((e) => e.startsWith('missing ')));
-  assert.match(planDraft(REPO_ROOT, catalog, 'freddy-and-the-slipper', 'en').errors[0], /names no placement/);
+  // X Marks the Treasure! and Freddy have complete listings (Freddy's Foxes placement read on 2026-11-27); a bare category is covered in review-fixes.test.mjs.
+  for (const book of ['x-marks-the-treasure', 'freddy-and-the-slipper']) {
+    const plan = planDraft(REPO_ROOT, catalog, book, 'en');
+    assert.ok(plan.fields.length > 20);
+    assert.ok(plan.errors.every((e) => e.startsWith('missing ')), book);
+  }
 });
 
 test('dry run writes a summary and opens no browser', async () => {
