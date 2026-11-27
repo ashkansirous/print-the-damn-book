@@ -199,11 +199,21 @@ category's "Fiction" placement, a guessed control.
 
 #### From review
 
-review read: `reviews/kdpx-high.md` findings 11/11; `reviews/kdpx-medium.md` findings 5/5.
+review read: `reviews/kdpx-high.md` findings 11/11; `reviews/kdpx-medium.md` findings 5/5; `reviews/seagull-high.md` findings 5/5; `reviews/seagull-medium.md` findings 5/5.
 
 - High pass (`reviews/kdpx-high.md`): fixed 1-8, 10 and 11.
 - Skipped #9 (`reviews/kdpx-high.md`): "Two gaps from removing the white barcode box." - the cover barcode test belongs to the cover code (item L), not this slice.
 - Medium pass (`reviews/kdpx-medium.md`): fixed 1, 3 and 4.
+- Seagull listing pass (`reviews/seagull-high.md`): fixed 3 and 5.
+- Skipped #1 (`reviews/seagull-high.md`): "the two robot bugs from the live run have no planned fix." - recorded under Open points; a fix is new robot code for its own slice.
+- Skipped #2 (`reviews/seagull-high.md`): "all three categories are unproven for this book." - the owner checks the categories on KDP by hand; no family branch name has been read yet.
+- Skipped #4 (`reviews/seagull-high.md`): "`state: "unknown"` and no `readAt`" - the state file is what the stopped run wrote; the next run reads the bookshelf.
+- Seagull medium pass (`reviews/seagull-medium.md`): nothing fixed.
+- Skipped #1 (`reviews/seagull-medium.md`): "three live-run robot bugs have no planned fix." - same as high #1, recorded under Open points.
+- Skipped #2 (`reviews/seagull-medium.md`): "`state: "unknown"` yet 18 field hashes listed as set." - the hashes are what the robot read back after KDP said "Save Successful!"; the Details fields are on KDP.
+- Skipped #3 (`reviews/seagull-medium.md`): "category picks (Birds, Friendship, Humor) do not fit a grandparents story." - same as high #2, the owner's to change on KDP.
+- Skipped #4 (`reviews/seagull-medium.md`): "the test is weaker than the original exact-list assertion." - it now checks two rows on each of the three named books and "Mr." on every row.
+- Skipped #5 (`reviews/seagull-medium.md`): "`languages: ["en"]` marks the book as a built English edition while its draft stopped at Trim Size with no files." - `languages` means the robot may draft that language, which it did.
 - Skipped #2 (`reviews/kdpx-medium.md`): "Series fields are never written even when SERIES.confirmed is true." - the slice fixes `SERIES.confirmed` at false and the series is the owner's to set; no write step is built.
 - Skipped #5 (`reviews/kdpx-medium.md`): "The stopped-run counter only counts errors thrown inside `runPages`." - a sign-in or captcha stop is the owner's step, not a robot failure, so the one-fix-one-rerun cap does not apply to it.
 - Skipped #1 (`reviews/kdpx-check.md`): "tools/kdp-robot/src/bookshelf.mjs:59, important. Strict path adopts a lone no-language exact-title row;" - low likelihood, and every run on X Marks English goes by the kdpId in `kdp/state` (4TK6278TV2X), which wins over title matching; a first run on a new book is Slice 39's concern.
