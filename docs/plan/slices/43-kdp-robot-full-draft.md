@@ -160,7 +160,7 @@ category's "Fiction" placement, a guessed control.
 
 #### Open points
 
-- Freddy and the Slipper's listing now fails `planDraft` until its first category (Foxes & Wolves) has a placement.
+- Freddy and the Slipper's draft (KDP id RXGKBXEGQ2J, ISBN 9798146341330) was set up by hand in Chrome on 2026-11-27, up to Publish; its first category is Foxes & Wolves > Foxes | Fiction, so `planDraft` passes. `kdp/state/freddy-and-the-slipper/en.json` holds only the id (field hashes are written by a robot run).
 - The catalog still holds one 9.99 price while the owner set prices per marketplace by hand (read from the live Pricing page).
 - The series write is blocked by the guard on "Submit updates" (owner's decision, see item C).
 - The `draft` command ignores `--content` and reads the worktree's `tmp/kdp-out`.

@@ -53,7 +53,8 @@ A funny, bouncy rhyming story for ages 1 to 5 about picky eating, listening to y
 The exact names in KDP's own category drop-downs (read from the categories dialog of a draft title on 2026-11-20, owner signed in):
 
 Each line ends with the placement box KDP shows after the leaf (after "|"). Foxes & Wolves has one more drop-down (Foxes; Wolves &
-Coyotes), read when the draft was set up on 2026-11-27 (KDP id RXGKBXEGQ2J).
+Coyotes); Foxes and its Fiction/Nonfiction boxes were read from the dialog when the draft was set up on 2026-11-27 (KDP id
+RXGKBXEGQ2J). Fiction because the story is made up, as for the other books' animal categories.
 
 1. Children's Books > Animals > Foxes & Wolves > Foxes | Fiction
 2. Children's Books > Humor | General
